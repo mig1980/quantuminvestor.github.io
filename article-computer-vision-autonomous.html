@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Vision in Autonomous Vehicles - Quantum Investor Digest</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-black text-white">
+    <!-- Header -->
+    <header class="border-b border-gray-800 py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <a href="index.html" class="text-xl font-bold tracking-tighter">
+                    <span class="text-purple-500">Quantum</span><span class="text-white"> Investor Digest</span>
+                </a>
+                <nav class="flex items-center space-x-6 text-sm">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition-colors duration-200">Home</a>
+                    <a href="articles.html" class="text-gray-400 hover:text-white transition-colors duration-200">Blog</a>
+                    <a href="about.html" class="text-gray-400 hover:text-white transition-colors duration-200">About</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12">
+        <article class="max-w-3xl mx-auto">
+            <div class="mb-8">
+                <div class="flex items-center gap-2 text-sm text-purple-500 mb-4">
+                    <span>👁️</span>
+                    <span>Computer Vision</span>
+                    <span class="text-gray-500">•</span>
+                    <span class="text-gray-500">August 3, 2023</span>
+                </div>
+                <h1 class="text-4xl font-bold mb-6">Computer Vision in Autonomous Vehicles</h1>
+                <div class="relative h-96 rounded-xl overflow-hidden border border-gray-800 mb-8">
+                    <img src="https://images.unsplash.com/photo-1563630381190-77c336ea545a?q=80&w=1200&h=800&auto=format&fit=crop" alt="Autonomous Vehicles" class="w-full h-full object-cover">
+                </div>
+            </div>
+
+            <div class="prose prose-invert max-w-none">
+                <p class="text-xl text-gray-300 mb-6">
+                    Exploring how computer vision algorithms are enabling self-driving cars to perceive and navigate complex environments.
+                </p>
+
+                <h2 class="text-2xl font-bold mt-8 mb-4">The Eyes of Autonomous Vehicles</h2>
+                <p class="text-gray-300 mb-4">
+                    Computer vision serves as the primary sensory system for autonomous vehicles, enabling them to understand their surroundings with remarkable accuracy. Through a combination of cameras, LIDAR, and radar, self-driving cars can perceive the world in ways that rival and often exceed human capabilities.
+                </p>
+
+                <h2 class="text-2xl font-bold mt-8 mb-4">Object Detection and Classification</h2>
+                <p class="text-gray-300 mb-4">
+                    Advanced deep learning models can identify and classify objects in real-time, from pedestrians and vehicles to traffic signs and road markings. These systems must work flawlessly under various lighting conditions, weather scenarios, and complex urban environments.
+                </p>
+
+                <h2 class="text-2xl font-bold mt-8 mb-4">Semantic Segmentation</h2>
+                <p class="text-gray-300 mb-4">
+                    Semantic segmentation algorithms allow autonomous vehicles to understand the precise boundaries and relationships between different objects in their environment. This pixel-level understanding is crucial for safe navigation and decision-making.
+                </p>
+
+                <h2 class="text-2xl font-bold mt-8 mb-4">Challenges and Future Directions</h2>
+                <p class="text-gray-300 mb-4">
+                    While computer vision has made tremendous strides, challenges remain in handling edge cases, adverse weather conditions, and ensuring robust performance across diverse driving scenarios. Ongoing research continues to push the boundaries of what's possible.
+                </p>
+            </div>
+
+            <div class="mt-12 pt-8 border-t border-gray-800">
+                <a href="articles.html" class="text-purple-500 hover:text-purple-400 flex items-center gap-2">
+                    ← Back to Articles
+                </a>
+            </div>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 py-12 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="space-y-4">
+                <a href="index.html" class="text-xl font-bold tracking-tighter">
+                    <span class="text-purple-500">Quantum</span><span class="text-white"> Investor Digest</span>
+                </a>
+                <p class="text-gray-400 text-sm">
+                    Exploring the cutting edge of artificial intelligence and machine learning.
+                </p>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-6 text-sm text-gray-400">
+                <p>© <span id="year"></span> Quantum Investor Digest. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
