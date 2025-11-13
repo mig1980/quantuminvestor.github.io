@@ -1,6 +1,7 @@
 /* CSS Variables */
 :root {
   --primary: #a855f7;
+  /*#8b5cf6 #a855f7*/
   --primary-dark: #7c3aed;
   --bg-black: #000000;
   --bg-gray-900: #111111;
@@ -22,6 +23,13 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  /* Prevent font size adjustment on iOS in landscape */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Enable smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -29,6 +37,10 @@ body {
   background-color: var(--bg-black);
   color: var(--text-white);
   line-height: 1.6;
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior-y: none;
+  /* Improve tap highlight color */
+  -webkit-tap-highlight-color: rgba(168, 85, 247, 0.2);
 }
 
 h1,
@@ -53,6 +65,35 @@ h3 {
 a {
   color: inherit;
   text-decoration: none;
+  /* Better touch feedback */
+  -webkit-tap-highlight-color: rgba(168, 85, 247, 0.2);
+  /* Prevent text selection on double-tap */
+  -webkit-touch-callout: none;
+}
+
+/* Improve button and interactive element accessibility */
+button, 
+a[href] {
+  /* Ensure minimum touch target size on mobile */
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
+/* Focus-visible styles for keyboard navigation accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outline only when focus-visible is supported */
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* Container */
@@ -358,12 +399,21 @@ a {
   color: var(--text-white);
 }
 
+.text-gray-400-static {
+  color: var(--text-gray-400);
+}
+
 .text-purple-500:hover {
   color: var(--primary);
 }
 
 .text-purple-400:hover {
   color: #e9d5ff;
+}
+
+/* Social icon tight spacing */
+.social-icons a + a {
+  margin-left: 1px; /* further reduced spacing */
 }
 
 /* Cards */
@@ -495,7 +545,31 @@ img {
   border-color: rgba(168, 85, 247, 0.5);
 }
 
-/* Media Queries */
+/* Media Queries - Tablet Landscape and Below (iPad Pro and smaller) */
+@media (max-width: 1024px) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  /* Improve touch targets for tablet */
+  nav a {
+    padding: 0.5rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Media Queries - Tablet Portrait (iPad and similar) */
 @media (max-width: 768px) {
   .hidden {
     display: none !important;
@@ -522,15 +596,22 @@ img {
   }
 
   h1 {
-    font-size: 1.875rem;
+    font-size: 2rem;
+    line-height: 1.3;
+  }
+
+  h2 {
+    font-size: 1.5rem;
   }
 
   .text-4xl {
-    font-size: 1.875rem;
+    font-size: 2rem;
+    line-height: 1.3;
   }
 
   .text-6xl {
-    font-size: 2.25rem;
+    font-size: 2.5rem;
+    line-height: 1.2;
   }
 
   .text-lg {
@@ -540,16 +621,52 @@ img {
   .text-xl {
     font-size: 1.125rem;
   }
+
+  /* Better spacing for tablet */
+  .py-12 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .mb-20 {
+    margin-bottom: 3rem;
+  }
+
+  /* Navigation improvements for tablet */
+  nav {
+    gap: 1rem;
+  }
+
+  nav a {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Card improvements */
+  .space-y-3 > * + * {
+    margin-top: 0.75rem;
+  }
+
+  /* Footer adjustments */
+  footer {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .footer-disclosure-link {
+    font-size: 16px;
+  }
 }
 
+/* Media Queries - Mobile (phones) */
 @media (max-width: 640px) {
   .px-4 {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   .gap-12 {
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
   .md\:grid-cols-2 {
@@ -566,6 +683,140 @@ img {
 
   .lg\:grid-cols-3 {
     grid-template-columns: 1fr;
+  }
+
+  /* Typography optimization for mobile */
+  h1 {
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+  }
+
+  .text-4xl {
+    font-size: 1.75rem;
+  }
+
+  .text-6xl {
+    font-size: 2rem;
+  }
+
+  /* Improve touch targets - Apple HIG recommends 44x44px minimum */
+  nav a {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Better header spacing on mobile */
+  header {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  header .text-xl {
+    font-size: 1.125rem;
+  }
+
+  nav {
+    gap: 0.5rem;
+  }
+
+  nav a {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  /* Improved spacing */
+  .py-12 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .py-6 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .mb-20 {
+    margin-bottom: 2rem;
+  }
+
+  .mb-8 {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Hero section mobile optimization */
+  .relative.h-96 {
+    height: 16rem;
+  }
+
+  /* Card grid spacing */
+  .gap-6 {
+    gap: 1.25rem;
+  }
+
+  /* Footer optimization */
+  footer {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  footer .space-x-4 {
+    gap: 1rem;
+  }
+
+  .footer-disclosure-link {
+    font-size: 15px;
+    margin-top: -10px;
+  }
+
+  /* Social icons larger tap targets */
+  footer a[aria-label] {
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  footer svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 375px) {
+  .text-4xl {
+    font-size: 1.5rem;
+  }
+
+  .text-6xl {
+    font-size: 1.75rem;
+  }
+
+  nav a {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.5rem;
+  }
+
+  header .text-xl {
+    font-size: 1rem;
+  }
+
+  .footer-disclosure-link {
+    font-size: 14px;
   }
 }
 
@@ -603,3 +854,399 @@ img {
     scroll-behavior: smooth;
   }
 }
+
+/* About Page Styles */
+.qi-about-block *,
+.qi-about-block *::before,
+.qi-about-block *::after {
+  box-sizing: border-box;
+}
+
+.qi-about-block .myblock-about-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 40px;
+  font-family: inherit;
+}
+
+.qi-about-block .myblock-profile-image {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 40px auto;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+}
+
+.qi-about-block .myblock-profile-image:hover {
+  transform: scale(1.03);
+}
+
+.qi-about-block .myblock-name-section {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.qi-about-block .myblock-name {
+  font-size: 3rem;
+  font-weight: 300;
+  margin-bottom: 10px;
+  color: var(--text-white);
+  line-height: 1.2;
+}
+
+.qi-about-block .myblock-tagline {
+  font-size: 1.125rem;
+  color: var(--text-white);
+  margin-bottom: 10px;
+  font-weight: 400;
+}
+
+.qi-about-block .myblock-email-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--text-white);
+  padding: 14px 40px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  border: 2px solid var(--primary);
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.qi-about-block .myblock-email-btn:hover {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Touch device active states */
+.qi-about-block .myblock-email-btn:active,
+.qi-about-block .myblock-action-btn:active {
+  transform: scale(0.98);
+}
+
+.qi-about-block .myblock-email-btn:focus,
+.qi-about-block .myblock-action-btn:focus {
+  outline: 3px solid #1f2937;
+  outline-offset: 2px;
+}
+
+.qi-about-block .myblock-email-btn:focus:not(:focus-visible),
+.qi-about-block .myblock-action-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure buttons are touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+  .qi-about-block .myblock-email-btn,
+  .qi-about-block .myblock-action-btn {
+    min-height: 48px;
+    padding: 0.875rem 1.5rem;
+  }
+}
+
+.qi-about-block .myblock-about-section,
+.qi-about-block .myblock-connect-section {
+  background: transparent;
+  padding: 60px 50px;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.qi-about-block .myblock-about-content {
+  max-width: 100%;
+  text-align: center;
+}
+
+.qi-about-block .myblock-about-title {
+  font-size: 3rem;
+  font-weight: 300;
+  margin-bottom: 30px;
+  color: var(--text-white);
+  position: relative;
+  padding-bottom: 20px;
+  text-align: center;
+}
+
+.qi-about-block .myblock-about-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 2px;
+  background-color: var(--text-white);
+}
+
+.qi-about-block .myblock-about-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-white);
+  margin-bottom: 40px;
+  text-align: justify;
+}
+
+.qi-about-block .myblock-action-buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.qi-about-block .myblock-action-btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 2px solid var(--primary);
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+.qi-about-block .myblock-action-btn:hover {
+  background: var(--primary);
+  color: var(--text-white);
+}
+
+/* About Page - Tablet */
+@media (max-width: 768px) {
+  .qi-about-block .myblock-about-container {
+    padding: 40px 16px;
+  }
+
+  .qi-about-block .myblock-about-section,
+  .qi-about-block .myblock-connect-section {
+    padding: 40px 16px;
+  }
+
+  .qi-about-block .myblock-name {
+    font-size: 2.2rem;
+  }
+
+  .qi-about-block .myblock-about-title {
+    font-size: 2.2rem;
+  }
+}
+
+/* About Page - Mobile */
+@media (max-width: 640px) {
+  .qi-about-block .myblock-about-container {
+    padding: 1rem 1rem;
+  }
+
+  .qi-about-block .myblock-about-section {
+    padding: 1.5rem 1rem;
+    box-shadow: none;
+  }
+
+  .qi-about-block .myblock-connect-section {
+    padding: 1rem 1rem 2rem 1rem;
+    box-shadow: none;
+  }
+
+  .qi-about-block .myblock-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .qi-about-block .myblock-about-title {
+    font-size: 1.5rem;
+  }
+
+  .qi-about-block .myblock-about-text {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .qi-about-block .myblock-profile-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .qi-about-block .myblock-action-buttons {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .qi-about-block .myblock-action-btn,
+  .qi-about-block .myblock-email-btn {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .qi-about-block .myblock-about-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding-bottom: 10px;
+  }
+
+  .qi-about-block .myblock-about-title::after {
+    width: 40px;
+  }
+
+  .qi-about-block .myblock-tagline {
+    font-size: 0.9rem;
+  }
+
+  .qi-about-block .myblock-email-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    margin: 0 auto 16px;
+  }
+
+  .qi-about-block .myblock-about-text {
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    text-align: justify;
+  }
+
+  .qi-about-block .myblock-action-buttons {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .qi-about-block .myblock-action-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+    box-sizing: border-box;
+    text-align: center;
+    margin: 0 0 12px 0;
+    border: 2px solid var(--primary);
+  }
+
+  .qi-about-block .myblock-action-btn:last-child {
+    margin-bottom: 0;
+  }
+
+  .qi-about-block .myblock-profile-image {
+    max-width: 90vw;
+    margin-bottom: 16px;
+    height: auto;
+    border-radius: 50%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+  }
+}
+
+  /* Disclosures page specific heading alignment */
+  .disclosures-page h2 {
+    text-align: left;
+  }
+
+  /* Footer disclosure link styling */
+  .footer-disclosure-link {
+    height: 20px;
+    margin-top: -13.45px;
+    font-size: 18px;
+  }
+
+  /* Skip to main content link for accessibility */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* iPad and tablet-specific optimizations */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    /* Optimize for iPad portrait and landscape */
+    .container {
+      max-width: 90%;
+    }
+
+    /* Better card layout for iPad */
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Improved typography for tablet reading */
+    .text-gray-400 {
+      font-size: 1rem;
+    }
+
+    /* Better spacing for tablet */
+    article,
+    section {
+      margin-bottom: 2.5rem;
+    }
+  }
+
+  /* iPad landscape optimization */
+  @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+    .container {
+      max-width: 95%;
+    }
+
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  /* Mobile landscape mode */
+  @media (max-height: 500px) and (orientation: landscape) {
+    header {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .py-12 {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .mb-20 {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Compact hero for landscape mobile */
+    .relative.h-96 {
+      height: 12rem;
+    }
+  }
+
+  /* High DPI displays (Retina) optimizations */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Slightly smaller text on high-res displays looks sharper */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  }
+
