@@ -1,0 +1,152 @@
+<style>
+.myblock-performance-snapshot {
+  margin: 20px 0;
+  font-family: inherit;
+  overflow-x: visible;
+}
+.myblock-portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed;
+  contain: layout style;
+}
+.myblock-portfolio-table thead tr {
+  background: #8B7AB8;
+  color: white;
+  font-weight: bold;
+}
+.myblock-portfolio-table th {
+  padding: 16px 12px;
+  text-align: left;
+  border: 1px solid #E5E5E5;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.myblock-portfolio-table th:not(:first-child) {
+  text-align: right;
+}
+.myblock-portfolio-table td {
+  padding: 14px 12px;
+  border: 1px solid #E5E5E5;
+  font-size: 14px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.myblock-portfolio-table .asset-name {
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  min-width: 120px;
+}
+.myblock-portfolio-table td:not(.asset-name) {
+  text-align: right;
+}
+.myblock-portfolio-table tbody tr:nth-child(even) {
+  background: #F9F9FB;
+}
+.myblock-portfolio-table .positive {
+  color: #2E7D32;
+  font-weight: 600;
+}
+.myblock-portfolio-table .negative {
+  color: #C62828;
+  font-weight: 600;
+}
+.myblock-portfolio-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+.myblock-portfolio-table tbody tr:hover {
+  background: #F8F5FF;
+}
+@media (max-width: 900px) {
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+  .myblock-portfolio-table th {
+    font-size: 11px;
+  }
+  .myblock-portfolio-table .asset-name {
+    min-width: 100px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  .myblock-portfolio-table th {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .myblock-portfolio-table .asset-name {
+    min-width: 70px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 480px) {
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {
+    padding: 5px 3px;
+    font-size: 10px;
+  }
+  .myblock-portfolio-table th {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+  .myblock-portfolio-table .asset-name {
+    min-width: 60px;
+    font-size: 10px;
+  }
+}
+</style>
+
+<div class="myblock-performance-snapshot">
+  <table class="myblock-portfolio-table" aria-label="Portfolio performance comparison">
+    <thead>
+      <tr>
+        <th>Asset</th>
+        <th>Oct 9</th>
+        <th>Nov 6, 2025</th>
+        <th>Nov 13, 2025</th>
+        <th>Weekly<br>Change</th>
+        <th>Total<br>Return</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="asset-name">GenAi Chosen ($)</td>
+        <td>10,000</td>
+        <td>10,396</td>
+        <td>10,388</td>
+        <td class="negative">-0.07%</td>
+        <td class="positive">+3.88%</td>
+      </tr>
+      <tr>
+        <td class="asset-name">S&amp;P 500 (Index)</td>
+        <td>6,688</td>
+        <td>6,720</td>
+        <td>6,737</td>
+        <td class="positive">+0.26%</td>
+        <td class="positive">+0.74%</td>
+      </tr>
+      <tr>
+        <td class="asset-name">Bitcoin ($)</td>
+        <td>123,353</td>
+        <td>101,301</td>
+        <td>99,697</td>
+        <td class="negative">-1.58%</td>
+        <td class="negative">-19.17%</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

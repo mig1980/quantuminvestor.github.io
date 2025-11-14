@@ -1,0 +1,62 @@
+{
+  "title": "GenAi-Managed Stocks Portfolio Week 6 \u2013 Performance, Risks & Next Moves",
+  "metaDescription": "How is an AI-managed stock portfolio navigating November volatility? Review Week 6 of the GenAi-Managed Stocks Portfolio: performance vs. the S&P 500 and Bitcoin, this week's leaders and laggards, and what the transformer-based AI model is signaling about risk and momentum heading into next week.",
+  "canonicalUrl": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-6.html",
+  "ogTitle": "GenAi-Managed Stocks Portfolio Weekly Update \u2013 Performance, Risks & Next Moves",
+  "ogDescription": "How is an AI-managed stock portfolio navigating November volatility? Review Week 6 of the GenAi-Managed Stocks Portfolio: performance vs. the S&P 500 and Bitcoin, this week's leaders and laggards, and what the transformer-based AI model is signaling about risk and momentum heading into next week.",
+  "ogImage": "https://quantuminvestor.net/Media/OG-Image.png",
+  "twitterCard": "summary_large_image",
+  "twitterSite": "@qid2025",
+  "twitterTitle": "GenAi-Managed Stocks Portfolio Weekly Update \u2013 Performance, Risks & Next Moves",
+  "twitterDescription": "How is an AI-managed stock portfolio navigating November volatility? Review Week 6 of the GenAi-Managed Stocks Portfolio: performance vs. the S&P 500 and Bitcoin, this week's leaders and laggards, and what the transformer-based AI model is signaling about risk and momentum heading into next week.",
+  "twitterImage": "https://quantuminvestor.net/Media/OG-Image.png",
+  "publishDate": "2025-11-17",
+  "weekNumber": 6,
+  "dateRange": "Nov 6 \u2013 Nov 13, 2025",
+  "slug": "GenAi-Managed-Stocks-Portfolio-Week-6",
+  "jsonLd": {
+    "blogPosting": {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "GenAi-Managed Stocks Portfolio Week 6 \u2013 Performance, Risks & Next Moves",
+      "description": "How is an AI-managed stock portfolio navigating November volatility? Review Week 6 of the GenAi-Managed Stocks Portfolio: performance vs. the S&P 500 and Bitcoin, this week's leaders and laggards, and what the transformer-based AI model is signaling about risk and momentum heading into next week.",
+      "datePublished": "2025-11-17",
+      "author": {
+        "@type": "Person",
+        "name": "Michael Gavrilov"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Quantum Investor Digest",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://quantuminvestor.net/Media/LogoB.webp"
+        }
+      }
+    },
+    "breadcrumbList": {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://quantuminvestor.net/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://quantuminvestor.net/Posts/posts.html"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "GenAi-Managed Stocks Portfolio Week 6",
+          "item": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-6.html"
+        }
+      ]
+    }
+  }
+}
