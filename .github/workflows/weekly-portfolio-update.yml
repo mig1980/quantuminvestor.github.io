@@ -1,0 +1,102 @@
+name: Weekly Portfolio Update
+
+on:
+  # Run every Thursday at 4:45 PM ET
+  # During EST (Nov-Mar): 21:45 UTC
+  # During EDT (Mar-Nov): 20:45 UTC
+  # Using 20:45 UTC to cover EDT (adjust manually for EST if needed)
+  schedule:
+    - cron: '45 20 * * 4'  # Thursdays at 8:45 PM UTC (4:45 PM EDT)
+  
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      week_number:
+        description: 'Week number (optional - auto-increments if not provided)'
+        required: false
+        type: string
+
+jobs:
+  generate-portfolio-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper git operations
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+      
+      - name: Run portfolio automation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/portfolio_automation.py --week ${{ inputs.week_number || 'auto' }}
+        continue-on-error: false
+      
+      - name: Validate generated files
+        run: |
+          # Check that at least one new HTML file was created
+          if ! ls Posts/GenAi-Managed-Stocks-Portfolio-Week-*.html 1> /dev/null 2>&1; then
+            echo "❌ Error: No portfolio HTML file generated"
+            exit 1
+          fi
+          # Check that Data directory was updated
+          if [ ! -d Data/archive ]; then
+            echo "⚠️ Warning: Archive directory not created"
+          fi
+          echo "✓ Validation passed"
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          
+          # Extract week number from generated file
+          WEEK_NUM=$(ls -t Posts/GenAi-Managed-Stocks-Portfolio-Week-*.html | head -1 | grep -oP 'Week-\K\d+' || echo 'X')
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: automated weekly portfolio update (Week $WEEK_NUM - $(date +%Y-%m-%d))"
+            git push
+          fi
+      
+      - name: Create workflow summary
+        if: always()
+        run: |
+          echo "## Portfolio Update Complete 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Show generated files
+          echo "**Generated files:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -lh Posts/GenAi-Managed-Stocks-Portfolio-Week-*.html 2>/dev/null | tail -1 || echo "No HTML files found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Show data files
+          echo "**Data files:**" >> $GITHUB_STEP_SUMMARY
+          LATEST_WEEK=$(ls -d Data/W* 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST_WEEK" ]; then
+            echo "- \`$LATEST_WEEK/master.json\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- Archive: \`Data/archive/\` ($(ls Data/archive/*.json 2>/dev/null | wc -l) snapshots)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Manual steps reminder
+          echo "**⚠️ Manual steps required:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review generated HTML for accuracy" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify stock prices against market data" >> $GITHUB_STEP_SUMMARY
+          echo "3. Update \`index.html\` and \`Posts/posts.html\` with new post card" >> $GITHUB_STEP_SUMMARY
+          echo "4. Create hero image \`Media/WX.webp\` if needed" >> $GITHUB_STEP_SUMMARY

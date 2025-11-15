@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAi-Managed Stocks Portfolio Week 3 – Performance, Risks & Next Moves - Quantum Investor Digest</title>
+    <meta name="description" content="How is an AI-managed stock portfolio performing through its third week? Review Week 3 (Oct 9–Oct 30) of the GenAi-Managed Stocks Portfolio: performance vs. the S&P 500 and Bitcoin, weekly trends, and what the transformer-based AI model is signaling for momentum and risk.">
+    <meta name="author" content="Michael Gavrilov">
+    <meta name="theme-color" content="#000000">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="canonical" href="https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-3.html">
+    <link rel="icon" href="../Media/favicon.ico" type="image/x-icon">
+
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-3.html">
+    <meta property="og:title" content="GenAi-Managed Stocks Portfolio Weekly Update – Week 3">
+    <meta property="og:description" content="How is an AI-managed stock portfolio performing through Week 3? Review weekly performance, winners and laggards, and what the transformer-based AI model is signaling next.">
+    <meta property="og:image" content="https://quantuminvestor.net/Media/OG-Image.png">
+
+    <meta property="article:published_time" content="2025-11-03T16:30:00Z">
+    <meta property="article:modified_time" content="2025-10-30T16:30:00Z">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@qid2025">
+    <meta name="twitter:title" content="GenAi-Managed Stocks Portfolio Weekly Update – Week 3">
+    <meta name="twitter:description" content="AI-managed momentum portfolio Week 3 performance update — see the latest moves vs. S&P 500 and Bitcoin.">
+    <meta name="twitter:image" content="https://quantuminvestor.net/Media/OG-Image.png">
+
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../js/template-loader.js" defer></script>
+    <script src="../js/mobile-menu.js" defer></script>
+
+    <!-- Shared CSS (aligned with Weeks 4 & 5) -->
+    <style>
+/* === CHART CSS ================================== */
+.myblock-chart-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: inherit;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.myblock-chart-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.myblock-chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.myblock-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.myblock-chart-grid-line {
+  stroke: #E8E8E8;
+  stroke-width: 1;
+  stroke-dasharray: 4,4;
+}
+.myblock-chart-axis {
+  stroke: #2C3E50;
+  stroke-width: 2;
+}
+.myblock-chart-label {
+  font-size: 12px;
+  fill: #666;
+  font-family: inherit;
+}
+.myblock-chart-line-genai {
+  fill: none;
+  stroke: #8B7AB8;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.myblock-chart-line-sp500 {
+  fill: none;
+  stroke: #2E7D32;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6,4;
+}
+.myblock-chart-line-bitcoin {
+  fill: none;
+  stroke: #C62828;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2,2;
+}
+.myblock-chart-dot {
+  r: 5;
+}
+.myblock-chart-dot-genai {
+  fill: #8B7AB8;
+  stroke: #fff;
+  stroke-width: 2;
+}
+.myblock-chart-dot-sp500 {
+  fill: #2E7D32;
+  stroke: #fff;
+  stroke-width: 2;
+}
+.myblock-chart-dot-bitcoin {
+  fill: #C62828;
+  stroke: #fff;
+  stroke-width: 2;
+}
+.myblock-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.myblock-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #2C3E50;
+}
+.myblock-chart-legend-line {
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+}
+.myblock-legend-genai { background:#8B7AB8; }
+.myblock-legend-sp500 { background:#2E7D32; }
+.myblock-legend-bitcoin { background:#C62828; }
+
+/* === TABLE CSS ================================ */
+.myblock-performance-snapshot {
+  margin: 20px 0;
+  font-family: inherit;
+  overflow-x: visible;
+}
+.myblock-portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed;
+  contain: layout style;
+}
+.myblock-portfolio-table thead tr {
+  background: #8B7AB8;
+  color: white;
+  font-weight: bold;
+}
+.myblock-portfolio-table th {
+  padding: 16px 12px;
+  text-align: left;
+  border: 1px solid #E5E5E5;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.myblock-portfolio-table th:not(:first-child) {
+  text-align: right;
+}
+.myblock-portfolio-table td {
+  padding: 14px 12px;
+  border: 1px solid #E5E5E5;
+  font-size: 14px;
+  white-space: nowrap;
+  font-family: inherit;
+  color: #2C3E50;
+}
+.myblock-portfolio-table .asset-name {
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  min-width: 120px;
+}
+.myblock-portfolio-table td:not(.asset-name) {
+  text-align: right;
+}
+.myblock-portfolio-table tbody tr:nth-child(even) {
+  background: #F9F9FB;
+}
+.myblock-portfolio-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+.myblock-portfolio-table tbody tr:hover {
+  background: #F8F5FF;
+}
+.myblock-portfolio-table .positive {
+  color: #2E7D32;
+  font-weight: 600;
+}
+.myblock-portfolio-table .negative {
+  color: #C62828;
+  font-weight: 600;
+}
+    </style>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"BlogPosting",
+  "headline":"GenAi-Managed Stocks Portfolio Week 3 – Performance, Risks & Next Moves",
+  "description":"Full Week 3 performance update for the AI-managed GenAi Chosen Portfolio.",
+  "datePublished":"2025-11-03",
+  "dateCreated":"2025-10-09",
+  "dateModified":"2025-10-30",
+  "author":{"@type":"Person","name":"Michael Gavrilov"},
+  "publisher":{
+    "@type":"Organization",
+    "name":"Quantum Investor Digest",
+    "logo":{"@type":"ImageObject","url":"https://quantuminvestor.net/Media/LogoB.webp"}
+  },
+  "url":"https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-3.html",
+  "image":"https://quantuminvestor.net/Media/W3.webp",
+  "articleSection":"AI Portfolio Weekly Review",
+  "keywords":"AI investing, momentum stocks, portfolio performance, Bitcoin, S&P 500"
+}
+    </script>
+</head>
+
+<body class="bg-black text-white">
+<div data-template="header" data-root-path="../"></div>
+
+<main class="container mx-auto px-4 py-12">
+  <article class="max-w-3xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-2 text-sm text-purple-500 mb-4">
+        <time class="text-gray-500" datetime="2025-11-03">November 3, 2025</time>
+      </div>
+      <h1 class="text-4xl font-bold" style="margin-bottom:1.5rem;">
+        GenAi-Managed Stocks Portfolio Week 3
+      </h1>
+      <div class="relative h-96 rounded-xl overflow-hidden border border-gray-800 mb-8">
+        <img src="../Media/W3.webp"
+             alt="Week 3 portfolio performance hero image"
+             width="1200" height="800"
+             class="w-full h-full object-cover"
+             loading="lazy" decoding="async">
+      </div>
+    </div>
+
+    <!-- ======================= NARRATIVE ========================= -->
+    <div class="prose prose-invert max-w-none">
+
+      <!-- INTRO -->
+      <p class="text-xl text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>This week, the GenAi Chosen portfolio gave back a small portion of prior gains</strong>, declining -0.64% while total returns since inception (October 9, 2025) stand at <strong>+4.81%</strong>. Over the same Oct 23 – Oct 30 window, the S&amp;P 500 gained roughly <strong>+1.25%</strong> to close near 6,822, while Bitcoin slipped about <strong>-0.70%</strong> to $108,306, extending its total drawdown to around <strong>-12.20%</strong> versus our inception reference level.
+      </p>
+
+      <!-- PORTFOLIO PROGRESS -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        Portfolio Progress Oct 9 – Oct 30, 2025
+      </h2>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>The GenAi Chosen portfolio is a $10,000 aggressive stock portfolio</strong> managed by a <strong>transformer-based AI model</strong> and designed to outperform the S&amp;P 500 through momentum-driven, high-conviction equity selection. The strategy accepts volatility in exchange for the potential to compound at a faster rate over time.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        From launch on October 9 through October 23, the portfolio climbed from 10,000 to 10,548 before easing back slightly to 10,481 by October 30. <strong>That path reflects a classic “strong start, modest consolidation” pattern</strong>: momentum was powerful early on, then cooled without breaking.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>No trades were executed this week</strong>. There were no new entries or exits, and no position size changes, so performance is entirely driven by market moves rather than portfolio rebalancing.
+      </p>
+
+      <!-- HOLDINGS -->
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>The portfolio continues to hold the same 10 positions:</strong>
+      </p>
+
+      <ul class="list-disc list-inside space-y-1 text-gray-300" style="margin-bottom:1.5rem;">
+        <li>Palantir Technologies (PLTR)</li>
+        <li>Newmont Corp. (NEM)</li>
+        <li>Seagate Technology (STX)</li>
+        <li>GE Vernova (GEV)</li>
+        <li>Western Digital (WDC)</li>
+        <li>General Electric (GE)</li>
+        <li>CVS Health (CVS)</li>
+        <li>NRG Energy (NRG)</li>
+        <li>Howmet Aerospace (HWM)</li>
+        <li>Royal Caribbean Cruises (RCL)</li>
+      </ul>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Because the lineup stayed unchanged from Oct 23 to Oct 30</strong>, this week gives a clear read on how the AI-selected basket behaves during a shallow pullback after a strong run.
+      </p>
+
+      <!-- KEY DRIVERS -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        Key Drivers: From Acceleration to Mild Pullback
+      </h2>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Into October 23, the portfolio benefitted from broad risk-on sentiment</strong>, with AI, storage, and cyclical names helping lift the GenAi Chosen portfolio more than +5% above its starting value.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>By October 30, that early strength leveled off</strong>. High-momentum names digested gains, and the broader market shifted into a more mixed tone—still constructive, but no longer in full acceleration mode. The result was a modest -0.64% dip for the portfolio on the week.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Bitcoin’s path remains a stark contrast</strong>. While the GenAi Chosen portfolio is up +4.81% since inception, Bitcoin now sits more than -12% below the inception reference level, underscoring how much more punishing crypto has been over this same period.
+      </p>
+
+      <!-- PERFORMANCE SNAPSHOT TABLE -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        Performance Snapshot
+      </h2>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>The table below now includes the Oct 23 checkpoint</strong>, making it easier to see how the portfolio and benchmarks moved from launch, to early strength, to this week’s modest giveback.
+      </p>
+
+      <div class="myblock-performance-snapshot">
+        <table class="myblock-portfolio-table" aria-label="Portfolio performance comparison">
+          <caption>Portfolio vs Benchmarks Performance (Oct 9 – Oct 30, 2025)</caption>
+          <thead>
+            <tr>
+              <th scope="col">Asset</th>
+              <th scope="col">Oct 9, 2025</th>
+              <th scope="col">Oct 23, 2025</th>
+              <th scope="col">Oct 30, 2025</th>
+              <th scope="col">Weekly<br>Change</th>
+              <th scope="col">Total<br>Return</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="asset-name">GenAi Chosen ($)</td>
+              <td>10,000</td>
+              <td>10,548</td>
+              <td>10,481</td>
+              <td class="negative">-0.64%</td>
+              <td class="positive">+4.81%</td>
+            </tr>
+            <tr>
+              <td class="asset-name">S&amp;P 500 (Index)</td>
+              <td>6,688</td>
+              <td>6,738</td>
+              <td>6,822</td>
+              <td class="positive">+1.25%</td>
+              <td class="positive">+2.00%</td>
+            </tr>
+            <tr>
+              <td class="asset-name">Bitcoin ($)</td>
+              <td>123,353</td>
+              <td>109,070</td>
+              <td>108,306</td>
+              <td class="negative">-0.70%</td>
+              <td class="negative">-12.20%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- NORMALIZED CHART -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        Performance Since Inception
+      </h2>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>The chart below shows normalized performance for the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin</strong>. All three series are set to 100 on the October 9, 2025 inception date so you can compare paths directly.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Readings above 100 indicate gains since inception</strong>, while readings below 100 indicate losses. By October 30, the GenAi Chosen portfolio sits clearly above 100, the S&amp;P 500 is modestly higher, and Bitcoin sits well below the baseline.
+      </p>
+
+      <div class="myblock-chart-container">
+        <div class="myblock-chart-title">Performance Since Inception (Normalized to 100)</div>
+        <div class="myblock-chart-wrapper">
+          <svg class="myblock-chart-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chartTitle chartDesc">
+            <title id="chartTitle">Normalized Performance Since Inception</title>
+            <desc id="chartDesc">
+              Line chart comparing normalized performance of the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin from October 9 to October 30, 2025, with all assets normalized to 100 on the inception date and 100 shown as the central reference line.
+            </desc>
+
+            <!-- Grid lines -->
+            <line class="myblock-chart-grid-line" x1="80" y1="50" x2="850" y2="50"/>
+            <line class="myblock-chart-grid-line" x1="80" y1="125" x2="850" y2="125"/>
+            <line class="myblock-chart-grid-line" x1="80" y1="200" x2="850" y2="200"/>
+            <line class="myblock-chart-grid-line" x1="80" y1="275" x2="850" y2="275"/>
+            <line class="myblock-chart-grid-line" x1="80" y1="350" x2="850" y2="350"/>
+
+            <!-- Y-axis labels (fixed around 100) -->
+            <text class="myblock-chart-label" x="65" y="55" text-anchor="end">120</text>
+            <text class="myblock-chart-label" x="65" y="130" text-anchor="end">110</text>
+            <text class="myblock-chart-label" x="65" y="205" text-anchor="end">100</text>
+            <text class="myblock-chart-label" x="65" y="280" text-anchor="end">90</text>
+            <text class="myblock-chart-label" x="65" y="355" text-anchor="end">80</text>
+
+            <!-- X-axis labels (Option B: Oct 9, Oct 23, Oct 30) -->
+            <text class="myblock-chart-label" x="80" y="375" text-anchor="middle">Oct 9, 2025</text>
+            <text class="myblock-chart-label" x="465" y="375" text-anchor="middle">Oct 23, 2025</text>
+            <text class="myblock-chart-label" x="850" y="375" text-anchor="middle">Oct 30, 2025</text>
+
+            <!-- Axes -->
+            <line class="myblock-chart-axis" x1="80" y1="50" x2="80" y2="350"/>
+            <line class="myblock-chart-axis" x1="80" y1="350" x2="850" y2="350"/>
+
+            <!-- Normalized values (all start at 100) -->
+            <!-- GenAi: 100, 105.48, 104.81 -->
+            <!-- S&P 500: 100, 100.75, 102.00 -->
+            <!-- Bitcoin: 100, 88.42, 87.80 -->
+
+            <!-- GenAi line -->
+            <polyline class="myblock-chart-line-genai"
+              points="
+                80,200
+                465,158.9
+                850,163.9
+              "/>
+
+            <!-- S&P 500 line -->
+            <polyline class="myblock-chart-line-sp500"
+              points="
+                80,200
+                465,194.4
+                850,185.0
+              "/>
+
+            <!-- Bitcoin line -->
+            <polyline class="myblock-chart-line-bitcoin"
+              points="
+                80,200
+                465,286.9
+                850,291.5
+              "/>
+
+            <!-- GenAi dots -->
+            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="80" cy="200"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="465" cy="158.9"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850" cy="163.9"/>
+
+            <!-- S&P 500 dots -->
+            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="80" cy="200"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="465" cy="194.4"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="850" cy="185.0"/>
+
+            <!-- Bitcoin dots -->
+            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="80" cy="200"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="465" cy="286.9"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="850" cy="291.5"/>
+          </svg>
+        </div>
+
+        <div class="myblock-chart-legend">
+          <div class="myblock-chart-legend-item">
+            <div class="myblock-chart-legend-line myblock-legend-genai"></div>
+            <span><strong>GenAi Chosen</strong> (+4.81%)</span>
+          </div>
+          <div class="myblock-chart-legend-item">
+            <div class="myblock-chart-legend-line myblock-legend-sp500"></div>
+            <span><strong>S&amp;P 500</strong> (+2.00%)</span>
+          </div>
+          <div class="myblock-chart-legend-item">
+            <div class="myblock-chart-legend-line myblock-legend-bitcoin"></div>
+            <span><strong>Bitcoin</strong> (-12.20%)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATION -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        This Week’s Recommendation: HOLD
+      </h2>
+
+      <ul class="list-disc list-inside space-y-3 text-gray-300" style="margin-bottom:1.5rem;">
+        <li>
+          <strong>The portfolio experienced a modest -0.64% pullback this week</strong>, but still sits at +4.81% since inception—comfortably ahead of the S&amp;P 500 (+2.00%) and well ahead of Bitcoin (-12.20%).
+        </li>
+        <li>
+          <strong>No positions breached drawdown or concentration thresholds</strong>. There were no -25% peak-to-trough losses at the single-stock level and no position exceeded the portfolio’s 20% concentration cap.
+        </li>
+        <li>
+          <strong>The S&amp;P 500’s +1.25% move this week</strong> means the index outperformed the portfolio in the short term, but the longer-term trend still favors the GenAi Chosen strategy.
+        </li>
+        <li>
+          <strong>Bitcoin’s continued weakness</strong> reinforces the decision to focus this portfolio on AI-driven stock selection rather than speculative crypto exposure.
+        </li>
+        <li>
+          <strong>The transformer-based AI model currently reads conditions as “pause, not reversal”</strong>—momentum is cooling, but not breaking. That favors staying invested rather than trying to time a short-term dip.
+        </li>
+        <li>
+          <strong>Given the still-positive trend and contained risk</strong>, the appropriate action for Week 3 is to HOLD all current positions and continue monitoring for any emerging regime shift.
+        </li>
+      </ul>
+
+      <!-- VERDICT -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+        Verdict
+      </h2>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Week 3 marks the first meaningful pause after a strong start</strong>. The portfolio has shifted from acceleration to consolidation, but the overall trajectory remains favorable and comfortably within all risk limits.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>HOLD remains the disciplined choice</strong>. Unless upcoming weeks introduce persistent underperformance versus the S&amp;P 500 or stock-specific risk triggers, the strategy continues to favor letting the AI-selected positions play out.
+      </p>
+
+      <!-- RISK DISCLOSURE -->
+      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">Risk Disclosure</h2>
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.
+      </p>
+
+      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+        <strong>Next Review:</strong> Monday, November 10, 2025.
+      </p>
+
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-gray-800">
+      <a href="posts.html" class="text-purple-500 hover:text-purple-400 flex items-center gap-2">← Back to Posts</a>
+    </div>
+
+  </article>
+</main>
+
+<div data-template="footer" data-root-path="../"></div>
+
+</body>
+</html>
