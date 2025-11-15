@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from openai import OpenAI
 import re
+import time
+import requests
 
 # Configure paths
 REPO_ROOT = Path(__file__).parent.parent
@@ -21,20 +23,45 @@ PROMPT_DIR = REPO_ROOT / "Prompt"
 ARCHIVE_DIR = DATA_DIR / "archive"
 
 class PortfolioAutomation:
-    def __init__(self, week_number=None, api_key=None, model="gpt-4-turbo-preview"):
+    def __init__(self, week_number=None, api_key=None, model="gpt-4-turbo-preview", data_source="ai", alphavantage_key=None, eval_date=None):
         self.week_number = week_number or self.detect_next_week()
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         self.model = model
-        
-        if not self.api_key:
-            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
-        
-        self.client = OpenAI(api_key=self.api_key)
-        print(f"✓ Using model: {self.model}")
-        
+        self.data_source = data_source.lower()
+        self.alphavantage_key = alphavantage_key or os.getenv('ALPHAVANTAGE_API_KEY')
+        self.client = None
+        self.ai_enabled = False
+        self.eval_date = None
+        if eval_date:
+            try:
+                datetime.strptime(eval_date, '%Y-%m-%d')
+                self.eval_date = eval_date
+                print(f"✓ Using manual evaluation date override: {self.eval_date}")
+            except ValueError:
+                print(f"⚠️ Invalid --eval-date '{eval_date}' (expected YYYY-MM-DD). Ignoring override.")
+
+        # Initialize OpenAI client (required unless using alphavantage data-only mode)
+        if self.api_key:
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+                self.ai_enabled = True
+                print(f"✓ OpenAI client initialized (model: {self.model})")
+            except Exception as e:
+                print(f"⚠️ Failed to init OpenAI client: {e}")
+        else:
+            if self.data_source == 'ai':
+                raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
+            print("⚠️ No OPENAI_API_KEY. Will skip AI narrative (Prompts B-D) and produce data-only output.")
+
+        # Validate Alpha Vantage key if needed
+        if self.data_source == 'alphavantage':
+            if not self.alphavantage_key:
+                raise ValueError("Alpha Vantage API key required. Set ALPHAVANTAGE_API_KEY environment variable.")
+            print(f"✓ Using Alpha Vantage data source (key: {self.alphavantage_key[:8]}...)")
+
         # Load prompts
         self.prompts = self.load_prompts()
-        
+
         # State storage
         self.master_json = None
         self.narrative_html = None
@@ -85,6 +112,8 @@ class PortfolioAutomation:
     
     def call_gpt4(self, system_prompt, user_message, model="gpt-4-turbo-preview", temperature=0.7):
         """Call OpenAI GPT-4 API with error handling"""
+        if not self.ai_enabled or not self.client:
+            raise RuntimeError("AI model not available (missing OPENAI_API_KEY).")
         try:
             response = self.client.chat.completions.create(
                 model=model,
@@ -106,21 +135,24 @@ class PortfolioAutomation:
         
         system_prompt = "You are the GenAi Chosen Data Engine. Follow Prompt A specifications exactly."
         
+        override_note = ''
+        if self.eval_date:
+            override_note = f"\nUse evaluation date {self.eval_date} as current_date (do not use today's date)."
         user_message = f"""
-{self.prompts['A']}
+    {self.prompts['A']}
 
----
+    ---
 
-Here is last week's master.json:
+    Here is last week's master.json:
 
-```json
-{json.dumps(self.master_json, indent=2)}
-```
+    ```json
+    {json.dumps(self.master_json, indent=2)}
+    ```
 
-Please update this for Week {self.week_number}, following all Change Management rules.
-Fetch latest prices for Thursday close (or most recent trading day).
-Output the updated master.json.
-"""
+    Please update this for Week {self.week_number}, following all Change Management rules.
+    Fetch latest prices for Thursday close (or most recent trading day).{override_note}
+    Output the updated master.json.
+    """
         
         response = self.call_gpt4(system_prompt, user_message, temperature=0.3)
         
@@ -144,6 +176,10 @@ Output the updated master.json.
             except json.JSONDecodeError:
                 raise ValueError("Prompt A did not return valid JSON. Check response format.")
         
+        # Enforce evaluation date override if set
+        if self.eval_date and self.master_json.get('meta', {}).get('current_date') != self.eval_date:
+            self.master_json['meta']['current_date'] = self.eval_date
+
         # Save updated master.json
         current_week_dir = DATA_DIR / f"W{self.week_number}"
         current_week_dir.mkdir(exist_ok=True)
@@ -161,6 +197,253 @@ Output the updated master.json.
         
         print(f"✓ Prompt A completed - master.json updated for Week {self.week_number}")
         return self.master_json
+
+    # ===================== ALPHA VANTAGE DATA ENGINE =====================
+    def _latest_market_date(self):
+        """Return latest market date (previous weekday if weekend)."""
+        d = datetime.utcnow().date()
+        # Adjust weekends
+        if d.weekday() == 5:  # Saturday
+            d -= timedelta(days=1)
+        elif d.weekday() == 6:  # Sunday
+            d -= timedelta(days=2)
+        return d.strftime('%Y-%m-%d')
+
+    def _fetch_alphavantage_quote(self, symbol):
+        """Fetch latest quote for a symbol from Alpha Vantage.
+        Returns dict with date and close price, or None on failure.
+        """
+        url = 'https://www.alphavantage.co/query'
+        params = {
+            'function': 'GLOBAL_QUOTE',
+            'symbol': symbol,
+            'apikey': self.alphavantage_key
+        }
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            if 'Global Quote' in data and data['Global Quote']:
+                quote = data['Global Quote']
+                return {
+                    'date': quote.get('07. latest trading day', ''),
+                    'close': float(quote.get('05. price', 0))
+                }
+            elif 'Note' in data:
+                print(f"⚠️ Rate limit hit for {symbol}: {data['Note']}")
+                return None
+            else:
+                print(f"⚠️ No data returned for {symbol}")
+                return None
+        except Exception as e:
+            print(f"⚠️ Failed to fetch {symbol}: {e}")
+            return None
+
+    def generate_master_from_alphavantage(self):
+        """Generate new week's master.json using Alpha Vantage API.
+        Uses previous week's master.json as baseline, fetches latest prices,
+        recalculates weekly and total pct changes, benchmarks, portfolio history.
+        """
+        print("\n🔄 Running Alpha Vantage data engine (replacing Prompt A)...")
+        if self.master_json is None:
+            raise ValueError("Previous master.json must be loaded before fetching new data.")
+
+        prev_master = json.loads(json.dumps(self.master_json))  # deep copy
+        prev_date = prev_master['meta']['current_date']
+        inception_date = prev_master['meta']['inception_date']
+        inception_value = prev_master['meta']['inception_value']
+        new_date = self.eval_date if self.eval_date else self._latest_market_date()
+        prev_portfolio_value = prev_master['portfolio_history'][-1]['value']
+
+        # Avoid duplicate regeneration
+        if new_date == prev_date:
+            print("⚠️ Evaluation date equals previous date; skipping update.")
+            return prev_master
+
+        tickers = [s['ticker'] for s in prev_master['stocks']]
+        print(f"Fetching prices for {len(tickers)} stocks + 2 benchmarks (Alpha Vantage API)")
+        print("Rate limiting: 5 requests/minute (12 sec between calls)...")
+
+        # Fetch stock prices with rate limiting (5 req/min = 12 sec between calls)
+        price_data = {}
+        for i, ticker in enumerate(tickers, 1):
+            print(f"→ [{i}/{len(tickers)}] Fetching {ticker}...")
+            quote = self._fetch_alphavantage_quote(ticker)
+            if quote:
+                price_data[ticker] = quote
+            else:
+                # Use previous price as fallback
+                prev_stock = next(s for s in prev_master['stocks'] if s['ticker'] == ticker)
+                price_data[ticker] = {
+                    'date': prev_date,
+                    'close': prev_stock['prices'][prev_date]
+                }
+                print(f"  ↳ Using previous price as fallback: ${price_data[ticker]['close']}")
+            
+            # Rate limit (skip delay on last item)
+            if i < len(tickers):
+                time.sleep(12)
+
+        # Build updated stocks list
+        updated_stocks = []
+        for stock in prev_master['stocks']:
+            t = stock['ticker']
+            current_price = price_data[t]['close']
+            
+            # Get inception and prior prices from history
+            inception_price = stock['prices'][inception_date]
+            prior_price = stock['prices'][prev_date]
+
+            weekly_pct = ((current_price / prior_price) - 1) * 100 if prior_price else 0.0
+            total_pct = ((current_price / inception_price) - 1) * 100 if inception_price else 0.0
+
+            # Update prices dict
+            new_prices = dict(stock['prices'])
+            new_prices[new_date] = round(current_price, 2)
+
+            current_value = round(stock['shares'] * current_price)
+
+            updated_stocks.append({
+                "ticker": t,
+                "name": stock['name'],
+                "shares": stock['shares'],
+                "prices": new_prices,
+                "current_value": current_value,
+                "weekly_pct": round(weekly_pct, 2),
+                "total_pct": round(total_pct, 2)
+            })
+
+        portfolio_current_value = sum(s['current_value'] for s in updated_stocks)
+        portfolio_weekly_pct = ((portfolio_current_value / prev_portfolio_value) - 1) * 100 if prev_portfolio_value else 0.0
+        portfolio_total_pct = ((portfolio_current_value / inception_value) - 1) * 100 if inception_value else 0.0
+
+        # Benchmarks: S&P 500 (SPY ETF as proxy), Bitcoin (use crypto endpoint fallback)
+        bench_symbols = {"sp500": "SPY", "bitcoin": "BTC"}  # SPY as S&P proxy
+        print("\nFetching benchmarks...")
+        bench_data = {}
+        
+        for key, symbol in bench_symbols.items():
+            print(f"→ Fetching {key.upper()} ({symbol})...")
+            if key == 'bitcoin':
+                # Bitcoin requires CRYPTO endpoint
+                url = 'https://www.alphavantage.co/query'
+                params = {
+                    'function': 'CURRENCY_EXCHANGE_RATE',
+                    'from_currency': 'BTC',
+                    'to_currency': 'USD',
+                    'apikey': self.alphavantage_key
+                }
+                try:
+                    response = requests.get(url, params=params, timeout=10)
+                    data = response.json()
+                    if 'Realtime Currency Exchange Rate' in data:
+                        rate = data['Realtime Currency Exchange Rate']
+                        bench_data[key] = {
+                            'date': rate.get('6. Last Refreshed', new_date)[:10],
+                            'close': float(rate.get('5. Exchange Rate', 0))
+                        }
+                    else:
+                        print(f"⚠️ Bitcoin data unavailable, using previous value")
+                        prev_btc = prev_master['benchmarks']['bitcoin']['history'][-1]['close']
+                        bench_data[key] = {'date': prev_date, 'close': prev_btc}
+                except Exception as e:
+                    print(f"⚠️ Bitcoin fetch failed: {e}")
+                    prev_btc = prev_master['benchmarks']['bitcoin']['history'][-1]['close']
+                    bench_data[key] = {'date': prev_date, 'close': prev_btc}
+            else:
+                quote = self._fetch_alphavantage_quote(symbol)
+                if quote:
+                    bench_data[key] = quote
+                else:
+                    # Fallback to previous value
+                    prev_val = prev_master['benchmarks'][key]['history'][-1]['close']
+                    bench_data[key] = {'date': prev_date, 'close': prev_val}
+                    print(f"  ↳ Using previous value: ${bench_data[key]['close']}")
+            
+            time.sleep(12)  # Rate limit
+
+        # Update benchmarks
+        updated_benchmarks = {}
+        for bench_key, series in prev_master['benchmarks'].items():
+            inception_reference = series['inception_reference']
+            history_prev = series['history']
+            prev_close = history_prev[-1]['close']
+            current_close = bench_data[bench_key]['close']
+
+            weekly_pct = ((current_close / prev_close) - 1) * 100 if prev_close else 0.0
+            total_pct = ((current_close / inception_reference) - 1) * 100 if inception_reference else 0.0
+
+            new_history_entry = {
+                "date": new_date,
+                "close": round(current_close, 2),
+                "weekly_pct": round(weekly_pct, 2),
+                "total_pct": round(total_pct, 2)
+            }
+            updated_benchmarks[bench_key] = {
+                "inception_reference": inception_reference,
+                "history": history_prev + [new_history_entry]
+            }
+
+        # Portfolio history
+        new_history_entry = {
+            "date": new_date,
+            "value": portfolio_current_value,
+            "weekly_pct": round(portfolio_weekly_pct, 2),
+            "total_pct": round(portfolio_total_pct, 2)
+        }
+        updated_portfolio_history = prev_master['portfolio_history'] + [new_history_entry]
+
+        # Normalized chart entry
+        spx_first_ref = prev_master['benchmarks']['sp500']['inception_reference']
+        btc_first_ref = prev_master['benchmarks']['bitcoin']['inception_reference']
+        spx_close = updated_benchmarks['sp500']['history'][-1]['close']
+        btc_close = updated_benchmarks['bitcoin']['history'][-1]['close']
+        
+        normalized_entry = {
+            "date": new_date,
+            "portfolio_value": portfolio_current_value,
+            "genai_norm": round(100 * portfolio_current_value / inception_value, 2),
+            "spx_close": spx_close,
+            "btc_close": btc_close,
+            "spx_norm": round(100 * spx_close / spx_first_ref, 5),
+            "btc_norm": round(100 * btc_close / btc_first_ref, 5)
+        }
+
+        updated_master = {
+            "meta": {
+                "portfolio_name": prev_master['meta']['portfolio_name'],
+                "inception_date": inception_date,
+                "inception_value": inception_value,
+                "current_date": new_date
+            },
+            "stocks": updated_stocks,
+            "portfolio_totals": {
+                "current_value": portfolio_current_value,
+                "weekly_pct": round(portfolio_weekly_pct, 2),
+                "total_pct": round(portfolio_total_pct, 2)
+            },
+            "benchmarks": updated_benchmarks,
+            "portfolio_history": updated_portfolio_history,
+            "normalized_chart": prev_master['normalized_chart'] + [normalized_entry]
+        }
+
+        # Persist
+        current_week_dir = DATA_DIR / f"W{self.week_number}"
+        current_week_dir.mkdir(exist_ok=True)
+        master_path = current_week_dir / "master.json"
+        with open(master_path, 'w') as f:
+            json.dump(updated_master, f, indent=2)
+
+        # Archive
+        ARCHIVE_DIR.mkdir(exist_ok=True)
+        archive_path = ARCHIVE_DIR / f"master-{new_date.replace('-', '')}.json"
+        with open(archive_path, 'w') as f:
+            json.dump(updated_master, f, indent=2)
+
+        self.master_json = updated_master
+        print(f"✓ Alpha Vantage data engine completed - master.json updated for Week {self.week_number}")
+        return updated_master
     
     def run_prompt_b(self):
         """Prompt B: Narrative Writer - Generate HTML content"""
@@ -395,28 +678,55 @@ Generate the complete HTML file for Week {self.week_number}.
         print(f"\n{'='*60}")
         print(f"GenAi Chosen Portfolio - Week {self.week_number} Automation")
         print(f"{'='*60}")
-        
+
         try:
-            # Load previous week's data
             self.load_master_json()
             
-            # Run 4-prompt sequence
-            self.run_prompt_a()
-            self.run_prompt_b()
-            self.run_prompt_c()
-            self.run_prompt_d()
+            # Data acquisition: AI or Alpha Vantage
+            if self.data_source == 'alphavantage':
+                self.generate_master_from_alphavantage()
+            else:
+                self.run_prompt_a()
             
-            # Update site navigation
+            # Narrative generation (if AI enabled)
+            if self.ai_enabled:
+                self.run_prompt_b()
+                self.run_prompt_c()
+                self.run_prompt_d()
+            else:
+                # Fallback: data-only HTML
+                output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
+                minimal_html = f"""<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <title>GenAi-Managed Stocks Portfolio Week {self.week_number} (Data Only)</title>
+  <meta name='description' content='Weekly portfolio update (data-only mode).'>
+</head>
+<body style='background:#000; color:#fff; font-family:sans-serif; padding:2rem;'>
+  <article style='max-width:900px; margin:0 auto;'>
+    <h1>GenAi-Managed Stocks Portfolio Week {self.week_number}</h1>
+    <p><em>AI narrative skipped (no OPENAI_API_KEY). Raw data below:</em></p>
+    <pre style='white-space:pre-wrap; font-size:12px; background:#111; padding:1rem; border-radius:8px; overflow-x:auto;'>{json.dumps(self.master_json, indent=2)}</pre>
+    <p><a href='posts.html' style='color:#6366f1;'>← Back to Posts</a></p>
+  </article>
+</body>
+</html>"""
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(minimal_html)
+                print(f"✓ Data-only HTML generated: {output_path.name}")
+
             self.update_index_pages()
-            
+
             print(f"\n{'='*60}")
             print(f"✅ SUCCESS! Week {self.week_number} generated successfully")
             print(f"{'='*60}")
             print(f"\nGenerated files:")
             print(f"  - Data/W{self.week_number}/master.json")
             print(f"  - Posts/GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html")
+            if not self.ai_enabled:
+                print("    (Data-only mode: enable OPENAI_API_KEY for full narrative)")
             print(f"  - Data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")
-            
         except Exception as e:
             print(f"\n❌ ERROR: {str(e)}")
             import traceback
@@ -431,15 +741,24 @@ def main():
                        help='OpenAI API key (default: read from OPENAI_API_KEY env var)')
     parser.add_argument('--model', type=str, default='gpt-4-turbo-preview',
                        help='OpenAI model to use (default: gpt-4-turbo-preview)')
-    
+    parser.add_argument('--data-source', type=str, choices=['ai', 'alphavantage'], default='ai',
+                       help='Data source: ai (Prompt A via GPT-4) or alphavantage (Alpha Vantage API)')
+    parser.add_argument('--alphavantage-key', type=str,
+                       help='Alpha Vantage API key (default: read from ALPHAVANTAGE_API_KEY env var)')
+    parser.add_argument('--eval-date', type=str,
+                        help='Manual override for evaluation date (YYYY-MM-DD). Uses this as current_date for week update.')
+
     args = parser.parse_args()
-    
+
     week_number = None if args.week == 'auto' else int(args.week)
-    
+
     automation = PortfolioAutomation(
-        week_number=week_number, 
+        week_number=week_number,
         api_key=args.api_key,
-        model=args.model
+        model=args.model,
+        data_source=args.data_source,
+        alphavantage_key=args.alphavantage_key,
+        eval_date=args.eval_date
     )
     automation.run()
 

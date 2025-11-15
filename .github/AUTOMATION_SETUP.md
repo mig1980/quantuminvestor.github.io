@@ -16,23 +16,51 @@ The automation runs every **Thursday at 4:45 PM Eastern Time** via GitHub Action
 
 ## Initial Setup
 
-### 1. Get an OpenAI API Key
+### 1. Choose Your Data Source
 
+The automation supports two data sources for stock prices:
+
+**Option A: AI-Powered (OpenAI GPT-4)** - Default
+- Prompts AI to fetch and update prices
+- 4 API calls per run (A → B → C → D)
+- Cost: ~$1-2 per run
+- Requires: OpenAI API key with GPT-4 access
+
+**Option B: Alpha Vantage API** - Direct Market Data
+- Fetches real-time prices from Alpha Vantage
+- 12 API calls per run (10 stocks + 2 benchmarks)
+- Takes ~2.5 minutes (rate limited to 5 req/min)
+- Cost: Free tier (25 req/day)
+- Requires: Alpha Vantage API key
+- Optional: OpenAI API key for narrative (Prompts B-D)
+
+### 2. Get API Keys
+
+**For AI-Powered (Default):**
 1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Create a new API key
-3. Copy the key (starts with `sk-...`)
-4. **Important:** You'll need GPT-4 access (paid account required)
+2. Create a new API key (starts with `sk-...`)
+3. **Important:** Requires GPT-4 access (paid account)
 
-**Cost estimate:** ~$0.50-$2.00 per weekly run depending on data size
+**For Alpha Vantage:**
+1. Go to [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+2. Get free API key (no credit card required)
+3. Free tier: 25 requests/day, 5 requests/minute
+4. *Optional:* Add OpenAI key for narrative generation (Prompts B-D)
 
-### 2. Add API Key to GitHub Secrets
+### 3. Add API Keys to GitHub Secrets
 
 1. Go to your GitHub repository
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
-4. Name: `OPENAI_API_KEY`
-5. Value: Paste your OpenAI API key
-6. Click **Add secret**
+4. Add one or both keys:
+
+**Required for AI-powered:**
+- Name: `OPENAI_API_KEY`
+- Value: Your OpenAI API key
+
+**Required for Alpha Vantage:**
+- Name: `ALPHAVANTAGE_API_KEY`
+- Value: Your Alpha Vantage API key
 
 ### 3. Verify File Structure
 
@@ -79,21 +107,32 @@ My-blog/
    
    **Note:** The script uses the latest OpenAI Python SDK (v1.12.0+) with the modern client pattern.
 
-2. Set your API key:
+2. Set your API key(s):
    ```powershell
+   # For AI-powered (default)
    $env:OPENAI_API_KEY="sk-your-key-here"
+   
+   # For Alpha Vantage data source
+   $env:ALPHAVANTAGE_API_KEY="your-av-key-here"
+   $env:OPENAI_API_KEY="sk-your-key-here"  # Optional, for narrative
    ```
 
 3. Run the automation:
    ```powershell
-   # Auto-detect next week number
+   # AI-powered (default) - auto-detect next week
    python scripts/portfolio_automation.py
    
-   # Or specify week number
-   python scripts/portfolio_automation.py --week 6
+   # Alpha Vantage data source
+   python scripts/portfolio_automation.py --data-source alphavantage
    
-   # Use a different/cheaper model
-   python scripts/portfolio_automation.py --week 6 --model gpt-4-turbo
+   # Alpha Vantage data-only (no narrative)
+   python scripts/portfolio_automation.py --data-source alphavantage --api-key ""
+   
+   # Specify week number and custom eval date
+   python scripts/portfolio_automation.py --week 6 --eval-date 2025-11-21
+   
+   # Use different AI model
+   python scripts/portfolio_automation.py --model gpt-4-turbo
    ```
 
 4. Review generated files:
@@ -103,8 +142,11 @@ My-blog/
 
 **Command-line options:**
 - `--week <number>` : Specify week number (default: auto-detect)
+- `--data-source <ai|alphavantage>` : Data source (default: ai)
 - `--model <name>` : OpenAI model (default: gpt-4-turbo-preview)
-- `--api-key <key>` : API key (default: from OPENAI_API_KEY env var)
+- `--api-key <key>` : OpenAI API key (default: from OPENAI_API_KEY env var)
+- `--alphavantage-key <key>` : Alpha Vantage API key (default: from ALPHAVANTAGE_API_KEY env var)
+- `--eval-date <YYYY-MM-DD>` : Manual evaluation date override
 
 ### GitHub Actions Testing
 
@@ -155,7 +197,8 @@ schedule:
 
 ### What Happens Automatically
 
-1. **Data Retrieval**: Prompt A fetches latest stock prices (Thursday close)
+**AI-Powered Mode (default):**
+1. **Data Retrieval**: Prompt A fetches latest stock prices via GPT-4
 2. **Narrative Generation**: Prompt B writes the weekly analysis
 3. **Visual Creation**: Prompt C generates table and chart
 4. **HTML Assembly**: Prompt D creates the final page
@@ -163,6 +206,14 @@ schedule:
    ```
    chore: automated weekly portfolio update (Week 2025-11-14)
    ```
+
+**Alpha Vantage Mode:**
+1. **Data Retrieval**: Fetches live prices from Alpha Vantage API (~2.5 min, rate limited)
+2. **Narrative Generation**: Prompt B writes analysis (if OpenAI key present)
+3. **Visual Creation**: Prompt C generates table and chart (if OpenAI key present)
+4. **HTML Assembly**: Prompt D creates final page (if OpenAI key present)
+   - *Without OpenAI key:* Generates data-only HTML with raw JSON
+5. **Git Commit**: Changes are committed automatically
 
 ### What You Need to Manually Review
 
@@ -176,7 +227,23 @@ schedule:
 
 ### Workflow Fails: "OpenAI API key not found"
 
-**Solution:** Add `OPENAI_API_KEY` to GitHub Secrets (see Setup section)
+**Solution:** 
+- For AI-powered mode: Add `OPENAI_API_KEY` to GitHub Secrets
+- For Alpha Vantage mode: Use `--data-source alphavantage` (OpenAI key optional for narrative)
+
+### Workflow Fails: "Alpha Vantage API key required"
+
+**Solution:** Add `ALPHAVANTAGE_API_KEY` to GitHub Secrets when using `--data-source alphavantage`
+
+### Alpha Vantage Rate Limit Hit
+
+**Symptoms:** "Rate limit hit" or "Too Many Requests" errors
+
+**Solution:**
+- Free tier: 5 requests/minute enforced automatically (12-second delays)
+- Daily limit: 25 requests/day (2 full runs max)
+- If exceeded: Wait 24 hours or upgrade to premium tier
+- The script automatically waits 12 seconds between calls
 
 ### Workflow Fails: "Cannot find master.json for Week X"
 
@@ -250,14 +317,20 @@ These are informational and won't stop the workflow, but should be reviewed.
 
 ### Price Fetching
 
-**Current behavior:** Prompt A relies on GPT-4 to fetch stock prices, which:
+**AI-Powered Mode (default):**
+- Prompt A relies on GPT-4 to fetch stock prices
 - May not have access to real-time data
 - Could return stale or incorrect prices
 - Depends on GPT-4's training data cutoff
+- **Workaround:** Use `--data-source alphavantage` for real-time prices
 
-**Workaround:** Manually verify and update prices in `master.json` before final publication
-
-**Future improvement:** Add direct API integration with Yahoo Finance or Alpha Vantage
+**Alpha Vantage Mode:**
+- Fetches live market data via Alpha Vantage API
+- Real-time prices (15-minute delay for free tier)
+- Rate limited: 5 requests/minute, 25 requests/day
+- Takes ~2.5 minutes to complete (12 API calls)
+- **Limitation:** Free tier may hit daily limit if running multiple times
+- Uses SPY ETF as S&P 500 proxy (nearly identical performance)
 
 ### Index Page Updates
 
@@ -322,22 +395,38 @@ After the workflow runs, you can edit the generated HTML:
 - GPT-4: ~$0.03 per 1K input tokens, ~$0.06 per 1K output tokens (higher quality)
 - Estimated per run: 15K-20K tokens total (4 prompts)
 
-**Cost per run by model:**
-- `gpt-4-turbo-preview` (default): ~$1.00-$2.00
+**Alpha Vantage API:**
+- Free tier: 25 requests/day, 5 requests/minute
+- Each weekly run: 12 requests (10 stocks + 2 benchmarks)
+- Cost: **$0** (free tier sufficient for weekly automation)
+- Premium: $50-$500/month for higher limits (not needed)
+
+**Cost per run by configuration:**
+
+*AI-Powered Mode (default):*
+- `gpt-4-turbo-preview`: ~$1.00-$2.00 (4 API calls)
 - `gpt-4-turbo`: ~$1.50-$2.50
 - `gpt-4`: ~$3.00-$5.00 (highest quality)
 
-**Monthly cost (4-5 runs):**
-- GPT-4 Turbo (default): ~$4-$10
-- GPT-4: ~$12-$25
+*Alpha Vantage + AI Narrative:*
+- Data: $0 (Alpha Vantage free)
+- Narrative (B+C+D): ~$0.75-$1.50 (3 API calls)
+- **Total: ~$0.75-$1.50** (25% cost reduction)
 
-**Total monthly cost:** ~$4-$25 depending on model choice
+*Alpha Vantage Data-Only:*
+- **Total: $0** (no AI narrative, just data + simple HTML)
+
+**Monthly cost (4-5 runs):**
+- AI-powered: ~$4-$10
+- Alpha Vantage + AI: ~$3-$7.50
+- Alpha Vantage data-only: **$0**
 
 **Cost optimization tips:**
-- Use `--model gpt-4-turbo` for best cost/quality balance (default)
-- Avoid `gpt-4` unless you need maximum accuracy
-- Consider Claude 3.5 Sonnet as an alternative (~30% cheaper)
+- Use `--data-source alphavantage` to eliminate Prompt A costs
+- Use data-only mode for maximum savings (no OPENAI_API_KEY)
+- Use `--model gpt-4-turbo` for best cost/quality on narrative
 - Run locally first to catch errors before automated runs
+- Alpha Vantage free tier handles 2 runs/day max (12 req × 2 = 24)
 
 ---
 
@@ -402,10 +491,13 @@ If you encounter issues:
 
 Before relying on automation, verify:
 - [ ] Previous week's `master.json` exists and is valid JSON
-- [ ] OpenAI API key is active and has credits
+- [ ] API key(s) are active:
+  - AI mode: OpenAI API key with credits
+  - Alpha Vantage mode: Alpha Vantage API key within daily limit (25 req/day)
 - [ ] All 4 Prompt files are present in `Prompt/` folder (script validates automatically)
 - [ ] GitHub Actions is enabled for your repository
 - [ ] Previous week's post HTML follows Week 5 structure (for consistency)
+- [ ] For Alpha Vantage: Haven't exceeded 25 requests today (2 full runs max)
 
 **The script now automatically validates:**
 - All 4 prompts are loaded on startup
