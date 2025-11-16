@@ -58,16 +58,16 @@
 
     <!-- TLDR STRIP (Week 3 metrics) -->
     <div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">
-      <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">--</span></div>
-      <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">--</span></div>
-      <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha">--</span></div>
+      <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek" aria-live="polite">--</span></div>
+      <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal" aria-live="polite">--</span></div>
+      <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha" aria-live="polite">--</span></div>
     </div>
 
     <!-- ======================= NARRATIVE ========================= -->
     <div class="prose prose-invert max-w-none">
 
       <!-- INTRO -->
-      <p class="text-xl text-gray-300" style="margin-bottom:1.5rem;">
+        <p class="text-xl text-gray-300 mb-6">
         <strong>This week, the GenAi Chosen portfolio gave back a small portion of prior gains</strong>, declining -0.64% while total returns since inception (October 9, 2025) stand at <strong>+4.81%</strong>. Over the same Oct 23 – Oct 30 window, the S&amp;P 500 gained roughly <strong>+1.25%</strong> to close near 6,822, while Bitcoin slipped about <strong>-0.70%</strong> to $108,306, extending its total drawdown to around <strong>-12.20%</strong> versus our inception reference level.
       </p>
 
@@ -76,24 +76,24 @@
         Portfolio Progress Oct 9 – Oct 30, 2025
       </h2>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>The GenAi Chosen portfolio is a $10,000 aggressive stock portfolio</strong> managed by a <strong>transformer-based AI model</strong> and designed to outperform the S&amp;P 500 through momentum-driven, high-conviction equity selection. The strategy accepts volatility in exchange for the potential to compound at a faster rate over time.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         From launch on October 9 through October 23, the portfolio climbed from 10,000 to 10,548 before easing back slightly to 10,481 by October 30. <strong>That path reflects a classic “strong start, modest consolidation” pattern</strong>: momentum was powerful early on, then cooled without breaking.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>No trades were executed this week</strong>. There were no new entries or exits, and no position size changes, so performance is entirely driven by market moves rather than portfolio rebalancing.
       </p>
 
       <!-- HOLDINGS -->
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>The portfolio continues to hold the same 10 positions:</strong>
       </p>
 
-      <ul class="list-disc list-inside space-y-1 text-gray-300" style="margin-bottom:1.5rem;">
+      <ul class="list-disc list-inside space-y-1 text-gray-300 mb-6">
         <li>Palantir Technologies (PLTR)</li>
         <li>Newmont Corp. (NEM)</li>
         <li>Seagate Technology (STX)</li>
@@ -106,7 +106,7 @@
         <li>Royal Caribbean Cruises (RCL)</li>
       </ul>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Because the lineup stayed unchanged from Oct 23 to Oct 30</strong>, this week gives a clear read on how the AI-selected basket behaves during a shallow pullback after a strong run.
       </p>
 
@@ -115,15 +115,15 @@
         Key Drivers: From Acceleration to Mild Pullback
       </h2>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Into October 23, the portfolio benefitted from broad risk-on sentiment</strong>, with AI, storage, and cyclical names helping lift the GenAi Chosen portfolio more than +5% above its starting value.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>By October 30, that early strength leveled off</strong>. High-momentum names digested gains, and the broader market shifted into a more mixed tone—still constructive, but no longer in full acceleration mode. The result was a modest -0.64% dip for the portfolio on the week.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Bitcoin’s path remains a stark contrast</strong>. While the GenAi Chosen portfolio is up +4.81% since inception, Bitcoin now sits more than -12% below the inception reference level, underscoring how much more punishing crypto has been over this same period.
       </p>
 
@@ -132,7 +132,7 @@
         Performance Snapshot
       </h2>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>The table below now includes the Oct 23 checkpoint</strong>, making it easier to see how the portfolio and benchmarks moved from launch, to early strength, to this week’s modest giveback.
       </p>
 
@@ -151,7 +151,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="asset-name">GenAi Chosen ($)</td>
+              <th scope="row" class="asset-name">GenAi Chosen ($)</th>
               <td>10,000</td>
               <td>10,548</td>
               <td>10,481</td>
@@ -159,7 +159,7 @@
               <td class="positive">+4.81%</td>
             </tr>
             <tr>
-              <td class="asset-name">S&amp;P 500 (Index)</td>
+              <th scope="row" class="asset-name">S&amp;P 500 (Index)</th>
               <td>6,688</td>
               <td>6,738</td>
               <td>6,822</td>
@@ -167,7 +167,7 @@
               <td class="positive">+2.00%</td>
             </tr>
             <tr>
-              <td class="asset-name">Bitcoin ($)</td>
+              <th scope="row" class="asset-name">Bitcoin ($)</th>
               <td>123,353</td>
               <td>109,070</td>
               <td>108,306</td>
@@ -183,11 +183,11 @@
         Performance Since Inception
       </h2>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>The chart below shows normalized performance for the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin</strong>. All three series are set to 100 on the October 9, 2025 inception date so you can compare paths directly.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Readings above 100 indicate gains since inception</strong>, while readings below 100 indicate losses. By October 30, the GenAi Chosen portfolio sits clearly above 100, the S&amp;P 500 is modestly higher, and Bitcoin sits well below the baseline.
       </p>
 
@@ -287,10 +287,10 @@
 
       <!-- RECOMMENDATION -->
       <h2 class="text-2xl font-bold mt-12 mb-6">
-        This Week’s Recommendation: HOLD
+        This Week's Recommendation: HOLD
       </h2>
 
-      <ul class="list-disc list-inside space-y-3 text-gray-300" style="margin-bottom:1.5rem;">
+      <ul class="list-disc list-inside space-y-3 text-gray-300 mb-6" aria-label="Weekly performance analysis points">
         <li>
           <strong>The portfolio experienced a modest -0.64% pullback this week</strong>, but still sits at +4.81% since inception—comfortably ahead of the S&amp;P 500 (+2.00%) and well ahead of Bitcoin (-12.20%).
         </li>
@@ -312,25 +312,25 @@
       </ul>
 
       <!-- VERDICT -->
-      <h2 class="text-2xl font-bold" style="margin-top:3rem; margin-bottom:1.5rem;">
+      <h2 class="text-2xl font-bold mt-12 mb-6">
         Verdict
       </h2>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Week 3 marks the first meaningful pause after a strong start</strong>. The portfolio has shifted from acceleration to consolidation, but the overall trajectory remains favorable and comfortably within all risk limits.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>HOLD remains the disciplined choice</strong>. Unless upcoming weeks introduce persistent underperformance versus the S&amp;P 500 or stock-specific risk triggers, the strategy continues to favor letting the AI-selected positions play out.
       </p>
 
       <!-- RISK DISCLOSURE -->
       <h2 class="text-2xl font-bold mt-12 mb-6">Risk Disclosure</h2>
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.
       </p>
 
-      <p class="text-gray-300" style="margin-bottom:1.5rem;">
+      <p class="text-gray-300 mb-6">
         <strong>Next Review:</strong> Monday, November 10, 2025.
       </p>
 

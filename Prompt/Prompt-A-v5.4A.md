@@ -137,14 +137,14 @@ For each stock, also compute its weight:
 
 - `weight_pct = (current_value / portfolio_value) × 100`.
 
-Append a new record to `portfolio_history`:
+Append a new record to `portfolio_history` (note: the key storing cumulative portfolio value MUST be `value` to remain consistent with existing weekly pages):
 
 ```json
 {
-  "date": "YYYY-MM-DD",
-  "portfolio_value": 10388,
-  "weekly_pct": -0.07,
-  "total_pct": 3.88
+   "date": "YYYY-MM-DD",
+   "value": 10388,
+   "weekly_pct": -0.07,
+   "total_pct": 3.88
 }
 ```
 

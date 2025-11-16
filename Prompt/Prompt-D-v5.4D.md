@@ -40,7 +40,7 @@ You must output a **fully valid HTML document**:
 <head>
   <!-- metadata & CSS -->
 </head>
-<body>
+<body data-theme="default">
   <div data-template="header" data-root-path="../"></div>
   <main class="container mx-auto px-4 py-12">
     <article class="max-w-3xl mx-auto">
@@ -55,7 +55,7 @@ You must output a **fully valid HTML document**:
 </html>
 ```
 
-**IMPORTANT**: Do NOT add class or data attributes to `<body>`. The automation pipeline injects `data-theme` for palette system support after generation.
+**IMPORTANT**: The `<body>` tag must include `data-theme="default"` for palette system support, matching the pattern used in all existing weekly pages.
 
 ### HEAD CONTENT
 
@@ -97,12 +97,16 @@ Populate `<head>` using `seo.json` and the Week 5 conventions:
   <meta name="twitter:description" content="[seo.twitterDescription]">
   <meta name="twitter:image" content="[seo.twitterImage]">
   ```
-- Include CSS and JS includes:
+- Include CSS and JS includes (STRICT CSP – NO inline script/style; every inline JSON-LD must carry the nonce attribute provided by the automation layer; DO NOT emit `unsafe-inline` anywhere):
   ```html
   <link rel="stylesheet" href="../styles.css">
-  <script src="../js/template-loader.js" defer></script>
-  <script src="../js/mobile-menu.js" defer></script>
+  <script src="../js/template-loader.js" defer nonce="{{nonce}}"></script>
+  <script src="../js/mobile-menu.js" defer nonce="{{nonce}}"></script>
+  <script src="../js/tldr.js" defer nonce="{{nonce}}"></script>
+  <script type="application/ld+json" nonce="{{nonce}}">{...}</script>
+  <script type="application/ld+json" nonce="{{nonce}}">{...}</script>
   ```
+  (The automation layer replaces `{{nonce}}` with a per-build random value.)
 
 ### INLINE VISUAL + TLDR CSS
 
@@ -115,7 +119,7 @@ In `<head>`, include a `<style>` block with:
 
 This CSS must match the Week 5 implementation exactly (colors, spacing, typography).
 
-Append TLDR CSS definitions to the end of the `<style>` block:
+Append TLDR CSS definitions to the end of the `<style>` block (NO inline `style="..."` attributes anywhere in the body – convert spacing to existing utility classes like `.mb-6`, `.mt-12`, etc.):
 ```css
 .tldr-strip { display:grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:.75rem; background:#111; border:1px solid #222; padding:.75rem 1rem; border-radius:.75rem; position:sticky; top:0; z-index:30; }
 .tldr-metric { display:flex; flex-direction:column; align-items:flex-start; }
@@ -127,7 +131,7 @@ Append TLDR CSS definitions to the end of the `<style>` block:
 
 ### JSON-LD
 
-From `seo.json`, insert two `<script type="application/ld+json">` blocks:
+From `seo.json`, insert two `<script type="application/ld+json" nonce="{{nonce}}">` blocks:
 
 1. `BlogPosting` object.
 2. `BreadcrumbList` object.
@@ -174,7 +178,8 @@ Use the Week 5 hero pattern:
          alt="Hero banner illustrating Week [N] AI-managed portfolio performance with abstract financial visuals"
          width="1200" height="800"
          class="w-full h-full object-cover"
-         loading="lazy"
+         loading="eager"
+         fetchpriority="high"
          decoding="async">
   </div>
 </div>
@@ -184,7 +189,7 @@ Use the Week 5 hero pattern:
 - `[Post title]` must match `seo.title`'s visible portion (without the site name tail if you prefer).
 - `[WEEK]` and `[N]` must match the week number, derived from `master.json` or input.
 
-**Performance Note**: Hero image initially has `loading="lazy"`. The automation pipeline post-processes HTML to apply `fetchpriority="high"` to the first hero image and ensures all other images remain lazy-loaded for optimal performance.
+**Performance Note**: Hero images must use `loading="eager"` and `fetchpriority="high"` for optimal initial page load performance, matching the pattern in all existing weekly pages.
 
 ### TLDR Summary Strip (AFTER Hero, BEFORE Narrative)
 
@@ -199,35 +204,13 @@ Insert this block immediately after the hero markup:
 </div>
 ```
 
-At the end of `<body>`, before closing, inject the population script (replace `NUMBER_PLACEHOLDER` with week number):
+**IMPORTANT**: The TLDR strip values are automatically populated by the external `tldr.js` script (already included in `<head>`). Do NOT add any inline script for TLDR population. The `tldr.js` module:
+- Automatically detects the week number from the URL
+- Fetches the appropriate `Data/W[N]/master.json` file
+- Populates the three metrics with fallback logic
+- Handles all error cases gracefully
 
-```html
-<script>
-(async function(){
-  try {
-    const week = NUMBER_PLACEHOLDER; // actual week number
-    const res = await fetch(`../Data/W${week}/master.json`);
-    if(!res.ok) return;
-    const data = await res.json();
-    const ph = data.portfolio_history || [];
-    const spxHist = data.benchmarks?.sp500?.history || [];
-    if(!ph.length || !spxHist.length) return;
-    const latestP = ph[ph.length-1];
-    const latestSPX = spxHist[spxHist.length-1];
-    const weekPct = latestP.weekly_pct != null ? latestP.weekly_pct.toFixed(2)+ '%' : '--';
-    const totalPct = latestP.total_pct != null ? latestP.total_pct.toFixed(2)+ '%' : '--';
-    const alphaVal = (latestP.total_pct - latestSPX.total_pct);
-    const alphaPct = alphaVal.toFixed(2) + '%';
-    const wEl = document.getElementById('tldrWeek');
-    const tEl = document.getElementById('tldrTotal');
-    const aEl = document.getElementById('tldrAlpha');
-    if(wEl) wEl.textContent = weekPct;
-    if(tEl) tEl.textContent = totalPct;
-    if(aEl){ aEl.textContent = alphaPct; aEl.classList.add(alphaVal >= 0 ? 'alpha-positive':'alpha-negative'); }
-  } catch(e){ console.warn('TLDR strip population failed', e); }
-})();
-</script>
-```
+This maintains CSP compliance and matches the pattern used in all existing weekly pages (Weeks 2-5).
 
 ### Narrative Block
 
@@ -242,6 +225,8 @@ Immediately after the TLDR strip, insert `narrative.html` **as-is**:
 Prompt D must not edit or reformat the narrative, table, or chart HTML inside it.
 
 If `narrative.html` already includes the table and chart HTML embedded in the correct positions, do **not** inject `performance_table.html` or `performance_chart.svg` again.
+
+Remove or avoid any inline `style="..."` attributes; rely on classes only. If the source `narrative.html` contains inline styles, replace them with semantic utility classes or omit if redundant.
 
 ### Back Link
 

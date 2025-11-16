@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation – Quantum Investor Digest</title>
+    <meta name="description" content="Technical documentation for the Quantum Investor Digest AI-managed portfolio: architecture, data pipeline, and contributing guide.">
+    <meta name="author" content="Michael Gavrilov">
+    <meta name="theme-color" content="#000000">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="canonical" href="https://quantuminvestor.net/docs.html">
+    <link rel="icon" href="Media/favicon.ico" type="image/x-icon">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://quantuminvestor.net/docs.html">
+    <meta property="og:title" content="Documentation – Quantum Investor Digest">
+    <meta property="og:description" content="Technical deep-dive into the AI-managed portfolio engine and how to contribute.">
+    <meta property="og:image" content="https://quantuminvestor.net/Media/OG-Image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@qid2025">
+    <meta name="twitter:title" content="Documentation – Quantum Investor Digest">
+    <meta name="twitter:description" content="Technical deep-dive into the AI-managed portfolio engine and how to contribute.">
+    <meta name="twitter:image" content="https://quantuminvestor.net/Media/OG-Image.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/template-loader.js" defer nonce="qi123"></script>
+    <script src="js/mobile-menu.js" defer nonce="qi123"></script>
+    <script type="application/ld+json" nonce="qi123">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Quantum Investor Digest Documentation",
+      "description": "Technical documentation for the Quantum Investor Digest AI-managed portfolio: architecture, data pipeline, and contributing guide.",
+      "author": {"@type": "Person", "name": "Michael Gavrilov"},
+      "url": "https://quantuminvestor.net/docs.html",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Quantum Investor Digest",
+        "logo": {"@type": "ImageObject", "url": "https://quantuminvestor.net/Media/LogoB.webp"}
+      }
+    }
+    </script>
+</head>
+<body data-theme="default">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- Header -->
+    <div data-template="header" data-root-path=""></div>
+
+    <main id="main-content" class="container mx-auto px-4 py-12" role="main">
+        <article class="max-w-3xl mx-auto">
+            <header class="mb-12">
+                <h1 class="text-4xl font-bold mb-4">Documentation</h1>
+                <p class="text-gray-400 text-lg">Technical deep-dive into how the AI-managed portfolio engine works and how you can contribute to the project.</p>
+            </header>
+
+            <section class="mb-12" aria-labelledby="how-it-works-heading">
+                <h2 id="how-it-works-heading" class="text-2xl font-bold mb-4">How It Works – Technical Deep Dive</h2>
+                <p class="mb-4">Quantum Investor Digest is a fully automated, AI-assisted content pipeline that produces a weekly performance update for the GenAI-managed stock portfolio. The system is orchestrated by a Python script, <code>scripts/portfolio_automation.py</code>, which coordinates data ingestion, analysis, AI calls, and HTML generation.</p>
+
+                <h3 class="text-xl font-semibold mb-3">High-Level Architecture</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Data Layer</strong> – Historical prices, benchmarks, and portfolio history live in the <code>Data/</code> directory, versioned by week (<code>Data/W1</code>, <code>Data/W2</code>, ...).</li>
+                    <li><strong>AI Layer</strong> – A sequence of prompts (Prompt A → B → C → D) run against an LLM to generate narrative, SEO metadata, and visuals.</li>
+                    <li><strong>Presentation Layer</strong> – Final posts are emitted as static HTML into <code>Posts/</code>, styled with <code>styles.css</code> and hydrated with small JS utilities like <code>tldr.js</code>.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">Weekly Pipeline</h3>
+                <ol class="list-decimal list-inside mb-4">
+                    <li><strong>Run the Automation Script</strong> – Execute <code>portfolio_automation.py</code> with a target week number and data source (LLM or Alpha Vantage).</li>
+                    <li><strong>Update <code>master.json</code></strong> – Either the AI (Prompt A) or Alpha Vantage updates the structured portfolio data for the new week.</li>
+                    <li><strong>Generate Narrative &amp; SEO</strong> – Prompt B produces <code>narrative.html</code> and <code>seo.json</code> from <code>master.json</code>.</li>
+                    <li><strong>Create Visuals</strong> – Prompt C generates a performance table and normalized performance chart.</li>
+                    <li><strong>Assemble Final Post</strong> – Prompt D stitches everything into a single HTML file, and the script standardizes the <code>&lt;head&gt;</code> (CSP, JSON-LD, shared scripts).</li>
+                    <li><strong>Regenerate Index</strong> – The posts index (<code>Posts/posts.html</code>) is rebuilt from the current set of weekly posts.</li>
+                </ol>
+
+                <h3 class="text-xl font-semibold mb-3">Security &amp; Performance Hardening</h3>
+                <p class="mb-3">The site is hardened as a static, CSP-protected deployment:</p>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Content Security Policy</strong> – A strict CSP disables inline scripts and restricts assets to <code>'self'</code>, with a nonce-based allowlist for JS.</li>
+                    <li><strong>Static Generation</strong> – All weekly posts are pre-rendered HTML files, reducing attack surface and improving performance.</li>
+                    <li><strong>Image Optimization</strong> – Weekly hero and snippet images are generated with Pillow and exported as optimized WEBP/PNG assets.</li>
+                    <li><strong>Accessibility</strong> – Skip links, semantic headings, and ARIA attributes make the content screen-reader friendly.</li>
+                </ul>
+            </section>
+
+            <section class="mb-12" aria-labelledby="contributing-heading">
+                <h2 id="contributing-heading" class="text-2xl font-bold mb-4">Contributing Guide</h2>
+                <p class="mb-4">Contributions are welcome, especially around data pipelines, visualization, prompt engineering, and documentation. This project is ideal for developers interested in the intersection of finance and applied generative AI.</p>
+
+                <h3 class="text-xl font-semibold mb-3">Ways to Contribute</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Improve Prompts</strong> – Suggest refinements to Prompts A–D to make narratives clearer, tables more readable, or charts more insightful.</li>
+                    <li><strong>Enhance Visuals</strong> – Add new chart types, improve responsive behavior, or experiment with alternative color palettes.</li>
+                    <li><strong>Extend Data Sources</strong> – Integrate additional market data providers or add new benchmarks and risk metrics.</li>
+                    <li><strong>Harden Security</strong> – Help evolve CSP, nonce handling, and any additional static-site security patterns.</li>
+                    <li><strong>Documentation</strong> – Expand this page with more diagrams, examples, or step-by-step tutorials.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">Development Workflow</h3>
+                <ol class="list-decimal list-inside mb-4">
+                    <li><strong>Fork or Clone the Repo</strong> – Create your own copy of the project on GitHub.</li>
+                    <li><strong>Set Up Python Environment</strong> – Install dependencies from <code>scripts/requirements.txt</code> in a virtual environment.</li>
+                    <li><strong>Configure API Keys</strong> – Export your <code>OPENAI_API_KEY</code> and <code>ALPHAVANTAGE_API_KEY</code> as environment variables for full pipeline runs.</li>
+                    <li><strong>Create a Feature Branch</strong> – Use a descriptive branch name (e.g., <code>feature/improve-tldr-strip</code>).</li>
+                    <li><strong>Run the Automation Script</strong> – Generate a new week locally and verify HTML output, accessibility, and layout.</li>
+                    <li><strong>Open a Pull Request</strong> – Describe your change, rationale, and any impacts on the generated content.</li>
+                </ol>
+
+                <h3 class="text-xl font-semibold mb-3">Code &amp; Prompt Style</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li>Keep Python changes focused, with small, composable functions.</li>
+                    <li>Prefer explicit, well-documented prompt instructions over cleverness.</li>
+                    <li>Maintain accessibility, performance, and CSP compatibility for any new front-end code.</li>
+                    <li>Add comments sparingly and only where they clarify non-obvious behavior.</li>
+                </ul>
+
+                <p class="text-gray-400 text-sm">Note: This project is for educational and informational purposes only and does not constitute financial advice.</p>
+            </section>
+            <section class="mb-12" aria-labelledby="prompt-gallery-heading">
+                <h2 id="prompt-gallery-heading" class="text-2xl font-bold mb-4">Prompt Gallery (A–D)</h2>
+                <p class="mb-4 text-gray-400">
+                    This gallery summarizes the four main prompts that power the GenAI-managed portfolio pipeline.
+                    The text below is intentionally high-level and sanitized so the system can be shared and discussed
+                    without exposing every implementation detail.
+                </p>
+
+                <!-- Prompt A -->
+                <details class="mb-4 border border-gray-800 rounded-lg">
+                    <summary class="p-4 cursor-pointer text-lg font-semibold">Prompt A – Data Engine</summary>
+                    <div class="p-6 pt-2">
+                    <p class="mb-3">
+                        Prompt A turns raw market data into a structured weekly snapshot of the portfolio. It updates
+                        <code>master.json</code> with current prices, weekly and since-inception performance, benchmark
+                        comparisons, and a normalized performance series for GenAI, S&amp;P 500, and Bitcoin.
+                    </p>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
+                    <ul class="list-disc list-inside mb-3 text-sm">
+                        <li>Previous week&rsquo;s <code>master.json</code> (portfolio history, holdings, benchmarks).</li>
+                        <li>Latest prices and dates for each stock and benchmark.</li>
+                        <li>Configuration notes (current week number, evaluation date overrides).</li>
+                    </ul>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
+                    <ul class="list-disc list-inside mb-0 text-sm">
+                        <li>Updated <code>master.json</code> with a new week appended to portfolio history.</li>
+                        <li>Recalculated weekly and total % changes per stock and benchmark.</li>
+                        <li>Normalized performance entries suitable for charting.</li>
+                    </ul>
+                    </div>
+                </details>
+
+                <!-- Prompt B -->
+                <details class="mb-4 border border-gray-800 rounded-lg">
+                    <summary class="p-4 cursor-pointer text-lg font-semibold">Prompt B – Narrative Writer</summary>
+                    <div class="p-6 pt-2">
+                    <p class="mb-3">
+                        Prompt B converts structured data into human-readable narrative. It writes the weekly article
+                        body (<code>narrative.html</code>) and SEO metadata (<code>seo.json</code>) based on the
+                        numbers in <code>master.json</code>.
+                    </p>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
+                    <ul class="list-disc list-inside mb-3 text-sm">
+                        <li>The latest <code>master.json</code> (portfolio totals, top movers, benchmarks, history).</li>
+                        <li>High-level style instructions (tone, audience, structure).</li>
+                    </ul>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
+                    <ul class="list-disc list-inside mb-0 text-sm">
+                        <li><code>narrative.html</code>  a structured prose block with headings, paragraphs, and lists
+                            describing weekly performance, risks, and outlook.</li>
+                        <li><code>seo.json</code>  title, description, canonical URL, OG/Twitter fields for the week.</li>
+                    </ul>
+                    </div>
+                </details>
+
+                <!-- Prompt C -->
+                <details class="mb-4 border border-gray-800 rounded-lg">
+                    <summary class="p-4 cursor-pointer text-lg font-semibold">Prompt C – Visual Generator</summary>
+                    <div class="p-6 pt-2">
+                    <p class="mb-3">
+                        Prompt C focuses on visuals. It takes the numeric history and produces a performance snapshot
+                        table and a normalized performance chart that compare the GenAI portfolio vs S&amp;P 500 and
+                        Bitcoin.
+                    </p>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
+                    <ul class="list-disc list-inside mb-3 text-sm">
+                        <li>The same <code>master.json</code> used by Prompt B.</li>
+                        <li>Layout expectations for the table and chart containers.</li>
+                    </ul>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
+                    <ul class="list-disc list-inside mb-0 text-sm">
+                        <li><code>performance_table.html</code>  responsive table markup summarizing key weekly metrics.</li>
+                        <li><code>performance_chart.svg</code> (inside a container)  normalized performance lines with legend.</li>
+                    </ul>
+                    </div>
+                </details>
+
+                <!-- Prompt D -->
+                <details class="mb-4 border border-gray-800 rounded-lg">
+                    <summary class="p-4 cursor-pointer text-lg font-semibold">Prompt D – Final Assembler</summary>
+                    <div class="p-6 pt-2">
+                    <p class="mb-3">
+                        Prompt D is the final assembler. It combines the narrative, visuals, SEO metadata, and global
+                        layout guidelines into a single, production-ready HTML page for the given week.
+                    </p>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
+                    <ul class="list-disc list-inside mb-3 text-sm">
+                        <li><code>narrative.html</code> from Prompt B.</li>
+                        <li><code>performance_table.html</code> and <code>performance_chart.svg</code> from Prompt C.</li>
+                        <li><code>seo.json</code> and a small set of site-wide design constraints.</li>
+                    </ul>
+                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
+                    <ul class="list-disc list-inside mb-0 text-sm">
+                        <li>A complete weekly HTML post (e.g., <code>GenAi-Managed-Stocks-Portfolio-Week-5.html</code>)
+                            with a standardized head, article structure, and content blocks in the right order.</li>
+                    </ul>
+                    </div>
+                </details>
+
+                <p class="text-gray-400 text-sm">
+                    For implementation details, see the automation script at <code>scripts/portfolio_automation.py</code>,
+                    which orchestrates Prompts A–D and writes the generated artifacts into the <code>Data/</code> and
+                    <code>Posts/</code> directories.
+                </p>
+            </section>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <div data-template="footer" data-root-path=""></div>
+</body>
+</html>

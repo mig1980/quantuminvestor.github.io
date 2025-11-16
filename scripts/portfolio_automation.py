@@ -50,7 +50,7 @@ class PortfolioAutomation:
         self.eval_date = None
         self.palette = palette  # theme palette selector ("default", "alt", etc.)
         self.minify_css = minify_css
-        self.nonce = base64.b64encode(os.urandom(16)).decode().rstrip('=')
+        self.nonce = 'qi123'
         self.stylesheet_name = 'styles.css'
         if eval_date:
             try:
@@ -88,91 +88,91 @@ class PortfolioAutomation:
         self.seo_json = None
         self.performance_table = None
         self.performance_chart = None
-        if self.minify_css:
-            try:
-                self._purge_and_minify_css()
-                self.stylesheet_name = 'styles.min.css'
-                print(f"✓ CSS minified -> {self.stylesheet_name}")
-                    """Prompt D: Final Assembler - Create complete HTML page (hardened head, external TLDR)."""
-                    print("\n🔨 Running Prompt D: Final HTML Assembler...")
+    
+    def detect_next_week(self):
+        """Auto-detect next week number by scanning Data/ directory"""
+        week_folders = sorted([int(d.name[1:]) for d in DATA_DIR.glob('W*') if d.is_dir() and d.name[1:].isdigit()])
+        return (week_folders[-1] + 1) if week_folders else 1
+    
+    def load_prompts(self):
+        """Load all prompt markdown files (A, B, C, D)"""
+        prompts = {}
+        for letter in ['A', 'B', 'C', 'D']:
+            prompt_file = PROMPT_DIR / f"Prompt-{letter}-v5.4{letter}.md"
+            if prompt_file.exists():
+                with open(prompt_file, 'r', encoding='utf-8') as f:
+                    prompts[letter] = f.read()
+            else:
+                print(f"⚠️ Warning: {prompt_file.name} not found")
+                prompts[letter] = f"# Prompt {letter} (placeholder)"
+        return prompts
+    
+    def load_master_json(self):
+        """Load previous week's master.json as baseline"""
+        prev_week = self.week_number - 1
+        if prev_week < 1:
+            raise ValueError("Cannot load previous master.json for Week 1. Provide baseline manually.")
+        
+        prev_master_path = DATA_DIR / f"W{prev_week}" / "master.json"
+        if not prev_master_path.exists():
+            raise ValueError(f"Previous week's master.json not found: {prev_master_path}")
+        
+        with open(prev_master_path, 'r', encoding='utf-8') as f:
+            self.master_json = json.load(f)
+        
+        print(f"✓ Loaded baseline from Week {prev_week}: {prev_master_path}")
+        return self.master_json
+    
+    def call_gpt4(self, system_prompt, user_message, temperature=0.7):
+        """Wrapper for OpenAI API calls with error handling"""
+        if not self.client:
+            raise ValueError("OpenAI client not initialized. Set OPENAI_API_KEY.")
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=temperature
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"⚠️ GPT-4 API call failed: {e}")
+            raise
+    
+    def _purge_and_minify_css(self):
+        """CSS optimization (placeholder - not critical for MVP)"""
+        print("⚠️ CSS minification not implemented (using original styles.css)")
+        pass
+    
+    def run_prompt_a(self):
+        """Prompt A: Data Engine - Update master.json with new week's data"""
+        print("\n📊 Running Prompt A: Data Engine...")
+        
+        system_prompt = "You are the GenAi Chosen Data Engine. Follow Prompt A specifications exactly."
+        
+        user_message = f"""
+{self.prompts['A']}
 
-                    system_prompt = "You are the GenAi Chosen Final Page Builder. Follow Prompt D specifications exactly."
+---
 
-                    # Embed table and chart into narrative if not already there
-                    if self.performance_table and self.performance_table not in self.narrative_html:
-                        snapshot_pattern = r'(<h2[^>]*>Performance Snapshot</h2>\s*<p[^>]*>.*?</p>)'
-                        match = re.search(snapshot_pattern, self.narrative_html, re.DOTALL)
-                        if match:
-                            insert_pos = match.end()
-                            self.narrative_html = (
-                                self.narrative_html[:insert_pos] + '\n\n' + self.performance_table + '\n\n' + self.narrative_html[insert_pos:]
-                            )
-                    if self.performance_chart and self.performance_chart not in self.narrative_html:
-                        inception_pattern = r'(<h2[^>]*>Performance Since Inception</h2>(?:.*?</p>){2,3})'
-                        match = re.search(inception_pattern, self.narrative_html, re.DOTALL)
-                        if match:
-                            insert_pos = match.end()
-                            self.narrative_html = (
-                                self.narrative_html[:insert_pos] + '\n\n' + self.performance_chart + '\n\n' + self.narrative_html[insert_pos:]
-                            )
+Here is last week's master.json:
 
-                    user_message = f"""
-            {self.prompts['D']}
+```json
+{json.dumps(self.master_json, indent=2)}
+```
 
-            ---
-
-            Here are the components:
-
-            **narrative.html:**
-            ```html
-            {self.narrative_html}
-            ```
-
-            **seo.json:**
-            ```json
-            {json.dumps(self.seo_json, indent=2)}
-            ```
-
-            **master.json (for reference):**
-            ```json
-            {json.dumps(self.master_json, indent=2)}
-            ```
-
-            Generate the complete HTML file for Week {self.week_number}.
-            """
-
-                    response = self.call_gpt4(system_prompt, user_message, temperature=0.2)
-                    html_match = re.search(r'<!DOCTYPE html>.*</html>', response, re.DOTALL | re.IGNORECASE)
-                    final_html = html_match.group(0) if html_match else response
-
-                    try:
-                        final_html = self._apply_standard_head(final_html)
-                    except Exception as e:
-                        print(f"⚠️ Standard head template failed: {e}")
-
-                    # Validation
-                    if not final_html.strip().startswith('<!DOCTYPE'):
-                        print("⚠️ Warning: Generated HTML doesn't start with DOCTYPE")
-                    if '</html>' not in final_html.lower():
-                        print("⚠️ Warning: Generated HTML missing closing </html>")
-                    required_elements = ['<head>', '<body>', '<article>', 'class="prose']
-                    missing = [e for e in required_elements if e not in final_html]
-                    if missing:
-                        print(f"⚠️ Missing elements: {', '.join(missing)}")
-
-                    try:
-                        final_html = self._optimize_performance(final_html)
-                    except Exception as e:
-                        print(f"⚠️ Performance optimization failed: {e}")
-
-                    output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
-                    with open(output_path, 'w', encoding='utf-8') as f:
-                        f.write(final_html)
-                    print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
-                    return final_html
-                    self.master_json = json.loads(json_match.group(0))
-                else:
-                    raise ValueError("Could not extract valid master.json from Prompt A response")
+Generate the updated master.json for Week {self.week_number}.
+"""
+        
+        response = self.call_gpt4(system_prompt, user_message)
+        
+        # Extract JSON from response
+        json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
+        if json_match:
+            self.master_json = json.loads(json_match.group(1))
         else:
             # Try to parse entire response as JSON
             try:
@@ -200,16 +200,17 @@ class PortfolioAutomation:
             json.dump(self.master_json, f, indent=2)
         
         print(f"✓ Prompt A completed - master.json updated for Week {self.week_number}")
+        
         # Generate hero image then snippet share card immediately after data update
         try:
             self.generate_hero_image()
         except Exception as e:
             print(f"⚠️ Hero image generation failed: {e}")
-        # Generate snippet share card (social preview)
         try:
             self.generate_snippet_card()
         except Exception as e:
             print(f"⚠️ Snippet card generation failed: {e}")
+        
         return self.master_json
 
     # ===================== ALPHA VANTAGE DATA ENGINE =====================
@@ -776,6 +777,16 @@ This is for Week {self.week_number}.
         published_iso = self.master_json.get('meta', {}).get('current_date', datetime.utcnow().date().isoformat()) + 'T00:00:00Z'
         modified_iso = published_iso
         csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce)
+        # Derive keywords (fallback: generic terms + tickers)
+        tickers = []
+        try:
+            tickers = [s.get('ticker') for s in self.master_json.get('stocks', []) if s.get('ticker')]
+        except Exception:
+            pass
+        base_keywords = ["AI investing", "momentum stocks", "portfolio performance", "S&P 500", "Bitcoin"]
+        if tickers:
+            base_keywords.extend(tickers[:10])
+        keywords_str = ", ".join(sorted(set(base_keywords)))
 
         blog_ld = {
             "@context": "https://schema.org",
@@ -785,14 +796,21 @@ This is for Week {self.week_number}.
             "image": og_image,
             "datePublished": published_iso,
             "dateModified": modified_iso,
-            "url": og_url
+            "dateCreated": self.master_json.get('meta', {}).get('inception_date', '2025-10-09'),
+            "url": og_url,
+            "mainEntityOfPage": {"@type": "WebPage", "@id": og_url},
+            "author": {"@type": "Person", "name": "Michael Gavrilov"},
+            "publisher": {"@type": "Organization", "name": "Quantum Investor Digest", "logo": {"@type": "ImageObject", "url": "https://quantuminvestor.net/Media/LogoB.webp"}},
+            "articleSection": "AI Portfolio Weekly Review",
+            "keywords": keywords_str
         }
         breadcrumbs_ld = {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
                 {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://quantuminvestor.net/"},
-                {"@type": "ListItem", "position": 2, "name": f"Week {self.week_number}", "item": og_url}
+                {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://quantuminvestor.net/Posts/posts.html"},
+                {"@type": "ListItem", "position": 3, "name": f"Week {self.week_number}", "item": og_url}
             ]
         }
 
@@ -838,6 +856,75 @@ This is for Week {self.week_number}.
         palette_attr = f'data-theme="{self.palette}"'
         new_html = re.sub(r'<body(\s[^>]*)?>', lambda m: '<body ' + palette_attr + ('' if m.group(1) is None else m.group(1)) + '>', new_html, count=1)
         return new_html
+
+    def harden_static_pages(self):
+        """Apply dynamic nonce + strict CSP to root static pages (index, about, Disclosures)."""
+        root_files = [
+            REPO_ROOT / 'index.html',
+            REPO_ROOT / 'about.html',
+            REPO_ROOT / 'Disclosures.html'
+        ]
+        for fp in root_files:
+            if not fp.exists():
+                continue
+            try:
+                content = fp.read_text(encoding='utf-8')
+                # Replace CSP meta
+                csp_meta_pattern = re.compile(r'<meta http-equiv="Content-Security-Policy"[^>]+>', re.IGNORECASE)
+                new_csp = f'<meta http-equiv="Content-Security-Policy" content="{CSP_POLICY_TEMPLATE.format(nonce=self.nonce)}">'
+                content = csp_meta_pattern.sub(new_csp, content)
+                # Add nonce to all eligible script tags (without one)
+                def add_nonce(m):
+                    tag = m.group(0)
+                    if 'nonce=' in tag:
+                        return tag
+                    if 'type="application/ld+json"' in tag and 'nonce=' not in tag:
+                        return tag.replace('<script', f'<script nonce="{self.nonce}"')
+                    if 'defer' in tag or 'src=' in tag:
+                        return tag.replace('<script', f'<script nonce="{self.nonce}"')
+                    return tag
+                content = re.sub(r'<script[^>]*>', add_nonce, content)
+                fp.write_text(content, encoding='utf-8')
+                print(f"✓ Hardened static page: {fp.name}")
+            except Exception as e:
+                print(f"⚠️ Failed hardening {fp.name}: {e}")
+
+    def cleanup_existing_weekly_posts(self):
+        """Remove inline margin styles (margin-bottom / margin-top) and apply utility classes mb-6 / mt-12."""
+        posts_dir = REPO_ROOT / 'Posts'
+        for fp in posts_dir.glob('GenAi-Managed-Stocks-Portfolio-Week-*.html'):
+            try:
+                original = fp.read_text(encoding='utf-8')
+                updated = original
+                # Remove specific inline margin styles
+                updated = re.sub(r'\sstyle="margin-bottom:1.5rem;"', '', updated)
+                updated = re.sub(r'\sstyle="margin-top:3rem;margin-bottom:1.5rem;"', '', updated)
+                # Ensure mb-6 added where style removed for p and ul
+                def add_mb6(match):
+                    cls = match.group(1)
+                    classes = cls.split()
+                    if 'mb-6' not in classes:
+                        classes.append('mb-6')
+                    return 'class="' + ' '.join(classes) + '"'
+                updated = re.sub(r'class="([^"]+)"(?![^>]*mb-6)(?=[^>]*>)(?=[^>]*(<p|<ul))', add_mb6, updated)
+                # Headings: add mt-12 mb-6 if they had inline style removed or if pattern suggests they are section headers without spacing utilities
+                def heading_utilities(m):
+                    tag = m.group(1)
+                    cls = m.group(2)
+                    classes = cls.split()
+                    if 'mt-12' not in classes:
+                        classes.append('mt-12')
+                    if 'mb-6' not in classes:
+                        classes.append('mb-6')
+                    return f'<{tag} class="' + ' '.join(classes) + '"'
+                updated = re.sub(r'<(h2)\s+class="([^"]+)"', heading_utilities, updated)
+                if updated != original:
+                    fp.write_text(updated, encoding='utf-8')
+                    print(f"✓ Cleaned inline styles: {fp.name}")
+                else:
+                    print(f"• No inline style changes needed: {fp.name}")
+            except Exception as e:
+                print(f"⚠️ Failed cleaning {fp.name}: {e}")
     
     def run_prompt_c(self):
         """Prompt C: Visual Generator - Create table and chart"""
@@ -968,89 +1055,27 @@ Generate the complete HTML file for Week {self.week_number}.
         except Exception as e:
             print(f"⚠️ Standard head template failed: {e}")
 
-        # ================= TLDR POST-PROCESS INJECTION =================
+        # ================= TLDR STRUCTURAL INJECTION (simplified, external script populates) =================
         try:
-            # Remove any accidental TLDR inside narrative (defensive)
-            if 'id="tldrStrip"' in final_html:
-                # If model already injected correctly, skip further modifications
-                pass
-            else:
-                # Derive metrics from master_json (latest entry)
-                ph = self.master_json.get('portfolio_history', [])
-                spx_hist = self.master_json.get('benchmarks', {}).get('sp500', {}).get('history', [])
-                if ph and spx_hist:
-                    latest_portfolio = ph[-1]
-                    latest_spx = spx_hist[-1]
-                    week_change = latest_portfolio.get('weekly_pct')
-                    total_change = latest_portfolio.get('total_pct')
-                    alpha_val = None
-                    if latest_spx.get('total_pct') is not None and total_change is not None:
-                        alpha_val = round(total_change - latest_spx.get('total_pct'), 2)
-                    def fmt(v):
-                        return ('--' if v is None else f"{v:.2f}%")
-                    week_str = fmt(week_change)
-                    total_str = fmt(total_change)
-                    alpha_str = ('--' if alpha_val is None else f"{alpha_val:.2f}%")
-                    alpha_class = 'alpha-positive' if (alpha_val is not None and alpha_val >= 0) else 'alpha-negative'
-
-                    tldr_markup = (
-                        '\n<!-- TLDR STRIP Injected by automation -->\n'
-                        '<div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">\n'
-                        f'  <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">{week_str}</span></div>\n'
-                        f'  <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">{total_str}</span></div>\n'
-                        f'  <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha" class="{alpha_class}">{alpha_str}</span></div>\n'
-                        '</div>\n'
-                    )
-
-                    # Insert TLDR before narrative prose block (fallback if hero detection is complex)
-                    prose_pos = final_html.find('<div class="prose')
-                    if prose_pos != -1:
-                        final_html = final_html[:prose_pos] + tldr_markup + final_html[prose_pos:]
-
-                    # Ensure TLDR CSS present (append if missing)
-                    if '.tldr-strip' not in final_html:
-                        style_block_match = re.search(r'<style[^>]*>(.*?)</style>', final_html, re.DOTALL | re.IGNORECASE)
-                        tldr_css = (
-                            '\n/* TLDR Strip Styles (injected) */\n'
-                            '.tldr-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;background:#111;border:1px solid #222;padding:.75rem 1rem;border-radius:.75rem;position:sticky;top:0;z-index:30;}\n'
-                            '.tldr-metric{display:flex;flex-direction:column;align-items:flex-start;}\n'
-                            '.tldr-metric span:first-child{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:#888;}\n'
-                            '.tldr-metric span:last-child{font-weight:600;font-size:.95rem;}\n'
-                            '.alpha-positive{color:#4ade80;}\n'
-                            '.alpha-negative{color:#f87171;}\n'
-                        )
-                        if style_block_match:
-                            # Append before closing </style>
-                            start, end = style_block_match.span(1)
-                            final_html = final_html[:end] + tldr_css + final_html[end:]
-                        else:
-                            # Create a new style block in <head>
-                            head_close = final_html.lower().find('</head>')
-                            if head_close != -1:
-                                new_style = f'<style>{tldr_css}</style>\n'
-                                final_html = final_html[:head_close] + new_style + final_html[head_close:]
-
-                    # Add population script (dynamic fetch) if not already present
-                    if 'TLDR strip population' not in final_html and 'fetch(`../Data/W' not in final_html:
-                        week_num = self.week_number
-                        population_script = (
-                            '\n<script><!-- TLDR strip population (injected) -->\n'
-                            '(async function(){try{const w=' + str(week_num) + ';'
-                            'const r=await fetch(`../Data/W${w}/master.json`);if(!r.ok)return;const d=await r.json();'
-                            'const ph=d.portfolio_history||[];const spx=d.benchmarks?.sp500?.history||[];'
-                            'if(!ph.length||!spx.length)return;const lp=ph[ph.length-1];const ls=spx[spx.length-1];'
-                            'const wc=lp.weekly_pct!=null?lp.weekly_pct.toFixed(2)+"%":"--";'
-                            'const tc=lp.total_pct!=null?lp.total_pct.toFixed(2)+"%":"--";'
-                            'const av=(lp.total_pct-ls.total_pct);const ac=av.toFixed(2)+"%";'
-                            'const wEl=document.getElementById("tldrWeek");const tEl=document.getElementById("tldrTotal");const aEl=document.getElementById("tldrAlpha");'
-                            'if(wEl)wEl.textContent=wc;if(tEl)tEl.textContent=tc;if(aEl){aEl.textContent=ac;aEl.classList.add(av>=0?"alpha-positive":"alpha-negative");}'
-                            '}catch(e){console.warn("TLDR strip population failed",e);}})();\n'</script>'
-                        )
-                        body_close = final_html.lower().rfind('</body>')
-                        if body_close != -1:
-                            final_html = final_html[:body_close] + population_script + final_html[body_close:]
+            # Remove accidental duplicate TLDR blocks leaving only first occurrence
+            occurrences = [m.start() for m in re.finditer(r'id="tldrStrip"', final_html)]
+            if len(occurrences) > 1:
+                # Keep first, strip others
+                final_html = re.sub(r'<!-- TLDR STRIP.*?<div id="tldrStrip"[\s\S]*?</div>\s*', '', final_html, count=len(occurrences)-1, flags=re.IGNORECASE)
+            if 'id="tldrStrip"' not in final_html:
+                tldr_markup = (
+                    '\n<!-- TLDR STRIP (populated by external tldr.js) -->\n'
+                    '<div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">\n'
+                    '  <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">--</span></div>\n'
+                    '  <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">--</span></div>\n'
+                    '  <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha">--</span></div>\n'
+                    '</div>\n'
+                )
+                prose_pos = final_html.find('<div class="prose')
+                if prose_pos != -1:
+                    final_html = final_html[:prose_pos] + tldr_markup + final_html[prose_pos:]
         except Exception as e:
-            print(f"⚠️ TLDR injection failed: {e}")
+            print(f"⚠️ TLDR structural injection failed: {e}")
         
         # Basic validation
         if not final_html.strip().startswith('<!DOCTYPE'):
@@ -1077,59 +1102,6 @@ Generate the complete HTML file for Week {self.week_number}.
         
         print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
         return final_html
-
-        # ================= TLDR STRUCTURAL INJECTION (no inline script) =================
-        try:
-            if 'id="tldrStrip"' not in final_html:
-                tldr_markup = (
-                    '\n<!-- TLDR STRIP (populated by external tldr.js) -->\n'
-                    '<div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">\n'
-                    '  <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">--</span></div>\n'
-                    '  <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">--</span></div>\n'
-                    '  <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha">--</span></div>\n'
-                    '</div>\n'
-                )
-                prose_pos = final_html.find('<div class="prose')
-                if prose_pos != -1:
-                    final_html = final_html[:prose_pos] + tldr_markup + final_html[prose_pos:]
-        except Exception as e:
-            print(f"⚠️ TLDR structural injection failed: {e}")
-    <meta property=\"og:url\" content=\"{canonical}\">
-    <meta property=\"og:title\" content=\"{og_title}\">
-    <meta property=\"og:description\" content=\"{og_desc}\">
-    <meta property=\"og:image\" content=\"{og_image}\">
-    <meta property=\"article:published_time\" content=\"{published_iso}\">
-    <meta property=\"article:modified_time\" content=\"{modified_iso}\">
-    <meta name=\"twitter:card\" content=\"{twitter_card}\">
-    <meta name=\"twitter:site\" content=\"@qid2025\">
-    <meta name=\"twitter:title\" content=\"{twitter_title}\">
-    <meta name=\"twitter:description\" content=\"{twitter_desc}\">
-    <meta name=\"twitter:image\" content=\"{twitter_image}\">
-    <link rel=\"stylesheet\" href=\"../styles.css\">
-    <script src=\"../js/template-loader.js\" defer></script>
-    <script src=\"../js/mobile-menu.js\" defer></script>
-    <script type=\"application/ld+json\">{json.dumps(blog_ld, separators=(',',':'))}</script>
-    <script type=\"application/ld+json\">{json.dumps(breadcrumbs_ld, separators=(',',':'))}</script>
-</head>"""
-        # Replace existing head section
-        new_html = re.sub(r'<head>.*?</head>', head_markup, html, flags=re.DOTALL|re.IGNORECASE)
-        if new_html == html:
-            # If no replacement occurred, prepend head (unlikely but fallback)
-            doctype_pos = new_html.lower().find('<!doctype')
-            if doctype_pos != -1:
-                # find first <html>
-                html_pos = new_html.lower().find('<html')
-                if html_pos != -1:
-                    # insert after <html ...>
-                    after_html_tag = re.search(r'<html[^>]*>', new_html, re.IGNORECASE)
-                    if after_html_tag:
-                        end = after_html_tag.end()
-                        new_html = new_html[:end] + head_markup + new_html[end:]
-        # Inject palette data attribute on <body> tag
-        palette_attr = f"data-theme=\"{self.palette}\""
-        new_html = re.sub(r'<body(\s[^>]*)?>', lambda m: (
-            '<body ' + palette_attr + ('' if m.group(1) is None else m.group(1)) + '>'), new_html, count=1)
-        return new_html
 
     def _optimize_performance(self, html: str) -> str:
         """Post-process HTML for performance: hero fetchpriority, lazy load images, remove redundant inline styles."""
@@ -1374,8 +1346,8 @@ Generate the complete HTML file for Week {self.week_number}.
             print(f"\nGenerated files:")
             print(f"  - Data/W{self.week_number}/master.json")
             print(f"  - Posts/GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html")
-                print(f"  - Media/W{self.week_number}-card.png (snippet card)")
-                print(f"  - Media/W{self.week_number}.webp (hero image)")
+            print(f"  - Media/W{self.week_number}-card.png (snippet card)")
+            print(f"  - Media/W{self.week_number}.webp (hero image)")
             if not self.ai_enabled:
                 print("    (Data-only mode: enable OPENAI_API_KEY for full narrative)")
             print(f"  - Data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")

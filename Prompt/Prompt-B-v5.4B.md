@@ -45,44 +45,41 @@ Do NOT include the TLDR summary strip. That component is injected by Prompt D. B
 
 ### Paragraphs
 
-- Use Tailwind classes and inline margin styles, like Week 5:
-
+- Use utility classes ONLY (strict CSP forbids inline `style=`). No inline styles.
   - Intro paragraph:
     ```html
-    <p class="text-xl text-gray-300" style="margin-bottom: 1.5rem;"> ... </p>
+    <p class="text-xl text-gray-300 mb-6"> ... </p>
     ```
-  - All other paragraphs:
+  - Standard paragraphs:
     ```html
-    <p class="text-gray-300" style="margin-bottom: 1.5rem;"> ... </p>
+    <p class="text-gray-300 mb-6"> ... </p>
     ```
-
+- Spacing: `mb-6` ≈ 1.5rem. Headings use `mt-12 mb-6` (3rem top / 1.5rem bottom).
 - Each paragraph should be **3–5 sentences**, focused on a single idea.
 - Each paragraph must contain **one key bolded phrase**, usually at the start:
   ```html
-  <strong>This week, the GenAi Chosen portfolio finished essentially flat</strong>, slipping just -0.07% ...
+  <p class="text-gray-300 mb-6"><strong>This week, the GenAi Chosen portfolio finished essentially flat</strong>, slipping just -0.07% ...</p>
   ```
 
 ### Headings
 
-Use `h2` with consistent style:
+Use `h2` with utility spacing:
 
 ```html
-<h2 class="text-2xl font-bold" style="margin-top: 3rem; margin-bottom: 1.5rem;">Section Title</h2>
+<h2 class="text-2xl font-bold mt-12 mb-6">Section Title</h2>
 ```
 
 ### Lists
 
-- Listings like holdings and bullet-point recommendations use:
+- Holdings list:
   ```html
-  <ul class="list-disc list-inside space-y-1 text-gray-300" style="margin-bottom: 1.5rem;" aria-label="Current portfolio holdings">
+  <ul class="list-disc list-inside space-y-1 text-gray-300 mb-6" aria-label="Current portfolio holdings">
     ...
   </ul>
   ```
-
-  or for recommendations:
-
+- Recommendation / analysis list:
   ```html
-  <ul class="list-disc list-inside space-y-3 text-gray-300" style="margin-bottom: 1.5rem;" aria-label="Weekly performance analysis points">
+  <ul class="list-disc list-inside space-y-3 text-gray-300 mb-6" aria-label="Weekly performance analysis points">
     <li><strong>The portfolio remained nearly unchanged</strong>, ...</li>
     ...
   </ul>
@@ -131,21 +128,21 @@ Your narrative must follow this structure:
        - Interprets what that move means in context (e.g., rotation, consolidation, risk).
 
 5. **Performance Snapshot**
-   - `h2`: `Performance Snapshot`
-   - 1 paragraph:
-     - Explain that the table compares GenAi Chosen vs S&P 500 vs Bitcoin.
-     - Emphasize whether the portfolio is ahead or behind both benchmarks on a total-return basis.
-   - Immediately after this paragraph, embed the performance table:
+  -- `h2`: `Performance Snapshot`
+  -- 1 paragraph (class `text-gray-300 mb-6`).
+    - Explain that the table compares GenAi Chosen vs S&P 500 vs Bitcoin.
+    - Emphasize whether the portfolio is ahead or behind both benchmarks on a total-return basis.
+  -- Immediately after this paragraph, embed the performance table:
 
      - If `performance_table.html` is provided: **insert its contents here unchanged**.
      - If not provided, you may generate the table reference placeholder (Prompt C primary generates the actual table).
 
 6. **Performance Since Inception**
-   - `h2`: `Performance Since Inception`
-   - 2–3 paragraphs:
-     - Explain what the chart shows.
-     - Highlight which assets are above or below 100 since inception.
-     - Compare GenAi Chosen vs S&P 500 vs Bitcoin.
+  -- `h2`: `Performance Since Inception`
+  -- 2–3 paragraphs (`text-gray-300 mb-6`):
+    - Explain what the chart shows.
+    - Highlight which assets are above or below 100 since inception.
+    - Compare GenAi Chosen vs S&P 500 vs Bitcoin.
    - You must include one explicit **normalization sentence**, similar to:
      > **All assets are normalized to 100 on the October 9, 2025 inception date, with 100 displayed as the central reference line.**
 
@@ -177,7 +174,7 @@ Your narrative must follow this structure:
    - Two paragraphs:
      1. Standard risk text, matching Week 5:
         ```html
-        <strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.
+        <p class="text-gray-300 mb-6"><strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.</p>
         ```
      2. Next review schedule:
         - `Next Review: Monday, [the following Monday date], after market close.`
