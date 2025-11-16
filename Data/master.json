@@ -1,0 +1,333 @@
+{
+  "meta": {
+    "portfolio_name": "GenAi Chosen",
+    "inception_date": "2025-10-09",
+    "inception_value": 10000,
+    "current_date": "2025-11-13"
+  },
+  "stocks": [
+    {
+      "ticker": "PLTR",
+      "name": "Palantir Technologies",
+      "shares": 5.39,
+      "prices": {
+        "2025-10-09": 185.47,
+        "2025-10-23": 180.48,
+        "2025-11-06": 175.05,
+        "2025-11-13": 172.14
+      },
+      "current_value": 1019,
+      "weekly_pct": -1.66,
+      "total_pct": -7.2
+    },
+    {
+      "ticker": "NEM",
+      "name": "Newmont Corp",
+      "shares": 11.73,
+      "prices": {
+        "2025-10-09": 85.21,
+        "2025-10-23": 88.91,
+        "2025-11-06": 82.53,
+        "2025-11-13": 89.72
+      },
+      "current_value": 1052,
+      "weekly_pct": 8.72,
+      "total_pct": 5.29
+    },
+    {
+      "ticker": "STX",
+      "name": "Seagate Technology",
+      "shares": 4.51,
+      "prices": {
+        "2025-10-09": 221.7,
+        "2025-10-23": 226.41,
+        "2025-11-06": 278.47,
+        "2025-11-13": 262.56
+      },
+      "current_value": 1184,
+      "weekly_pct": -5.72,
+      "total_pct": 18.4
+    },
+    {
+      "ticker": "GEV",
+      "name": "GE Vernova",
+      "shares": 1.58,
+      "prices": {
+        "2025-10-09": 634.27,
+        "2025-10-23": 595.15,
+        "2025-11-06": 550.17,
+        "2025-11-13": 558.17
+      },
+      "current_value": 882,
+      "weekly_pct": 1.46,
+      "total_pct": -12.0
+    },
+    {
+      "ticker": "WDC",
+      "name": "Western Digital",
+      "shares": 8.35,
+      "prices": {
+        "2025-10-09": 119.7,
+        "2025-10-23": 125.72,
+        "2025-11-06": 163.6,
+        "2025-11-13": 157.16
+      },
+      "current_value": 1312,
+      "weekly_pct": -3.94,
+      "total_pct": 31.28
+    },
+    {
+      "ticker": "GE",
+      "name": "General Electric",
+      "shares": 3.34,
+      "prices": {
+        "2025-10-09": 299.35,
+        "2025-10-23": 305.52,
+        "2025-11-06": 305.27,
+        "2025-11-13": 304.17
+      },
+      "current_value": 1016,
+      "weekly_pct": -0.36,
+      "total_pct": 1.61
+    },
+    {
+      "ticker": "CVS",
+      "name": "CVS Health",
+      "shares": 12.61,
+      "prices": {
+        "2025-10-09": 79.27,
+        "2025-10-23": 69.67,
+        "2025-11-06": 78.66,
+        "2025-11-13": 79.36
+      },
+      "current_value": 1000,
+      "weekly_pct": 0.89,
+      "total_pct": 0.11
+    },
+    {
+      "ticker": "NRG",
+      "name": "NRG Energy",
+      "shares": 5.96,
+      "prices": {
+        "2025-10-09": 167.82,
+        "2025-10-23": 163.81,
+        "2025-11-06": 170.1,
+        "2025-11-13": 166.15
+      },
+      "current_value": 991,
+      "weekly_pct": -2.32,
+      "total_pct": -1.0
+    },
+    {
+      "ticker": "HWM",
+      "name": "Howmet Aerospace",
+      "shares": 5.3,
+      "prices": {
+        "2025-10-09": 188.72,
+        "2025-10-23": 201.17,
+        "2025-11-06": 205.6,
+        "2025-11-13": 201.3
+      },
+      "current_value": 1066,
+      "weekly_pct": -2.09,
+      "total_pct": 6.68
+    },
+    {
+      "ticker": "RCL",
+      "name": "Royal Caribbean Cruises",
+      "shares": 3.26,
+      "prices": {
+        "2025-10-09": 306.99,
+        "2025-10-23": 320.26,
+        "2025-11-06": 253.57,
+        "2025-11-13": 265.42
+      },
+      "current_value": 866,
+      "weekly_pct": 4.67,
+      "total_pct": -13.51
+    }
+  ],
+  "portfolio_totals": {
+    "current_value": 10388,
+    "weekly_pct": -0.07,
+    "total_pct": 3.88
+  },
+  "benchmarks": {
+    "sp500": {
+      "inception_reference": 6688,
+      "history": [
+        {
+          "date": "2025-10-09",
+          "close": 6735,
+          "weekly_pct": null,
+          "total_pct": 0.7
+        },
+        {
+          "date": "2025-10-16",
+          "close": 6646,
+          "weekly_pct": -1.32,
+          "total_pct": -0.63
+        },
+        {
+          "date": "2025-10-23",
+          "close": 6738,
+          "weekly_pct": 1.38,
+          "total_pct": 0.75
+        },
+        {
+          "date": "2025-10-30",
+          "close": 6822,
+          "weekly_pct": 1.24,
+          "total_pct": 2.0
+        },
+        {
+          "date": "2025-11-06",
+          "close": 6720.32,
+          "weekly_pct": -1.49,
+          "total_pct": 0.48
+        },
+        {
+          "date": "2025-11-13",
+          "close": 6737.49,
+          "weekly_pct": 0.26,
+          "total_pct": 0.74
+        }
+      ]
+    },
+    "bitcoin": {
+      "inception_reference": 123353,
+      "history": [
+        {
+          "date": "2025-10-09",
+          "close": 121706,
+          "weekly_pct": null,
+          "total_pct": -1.33
+        },
+        {
+          "date": "2025-10-16",
+          "close": 107198,
+          "weekly_pct": -11.94,
+          "total_pct": -13.1
+        },
+        {
+          "date": "2025-10-23",
+          "close": 109070,
+          "weekly_pct": 1.74,
+          "total_pct": -11.58
+        },
+        {
+          "date": "2025-10-30",
+          "close": 108306,
+          "weekly_pct": -0.7,
+          "total_pct": -11.31
+        },
+        {
+          "date": "2025-11-06",
+          "close": 101301,
+          "weekly_pct": -6.47,
+          "total_pct": -17.91
+        },
+        {
+          "date": "2025-11-13",
+          "close": 99697,
+          "weekly_pct": -1.58,
+          "total_pct": -19.17
+        }
+      ]
+    }
+  },
+  "portfolio_history": [
+    {
+      "date": "2025-10-09",
+      "value": 10000,
+      "weekly_pct": null,
+      "total_pct": 0.0
+    },
+    {
+      "date": "2025-10-16",
+      "value": 10389,
+      "weekly_pct": 3.89,
+      "total_pct": 3.89
+    },
+    {
+      "date": "2025-10-23",
+      "value": 10548,
+      "weekly_pct": 1.53,
+      "total_pct": 5.48
+    },
+    {
+      "date": "2025-10-30",
+      "value": 10481,
+      "weekly_pct": -0.64,
+      "total_pct": 4.81
+    },
+    {
+      "date": "2025-11-06",
+      "value": 10396,
+      "weekly_pct": -0.81,
+      "total_pct": 3.96
+    },
+    {
+      "date": "2025-11-13",
+      "value": 10388,
+      "weekly_pct": -0.07,
+      "total_pct": 3.88
+    }
+  ],
+  "normalized_chart": [
+    {
+      "date": "2025-10-09",
+      "portfolio_value": 10000,
+      "genai_norm": 100.0,
+      "spx_close": 6735,
+      "btc_close": 121706,
+      "spx_norm": 100.70275119617224,
+      "btc_norm": 98.66480750366834
+    },
+    {
+      "date": "2025-10-16",
+      "portfolio_value": 10389,
+      "genai_norm": 103.88999999999999,
+      "spx_close": 6646,
+      "btc_close": 107198,
+      "spx_norm": 99.372009569378,
+      "btc_norm": 86.9034397217741
+    },
+    {
+      "date": "2025-10-23",
+      "portfolio_value": 10548,
+      "genai_norm": 105.47999999999999,
+      "spx_close": 6738,
+      "btc_close": 109070,
+      "spx_norm": 100.74760765550239,
+      "btc_norm": 88.42103556459917
+    },
+    {
+      "date": "2025-10-30",
+      "portfolio_value": 10481,
+      "genai_norm": 104.81,
+      "spx_close": 6822,
+      "btc_close": 108306,
+      "spx_norm": 102.0035885167464,
+      "btc_norm": 87.80167486806157
+    },
+    {
+      "date": "2025-11-06",
+      "portfolio_value": 10396,
+      "genai_norm": 103.96000000000001,
+      "spx_close": 6720.32,
+      "btc_close": 101301,
+      "spx_norm": 100.48325358851675,
+      "btc_norm": 82.12285068056715
+    },
+    {
+      "date": "2025-11-13",
+      "portfolio_value": 10388,
+      "genai_norm": 103.88,
+      "spx_close": 6737.49,
+      "btc_close": 99697,
+      "spx_norm": 100.73998205741626,
+      "btc_norm": 80.82251749045423
+    }
+  ]
+}

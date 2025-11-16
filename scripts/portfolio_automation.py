@@ -15,8 +15,8 @@ import re
 import time
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import os
 import io
+import base64
 
 # Configure paths
 REPO_ROOT = Path(__file__).parent.parent
@@ -25,11 +25,11 @@ POSTS_DIR = REPO_ROOT / "Posts"
 PROMPT_DIR = REPO_ROOT / "Prompt"
 ARCHIVE_DIR = DATA_DIR / "archive"
 
-# Unified CSP policy for all pages
-CSP_POLICY = (
+# CSP policy template (per-run nonce, no unsafe-inline)
+CSP_POLICY_TEMPLATE = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline'; "
-    "style-src 'self' 'unsafe-inline'; "
+    "script-src 'self' 'nonce-{nonce}'; "
+    "style-src 'self'; "
     "img-src 'self' data: https:; "
     "font-src 'self' data:; "
     "connect-src 'self'; "
@@ -39,7 +39,7 @@ CSP_POLICY = (
 )
 
 class PortfolioAutomation:
-    def __init__(self, week_number=None, api_key=None, model="gpt-4-turbo-preview", data_source="ai", alphavantage_key=None, eval_date=None, palette="default"):
+    def __init__(self, week_number=None, api_key=None, model="gpt-4-turbo-preview", data_source="ai", alphavantage_key=None, eval_date=None, palette="default", minify_css=False):
         self.week_number = week_number or self.detect_next_week()
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         self.model = model
@@ -49,6 +49,9 @@ class PortfolioAutomation:
         self.ai_enabled = False
         self.eval_date = None
         self.palette = palette  # theme palette selector ("default", "alt", etc.)
+        self.minify_css = minify_css
+        self.nonce = base64.b64encode(os.urandom(16)).decode().rstrip('=')
+        self.stylesheet_name = 'styles.css'
         if eval_date:
             try:
                 datetime.strptime(eval_date, '%Y-%m-%d')
@@ -85,104 +88,88 @@ class PortfolioAutomation:
         self.seo_json = None
         self.performance_table = None
         self.performance_chart = None
-        
-    def detect_next_week(self):
-        """Auto-detect next week number by scanning existing posts"""
-        existing_weeks = []
-        for file in POSTS_DIR.glob("GenAi-Managed-Stocks-Portfolio-Week-*.html"):
-            match = re.search(r'Week-(\d+)\.html', file.name)
-            if match:
-                existing_weeks.append(int(match.group(1)))
-        
-        return max(existing_weeks, default=0) + 1 if existing_weeks else 6
-    
-    def load_prompts(self):
-        """Load all prompt templates from Prompt folder"""
-        prompts = {}
-        for prompt_file in PROMPT_DIR.glob("Prompt-*.md"):
-            prompt_id = prompt_file.stem.split('-')[1]  # Extract A, B, C, D
-            with open(prompt_file, 'r', encoding='utf-8') as f:
-                prompts[prompt_id] = f.read()
-        
-        # Validate all required prompts are present
-        required = {'A', 'B', 'C', 'D'}
-        missing = required - set(prompts.keys())
-        if missing:
-            raise FileNotFoundError(f"Missing prompt files: {', '.join(f'Prompt-{p}-*.md' for p in missing)}")
-        
-        print(f"✓ Loaded {len(prompts)} prompt templates")
-        return prompts
-    
-    def load_master_json(self):
-        """Load latest master.json from previous week"""
-        prev_week = self.week_number - 1
-        master_path = DATA_DIR / f"W{prev_week}" / "master.json"
-        
-        if not master_path.exists():
-            raise FileNotFoundError(f"Cannot find master.json for Week {prev_week} at {master_path}")
-        
-        with open(master_path, 'r') as f:
-            self.master_json = json.load(f)
-        
-        print(f"✓ Loaded master.json from Week {prev_week}")
-        return self.master_json
-    
-    def call_gpt4(self, system_prompt, user_message, model="gpt-4-turbo-preview", temperature=0.7):
-        """Call OpenAI GPT-4 API with error handling"""
-        if not self.ai_enabled or not self.client:
-            raise RuntimeError("AI model not available (missing OPENAI_API_KEY).")
-        try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=temperature,
-                max_tokens=4096
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            print(f"❌ OpenAI API error: {str(e)}")
-            raise
-    
-    def run_prompt_a(self):
-        """Prompt A: Data Engine - Update master.json with new week data"""
-        print("\n🔄 Running Prompt A: Data Engine...")
-        
-        system_prompt = "You are the GenAi Chosen Data Engine. Follow Prompt A specifications exactly."
-        
-        override_note = ''
-        if self.eval_date:
-            override_note = f"\nUse evaluation date {self.eval_date} as current_date (do not use today's date)."
-        user_message = f"""
-    {self.prompts['A']}
-
-    ---
-
-    Here is last week's master.json:
-
-    ```json
-    {json.dumps(self.master_json, indent=2)}
-    ```
-
-    Please update this for Week {self.week_number}, following all Change Management rules.
-    Fetch latest prices for Thursday close (or most recent trading day).{override_note}
-    Output the updated master.json.
-    """
-        
-        response = self.call_gpt4(system_prompt, user_message, temperature=0.3)
-        
-        # Extract JSON from response
-        json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
-        if json_match:
+        if self.minify_css:
             try:
-                self.master_json = json.loads(json_match.group(1))
-            except json.JSONDecodeError as e:
-                print(f"❌ Failed to parse JSON from code block: {e}")
-                # Try to find JSON without code block markers
-                json_match = re.search(r'{\s*"meta".*?}(?=\s*$)', response, re.DOTALL)
-                if json_match:
+                self._purge_and_minify_css()
+                self.stylesheet_name = 'styles.min.css'
+                print(f"✓ CSS minified -> {self.stylesheet_name}")
+                    """Prompt D: Final Assembler - Create complete HTML page (hardened head, external TLDR)."""
+                    print("\n🔨 Running Prompt D: Final HTML Assembler...")
+
+                    system_prompt = "You are the GenAi Chosen Final Page Builder. Follow Prompt D specifications exactly."
+
+                    # Embed table and chart into narrative if not already there
+                    if self.performance_table and self.performance_table not in self.narrative_html:
+                        snapshot_pattern = r'(<h2[^>]*>Performance Snapshot</h2>\s*<p[^>]*>.*?</p>)'
+                        match = re.search(snapshot_pattern, self.narrative_html, re.DOTALL)
+                        if match:
+                            insert_pos = match.end()
+                            self.narrative_html = (
+                                self.narrative_html[:insert_pos] + '\n\n' + self.performance_table + '\n\n' + self.narrative_html[insert_pos:]
+                            )
+                    if self.performance_chart and self.performance_chart not in self.narrative_html:
+                        inception_pattern = r'(<h2[^>]*>Performance Since Inception</h2>(?:.*?</p>){2,3})'
+                        match = re.search(inception_pattern, self.narrative_html, re.DOTALL)
+                        if match:
+                            insert_pos = match.end()
+                            self.narrative_html = (
+                                self.narrative_html[:insert_pos] + '\n\n' + self.performance_chart + '\n\n' + self.narrative_html[insert_pos:]
+                            )
+
+                    user_message = f"""
+            {self.prompts['D']}
+
+            ---
+
+            Here are the components:
+
+            **narrative.html:**
+            ```html
+            {self.narrative_html}
+            ```
+
+            **seo.json:**
+            ```json
+            {json.dumps(self.seo_json, indent=2)}
+            ```
+
+            **master.json (for reference):**
+            ```json
+            {json.dumps(self.master_json, indent=2)}
+            ```
+
+            Generate the complete HTML file for Week {self.week_number}.
+            """
+
+                    response = self.call_gpt4(system_prompt, user_message, temperature=0.2)
+                    html_match = re.search(r'<!DOCTYPE html>.*</html>', response, re.DOTALL | re.IGNORECASE)
+                    final_html = html_match.group(0) if html_match else response
+
+                    try:
+                        final_html = self._apply_standard_head(final_html)
+                    except Exception as e:
+                        print(f"⚠️ Standard head template failed: {e}")
+
+                    # Validation
+                    if not final_html.strip().startswith('<!DOCTYPE'):
+                        print("⚠️ Warning: Generated HTML doesn't start with DOCTYPE")
+                    if '</html>' not in final_html.lower():
+                        print("⚠️ Warning: Generated HTML missing closing </html>")
+                    required_elements = ['<head>', '<body>', '<article>', 'class="prose']
+                    missing = [e for e in required_elements if e not in final_html]
+                    if missing:
+                        print(f"⚠️ Missing elements: {', '.join(missing)}")
+
+                    try:
+                        final_html = self._optimize_performance(final_html)
+                    except Exception as e:
+                        print(f"⚠️ Performance optimization failed: {e}")
+
+                    output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(final_html)
+                    print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
+                    return final_html
                     self.master_json = json.loads(json_match.group(0))
                 else:
                     raise ValueError("Could not extract valid master.json from Prompt A response")
@@ -771,6 +758,86 @@ This is for Week {self.week_number}.
             "twitterImage": f"https://quantuminvestor.net/Media/W{self.week_number}.webp",
             "twitterCard": "summary_large_image"
         }
+
+    def _apply_standard_head(self, html: str) -> str:
+        """Apply hardened CSP + nonce, stylesheet link, external scripts, JSON-LD."""
+        seo = self.seo_json or self.generate_fallback_seo()
+        canonical = seo.get('canonicalUrl')
+        title = seo.get('title')
+        meta_desc = seo.get('description')
+        og_title = seo.get('ogTitle') or title
+        og_desc = seo.get('ogDescription') or meta_desc
+        og_image = seo.get('ogImage') or f"https://quantuminvestor.net/Media/W{self.week_number}.webp"
+        og_url = seo.get('ogUrl') or canonical
+        twitter_title = seo.get('twitterTitle') or og_title
+        twitter_desc = seo.get('twitterDescription') or og_desc
+        twitter_image = seo.get('twitterImage') or og_image
+        twitter_card = seo.get('twitterCard') or 'summary_large_image'
+        published_iso = self.master_json.get('meta', {}).get('current_date', datetime.utcnow().date().isoformat()) + 'T00:00:00Z'
+        modified_iso = published_iso
+        csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce)
+
+        blog_ld = {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": og_title,
+            "description": og_desc,
+            "image": og_image,
+            "datePublished": published_iso,
+            "dateModified": modified_iso,
+            "url": og_url
+        }
+        breadcrumbs_ld = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://quantuminvestor.net/"},
+                {"@type": "ListItem", "position": 2, "name": f"Week {self.week_number}", "item": og_url}
+            ]
+        }
+
+        head_markup = f"""<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>{title}</title>
+    <meta name=\"description\" content=\"{meta_desc}\">
+    <link rel=\"canonical\" href=\"{canonical}\">
+    <meta name=\"author\" content=\"Michael Gavrilov\">
+    <meta name=\"theme-color\" content=\"#000000\">
+    <meta http-equiv=\"X-Content-Type-Options\" content=\"nosniff\">
+    <meta http-equiv=\"X-Frame-Options\" content=\"SAMEORIGIN\">
+    <meta http-equiv=\"Content-Security-Policy\" content=\"{csp_policy}\">
+    <meta name=\"referrer\" content=\"strict-origin-when-cross-origin\">
+    <meta property=\"og:type\" content=\"article\">
+    <meta property=\"og:url\" content=\"{og_url}\">
+    <meta property=\"og:title\" content=\"{og_title}\">
+    <meta property=\"og:description\" content=\"{og_desc}\">
+    <meta property=\"og:image\" content=\"{og_image}\">
+    <meta property=\"article:published_time\" content=\"{published_iso}\">
+    <meta property=\"article:modified_time\" content=\"{modified_iso}\">
+    <meta name=\"twitter:card\" content=\"{twitter_card}\">
+    <meta name=\"twitter:site\" content=\"@qid2025\">
+    <meta name=\"twitter:title\" content=\"{twitter_title}\">
+    <meta name=\"twitter:description\" content=\"{twitter_desc}\">
+    <meta name=\"twitter:image\" content=\"{twitter_image}\">
+    <link rel=\"icon\" href=\"../Media/favicon.ico\" type=\"image/x-icon\">
+    <link rel=\"stylesheet\" href=\"../{self.stylesheet_name}\">
+    <script src=\"../js/template-loader.js\" defer nonce=\"{self.nonce}\"></script>
+    <script src=\"../js/mobile-menu.js\" defer nonce=\"{self.nonce}\"></script>
+    <script src=\"../js/tldr.js\" defer nonce=\"{self.nonce}\"></script>
+    <script type=\"application/ld+json\" nonce=\"{self.nonce}\">{json.dumps(blog_ld, separators=(',',':'))}</script>
+    <script type=\"application/ld+json\" nonce=\"{self.nonce}\">{json.dumps(breadcrumbs_ld, separators=(',',':'))}</script>
+</head>"""
+
+        new_html = re.sub(r'<head>.*?</head>', head_markup, html, flags=re.DOTALL | re.IGNORECASE)
+        if new_html == html:
+            html_tag = re.search(r'<html[^>]*>', new_html, re.IGNORECASE)
+            if html_tag:
+                end = html_tag.end()
+                new_html = new_html[:end] + head_markup + new_html[end:]
+        palette_attr = f'data-theme="{self.palette}"'
+        new_html = re.sub(r'<body(\s[^>]*)?>', lambda m: '<body ' + palette_attr + ('' if m.group(1) is None else m.group(1)) + '>', new_html, count=1)
+        return new_html
     
     def run_prompt_c(self):
         """Prompt C: Visual Generator - Create table and chart"""
@@ -885,7 +952,6 @@ Here are the components:
 **master.json (for reference):**
 ```json
 {json.dumps(self.master_json, indent=2)}
-```
 
 Generate the complete HTML file for Week {self.week_number}.
 """
@@ -1012,84 +1078,22 @@ Generate the complete HTML file for Week {self.week_number}.
         print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
         return final_html
 
-    # ===================== STANDARD HEAD BUILDER =====================
-    def _apply_standard_head(self, html: str) -> str:
-        """Replace <head> section with standardized meta/SEO structure.
-        Uses self.seo_json + self.master_json to build consistent ordering.
-        """
-        if not self.seo_json or not self.master_json:
-            return html
-        # Base values
-        base_url = "https://quantuminvestor.net"
-        week = self.week_number
-        slug = f"GenAi-Managed-Stocks-Portfolio-Week-{week}.html"
-        canonical = f"{base_url}/Posts/{slug}"
-        current_date = self.master_json.get('meta', {}).get('current_date')
-        # Published = next Monday after current_date
-        pub_dt = None
+        # ================= TLDR STRUCTURAL INJECTION (no inline script) =================
         try:
-            d_obj = datetime.strptime(current_date, '%Y-%m-%d').date()
-            # Compute next Monday (0=Mon)
-            offset = (7 - d_obj.weekday()) % 7  # days until next Monday (0 means today if Monday)
-            if offset == 0:  # if current_date already Monday, treat as same-day publish
-                offset = 0
-            pub_dt = d_obj + timedelta(days=offset or 0)
-        except Exception:
-            pub_dt = datetime.utcnow().date()
-        published_iso = f"{pub_dt}T16:30:00Z"
-        modified_iso = f"{current_date}T16:30:00Z" if current_date else published_iso
-        title = self.seo_json.get('title') or f"GenAi-Managed Stocks Portfolio Week {week} – Performance, Risks & Next Moves - Quantum Investor Digest"
-        description = self.seo_json.get('description') or f"Week {week} AI-managed portfolio performance: returns, movers, risks vs. benchmarks."
-        og_title = self.seo_json.get('ogTitle') or title
-        og_desc = self.seo_json.get('ogDescription') or description
-        og_image = self.seo_json.get('ogImage') or f"{base_url}/Media/W{week}.webp"
-        twitter_title = self.seo_json.get('twitterTitle') or og_title
-        twitter_desc = self.seo_json.get('twitterDescription') or og_desc
-        twitter_image = self.seo_json.get('twitterImage') or og_image
-        twitter_card = self.seo_json.get('twitterCard') or 'summary_large_image'
-        author = "Michael Gavrilov"
-
-        # JSON-LD BlogPosting
-        blog_ld = {
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            "headline": title.replace(' - Quantum Investor Digest',''),
-            "description": description,
-            "datePublished": str(pub_dt),
-            "dateCreated": self.master_json.get('meta', {}).get('inception_date'),
-            "dateModified": current_date,
-            "url": canonical,
-            "author": {"@type":"Person","name": author},
-            "publisher": {"@type":"Organization","name":"Quantum Investor Digest","logo":{"@type":"ImageObject","url": f"{base_url}/Media/LogoB.webp"}},
-            "image": f"{base_url}/Media/W{week}.webp",
-            "articleSection": "AI Portfolio Weekly Review",
-            "keywords": "AI investing, momentum stocks, portfolio performance, Bitcoin, S&P 500"
-        }
-        # Breadcrumbs
-        breadcrumbs_ld = {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {"@type":"ListItem","position":1,"name":"Home","item": base_url + "/"},
-                {"@type":"ListItem","position":2,"name":"Blog","item": f"{base_url}/Posts/posts.html"},
-                {"@type":"ListItem","position":3,"name": f"GenAi-Managed Stocks Portfolio Week {week}","item": canonical}
-            ]
-        }
-        # Build head markup (weekly posts use local images, no external preconnect needed)
-        csp = CSP_POLICY
-        head_markup = f"""<head>
-    <meta charset=\"UTF-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-    <title>{title}</title>
-    <meta name=\"description\" content=\"{description}\">
-    <meta name=\"author\" content=\"{author}\">
-    <meta name=\"theme-color\" content=\"#000000\">
-    <meta name=\"referrer\" content=\"strict-origin-when-cross-origin\">
-    <meta http-equiv=\"Content-Security-Policy\" content=\"{csp}\">
-    <meta name=\"color-scheme\" content=\"dark\">
-    <link rel=\"canonical\" href=\"{canonical}\">
-    <link rel=\"icon\" href=\"../Media/favicon.ico\" type=\"image/x-icon\">
-    <meta property=\"og:type\" content=\"article\">
+            if 'id="tldrStrip"' not in final_html:
+                tldr_markup = (
+                    '\n<!-- TLDR STRIP (populated by external tldr.js) -->\n'
+                    '<div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">\n'
+                    '  <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">--</span></div>\n'
+                    '  <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">--</span></div>\n'
+                    '  <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha">--</span></div>\n'
+                    '</div>\n'
+                )
+                prose_pos = final_html.find('<div class="prose')
+                if prose_pos != -1:
+                    final_html = final_html[:prose_pos] + tldr_markup + final_html[prose_pos:]
+        except Exception as e:
+            print(f"⚠️ TLDR structural injection failed: {e}")
     <meta property=\"og:url\" content=\"{canonical}\">
     <meta property=\"og:title\" content=\"{og_title}\">
     <meta property=\"og:description\" content=\"{og_desc}\">
@@ -1256,7 +1260,8 @@ Generate the complete HTML file for Week {self.week_number}.
         # Get newest hero for OG image
         og_image = f"https://quantuminvestor.net/Media/W{posts_meta[0]['week']}.webp" if posts_meta else "https://quantuminvestor.net/Media/Hero.webp"
         
-        # Generate complete posts.html
+        # Generate complete posts.html with nonce CSP
+        csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce)
         posts_html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1268,7 +1273,7 @@ Generate the complete HTML file for Week {self.week_number}.
     <meta name="theme-color" content="#000000">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-    <meta http-equiv="Content-Security-Policy" content="{CSP_POLICY}">
+    <meta http-equiv="Content-Security-Policy" content="{csp_policy}">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="canonical" href="https://quantuminvestor.net/Posts/posts.html">
     <link rel="icon" href="../Media/favicon.ico" type="image/x-icon">
@@ -1282,15 +1287,14 @@ Generate the complete HTML file for Week {self.week_number}.
     <meta name="twitter:title" content="All Posts - Quantum Investor Digest">
     <meta name="twitter:description" content="Browse all AI portfolio weekly performance updates and GenAI investing insights.">
     <meta name="twitter:image" content="{og_image}">
-    <link rel="preconnect" href="https://images.unsplash.com">
-    <link rel="dns-prefetch" href="https://images.unsplash.com">
-    <link rel="stylesheet" href="../styles.css">
-    <script src="../js/template-loader.js" defer></script>
-    <script src="../js/mobile-menu.js" defer></script>
-    <script type="application/ld+json">
+    <link rel="stylesheet" href="../{self.stylesheet_name}">
+    <script src="../js/template-loader.js" defer nonce="{self.nonce}"></script>
+    <script src="../js/mobile-menu.js" defer nonce="{self.nonce}"></script>
+    <script src="../js/tldr.js" defer nonce="{self.nonce}"></script>
+    <script type="application/ld+json" nonce="{self.nonce}">
 {json.dumps(item_list_json, indent=2)}
     </script>
-    <script type="application/ld+json">
+    <script type="application/ld+json" nonce="{self.nonce}">
 {json.dumps(breadcrumb_json, indent=2)}
     </script>
 </head>
