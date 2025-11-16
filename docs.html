@@ -48,16 +48,23 @@
     <div data-template="header" data-root-path=""></div>
 
     <main id="main-content" class="container mx-auto px-4 py-12" role="main">
-        <article class="max-w-3xl mx-auto">
-            <header class="mb-12">
-                <h1 class="text-4xl font-bold mb-4">Documentation</h1>
-                <p class="text-gray-400 text-lg">Technical deep-dive into how the AI-managed portfolio engine works and how you can contribute to the project.</p>
+        <article class="max-w-3xl mx-auto max-w-none">
+            <header class="mb-12 docs-hero">
+                <div class="docs-hero-inner">
+                    <div>
+                        <div class="docs-hero-pill">
+                            <span class="docs-hero-pill-dot" aria-hidden="true"></span>
+                            <span>Docs · Quantum Investor Digest</span>
+                        </div>
+                        <h1 class="docs-hero-title font-bold">Documentation &amp; System Blueprint</h1>
+                        <p class="docs-hero-subtitle text-lg">A technical map of how the GenAI-managed portfolio is wired together – from raw market data to the weekly posts you read.</p>
+                    </div>
+                </div>
             </header>
 
             <section class="mb-12" aria-labelledby="how-it-works-heading">
                 <h2 id="how-it-works-heading" class="text-2xl font-bold mb-4">How It Works – Technical Deep Dive</h2>
                 <p class="mb-4">Quantum Investor Digest is a fully automated, AI-assisted content pipeline that produces a weekly performance update for the GenAI-managed stock portfolio. The system is orchestrated by a Python script, <code>scripts/portfolio_automation.py</code>, which coordinates data ingestion, analysis, AI calls, and HTML generation.</p>
-
                 <h3 class="text-xl font-semibold mb-3">High-Level Architecture</h3>
                 <ul class="list-disc list-inside mb-4">
                     <li><strong>Data Layer</strong> – Historical prices, benchmarks, and portfolio history live in the <code>Data/</code> directory, versioned by week (<code>Data/W1</code>, <code>Data/W2</code>, ...).</li>
@@ -85,39 +92,124 @@
                 </ul>
             </section>
 
-            <section class="mb-12" aria-labelledby="contributing-heading">
-                <h2 id="contributing-heading" class="text-2xl font-bold mb-4">Contributing Guide</h2>
-                <p class="mb-4">Contributions are welcome, especially around data pipelines, visualization, prompt engineering, and documentation. This project is ideal for developers interested in the intersection of finance and applied generative AI.</p>
+            <section class="mb-12" aria-labelledby="tools-stack-heading">
+                <h2 id="tools-stack-heading" class="text-2xl font-bold mb-4">Tools &amp; Stack</h2>
+                <p class="mb-4">Here are the core tools, products, and technologies that power this project end-to-end &mdash; from data collection and AI orchestration to writing, automation, and deployment.</p>
 
-                <h3 class="text-xl font-semibold mb-3">Ways to Contribute</h3>
-                <ul class="list-disc list-inside mb-4">
-                    <li><strong>Improve Prompts</strong> – Suggest refinements to Prompts A–D to make narratives clearer, tables more readable, or charts more insightful.</li>
-                    <li><strong>Enhance Visuals</strong> – Add new chart types, improve responsive behavior, or experiment with alternative color palettes.</li>
-                    <li><strong>Extend Data Sources</strong> – Integrate additional market data providers or add new benchmarks and risk metrics.</li>
-                    <li><strong>Harden Security</strong> – Help evolve CSP, nonce handling, and any additional static-site security patterns.</li>
-                    <li><strong>Documentation</strong> – Expand this page with more diagrams, examples, or step-by-step tutorials.</li>
-                </ul>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            💻
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Python &amp; Data Stack</h3>
+                            <p class="text-sm text-gray-300 mb-1">Python, pandas, and NumPy for portfolio math, data munging, and weekly pipeline logic.</p>
+                            <p class="text-xs text-gray-500">Files: <code>scripts/portfolio_automation.py</code>, <code>Data/</code> directory.</p>
+                        </div>
+                    </div>
 
-                <h3 class="text-xl font-semibold mb-3">Development Workflow</h3>
-                <ol class="list-decimal list-inside mb-4">
-                    <li><strong>Fork or Clone the Repo</strong> – Create your own copy of the project on GitHub.</li>
-                    <li><strong>Set Up Python Environment</strong> – Install dependencies from <code>scripts/requirements.txt</code> in a virtual environment.</li>
-                    <li><strong>Configure API Keys</strong> – Export your <code>OPENAI_API_KEY</code> and <code>ALPHAVANTAGE_API_KEY</code> as environment variables for full pipeline runs.</li>
-                    <li><strong>Create a Feature Branch</strong> – Use a descriptive branch name (e.g., <code>feature/improve-tldr-strip</code>).</li>
-                    <li><strong>Run the Automation Script</strong> – Generate a new week locally and verify HTML output, accessibility, and layout.</li>
-                    <li><strong>Open a Pull Request</strong> – Describe your change, rationale, and any impacts on the generated content.</li>
-                </ol>
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            🤖
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">LLM &amp; Prompting</h3>
+                            <p class="text-sm text-gray-300 mb-1">LLM APIs for Prompts A–D to generate structured data, narrative, SEO, and visuals.</p>
+                            <p class="text-xs text-gray-500">Specs: Prompt gallery below, <code>Prompt/Prompt-A–D</code> prompt documents.</p>
+                        </div>
+                    </div>
 
-                <h3 class="text-xl font-semibold mb-3">Code &amp; Prompt Style</h3>
-                <ul class="list-disc list-inside mb-4">
-                    <li>Keep Python changes focused, with small, composable functions.</li>
-                    <li>Prefer explicit, well-documented prompt instructions over cleverness.</li>
-                    <li>Maintain accessibility, performance, and CSP compatibility for any new front-end code.</li>
-                    <li>Add comments sparingly and only where they clarify non-obvious behavior.</li>
-                </ul>
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            📊
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Market Data &amp; Benchmarks</h3>
+                            <p class="text-sm text-gray-300 mb-1">Alpha Vantage and structured CSV/JSON files for prices, history, and benchmark series.</p>
+                            <p class="text-xs text-gray-500">Files: <code>Data/master.json</code>, weekly <code>Data/W*</code> snapshots.</p>
+                        </div>
+                    </div>
 
-                <p class="text-gray-400 text-sm">Note: This project is for educational and informational purposes only and does not constitute financial advice.</p>
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            🖼️
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Static Site &amp; Media</h3>
+                            <p class="text-sm text-gray-300 mb-1">Hand-crafted HTML, a shared <code>styles.css</code>, and Python-powered image generation for posts.</p>
+                            <p class="text-xs text-gray-500">Files: <code>index.html</code>, <code>Posts/</code>, <code>Media/PostImages/</code>, <code>scripts/hero_image_generator.py</code>.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            🧩
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Automation &amp; Snippets</h3>
+                            <p class="text-sm text-gray-300 mb-1">Custom Python utilities to regenerate weekly posts, snippet cards, and index pages with one command.</p>
+                            <p class="text-xs text-gray-500">Files: <code>scripts/snippet_card_generator.py</code>, <code>test_automation.py</code>.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start p-4 border border-gray-800 rounded-lg bg-black/40">
+                        <div class="mr-3 text-xl" aria-hidden="true">
+                            🧪
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Editing &amp; Workflow</h3>
+                            <p class="text-sm text-gray-300 mb-1">VS Code, GitHub, and a simple local Python environment for iterative prompt and pipeline tuning.</p>
+                            <p class="text-xs text-gray-500">See <code>automation_setup.md</code> for a detailed setup walkthrough.</p>
+                        </div>
+                    </div>
+                </div>
             </section>
+
+            <section class="mb-12" aria-labelledby="strategy-methodology-heading">
+                <h2 id="strategy-methodology-heading" class="text-2xl font-bold mb-4">Strategy &amp; Methodology</h2>
+                <p class="mb-4">The GenAI-managed portfolio is intentionally simple, rules-based, and transparent. The goal is not to maximize short-term returns at any cost, but to create a repeatable, inspectable process that balances learning value with real-world constraints.</p>
+
+                <h3 class="text-xl font-semibold mb-3">Core Objectives</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li>Track how a GenAI-driven stock selection process behaves over time.</li>
+                    <li>Stay comparable to broad market benchmarks (S&amp;P 500, Bitcoin).</li>
+                    <li>Prioritize clarity, auditability, and educational value over complexity.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">Portfolio Construction</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Universe</strong> – Large, liquid U.S. stocks with reliable market data.</li>
+                    <li><strong>Position Sizing</strong> – Equal-weight starting allocations with small, bounded adjustments week-to-week.</li>
+                    <li><strong>Turnover Constraints</strong> – Caps on the number of changes per week to avoid over-trading and narrative whiplash.</li>
+                    <li><strong>Cash Handling</strong> – Small residual cash balances are allowed; the portfolio is kept mostly invested.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">GenAI Decision Process</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Input Signals</strong> – Recent returns, drawdowns, sector tilts, and simple risk flags derived from <code>master.json</code>.</li>
+                    <li><strong>LLM Role</strong> – The model acts as an analyst and editor, proposing changes and explaining the rationale, but is constrained by explicit rules in the prompts.</li>
+                    <li><strong>Guardrails</strong> – Prompts discourage concentrated bets, unsupported macro calls, and excessive turnover. The system favors incremental adjustments.</li>
+                    <li><strong>Human Oversight</strong> – Final allocations are always reviewed by a human before being written to production data.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">Risk &amp; Benchmarking</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li><strong>Primary Benchmark</strong> – S&amp;P 500 total return, representing a diversified U.S. equity portfolio.</li>
+                    <li><strong>Secondary Benchmark</strong> – Bitcoin, to illustrate contrast with a high-volatility, single-asset exposure.</li>
+                    <li><strong>Risk Framing</strong> – The project surfaces drawdowns, volatility, and tracking error in plain language instead of optimizing against a single risk metric.</li>
+                    <li><strong>Time Horizon</strong> – The focus is on multi-quarter behavior rather than week-to-week wins.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">Limitations &amp; Disclaimers</h3>
+                <ul class="list-disc list-inside mb-4">
+                    <li>The system is experimental and educational, not a production trading stack.</li>
+                    <li>Backtests are minimal; performance is mostly “live” from the inception date.</li>
+                    <li>Market data may contain errors or gaps; all numbers should be treated as approximate.</li>
+                    <li>Nothing here is investment advice; readers should do their own research and consider their risk tolerance.</li>
+                </ul>
+                <p class="text-gray-400 text-sm">This section is intentionally high-level and will evolve over time as the prompts, data sources, and risk framing improve. When changes are made to the strategy or methodology, they are documented in the weekly posts and in the repository history.</p>
+            </section>
+
             <section class="mb-12" aria-labelledby="prompt-gallery-heading">
                 <h2 id="prompt-gallery-heading" class="text-2xl font-bold mb-4">Prompt Gallery (A–D)</h2>
                 <p class="mb-4 text-gray-400">
@@ -125,28 +217,27 @@
                     The text below is intentionally high-level and sanitized so the system can be shared and discussed
                     without exposing every implementation detail.
                 </p>
-
                 <!-- Prompt A -->
                 <details class="mb-4 border border-gray-800 rounded-lg">
                     <summary class="p-4 cursor-pointer text-lg font-semibold">Prompt A – Data Engine</summary>
                     <div class="p-6 pt-2">
-                    <p class="mb-3">
-                        Prompt A turns raw market data into a structured weekly snapshot of the portfolio. It updates
-                        <code>master.json</code> with current prices, weekly and since-inception performance, benchmark
-                        comparisons, and a normalized performance series for GenAI, S&amp;P 500, and Bitcoin.
-                    </p>
-                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
-                    <ul class="list-disc list-inside mb-3 text-sm">
-                        <li>Previous week&rsquo;s <code>master.json</code> (portfolio history, holdings, benchmarks).</li>
-                        <li>Latest prices and dates for each stock and benchmark.</li>
-                        <li>Configuration notes (current week number, evaluation date overrides).</li>
-                    </ul>
-                    <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
-                    <ul class="list-disc list-inside mb-0 text-sm">
-                        <li>Updated <code>master.json</code> with a new week appended to portfolio history.</li>
-                        <li>Recalculated weekly and total % changes per stock and benchmark.</li>
-                        <li>Normalized performance entries suitable for charting.</li>
-                    </ul>
+                        <p class="mb-3">
+                            Prompt A turns raw market data into a structured weekly snapshot of the portfolio. It updates
+                            <code>master.json</code> with current prices, weekly and since-inception performance, benchmark
+                            comparisons, and a normalized performance series for GenAI, S&amp;P 500, and Bitcoin.
+                        </p>
+                        <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Input</h4>
+                        <ul class="list-disc list-inside mb-3 text-sm">
+                            <li>Previous week&rsquo;s <code>master.json</code> (portfolio history, holdings, benchmarks).</li>
+                            <li>Latest prices and dates for each stock and benchmark.</li>
+                            <li>Configuration notes (current week number, evaluation date overrides).</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1 text-sm tracking-tighter uppercase">Typical Output</h4>
+                        <ul class="list-disc list-inside mb-0 text-sm">
+                            <li>Updated <code>master.json</code> with a new week appended to portfolio history.</li>
+                            <li>Recalculated weekly and total % changes per stock and benchmark.</li>
+                            <li>Normalized performance entries suitable for charting.</li>
+                        </ul>
                     </div>
                 </details>
 
