@@ -21,12 +21,11 @@ You do **not** recalculate data or change text meaning. You only glue components
 ## INPUT
 
 You receive:
-
-- `narrative.html` – containing exactly one `<div class="prose prose-invert max-w-none">...</div>` block.
-- `performance_table.html` – used inside the narrative (already embedded by Prompt B) or available if needed.
-- `performance_chart.svg` – used inside the narrative (already embedded by Prompt B) or available if needed.
-- `seo.json` – containing title, description, canonical URL, JSON-LD BlogPosting and BreadcrumbList.
-- `master.json` – for week number, date range, etc. if needed for filenames.
+- `narrative.html` – prose block from Prompt B
+- `performance_table.html` – visual from Prompt C (may be embedded in narrative)
+- `performance_chart.svg` – visual from Prompt C (may be embedded in narrative)
+- `seo.json` – metadata from Prompt B
+- `master.json` – for week number, dates, filenames
 
 ---
 
@@ -213,7 +212,8 @@ Insert this block immediately after the hero markup:
 
 **IMPORTANT**: The TLDR strip values are automatically populated by the external `tldr.js` script (already included in `<head>`). Do NOT add any inline script for TLDR population. The `tldr.js` module:
 - Automatically detects the week number from the URL
-- Fetches the appropriate `Data/W[N]/master.json` file
+- Fetches the consolidated `master data/master.json` file
+- Extracts the appropriate week data from portfolio_history
 - Populates the three metrics with fallback logic
 - Handles all error cases gracefully
 

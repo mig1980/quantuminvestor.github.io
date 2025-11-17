@@ -172,16 +172,23 @@
   
   // Initialize
   async function init() {
-    // Discover available weeks
-    for (let i = 1; i <= 10; i++) {
-      try {
-        const res = await fetch(`../Data/W${i}/master.json`);
-        if (res.ok) {
-          availableWeeks.push(i);
-        }
-      } catch (e) {
-        break;
+    // Load master data
+    let masterData;
+    try {
+      const res = await fetch('../master data/master.json');
+      if (!res.ok) throw new Error('Failed to load master data');
+      masterData = await res.json();
+      
+      // Discover available weeks from portfolio history
+      // First entry (index 0) is inception, skip it
+      // W1 = index 1, W2 = index 2, etc.
+      for (let i = 1; i < masterData.portfolio_history.length; i++) {
+        availableWeeks.push(i);
       }
+    } catch (e) {
+      document.getElementById('errorMsg').textContent = `Error loading master data: ${e.message}`;
+      document.getElementById('errorMsg').style.display = 'block';
+      return;
     }
     
     const weekSelect = document.getElementById('weekSelect');
@@ -193,7 +200,7 @@
     });
     
     weekSelect.addEventListener('change', async (e) => {
-      const week = e.target.value;
+      const week = parseInt(e.target.value);
       if (!week) {
         document.getElementById('generateBtn').disabled = true;
         return;
@@ -203,10 +210,58 @@
       document.getElementById('errorMsg').style.display = 'none';
       
       try {
-        const res = await fetch(`../Data/W${week}/master.json`);
-        if (!res.ok) throw new Error('Failed to load data');
-        weekData = await res.json();
-        weekData.weekNumber = week;
+        // Extract week-specific data from master
+        // Week number maps directly to array index (W1 = index 1, W2 = index 2, etc.)
+        const weekIndex = week;
+        const portfolioEntry = masterData.portfolio_history[weekIndex];
+        const date = portfolioEntry.date;
+        
+        // Build week data structure
+        weekData = {
+          weekNumber: week,
+          meta: masterData.meta,
+          portfolio_history: masterData.portfolio_history.slice(0, weekIndex + 1),
+          benchmarks: {
+            sp500: {
+              ...masterData.benchmarks.sp500,
+              history: masterData.benchmarks.sp500.history.slice(0, weekIndex + 1)
+            },
+            bitcoin: {
+              ...masterData.benchmarks.bitcoin,
+              history: masterData.benchmarks.bitcoin.history.slice(0, weekIndex + 1)
+            }
+          },
+          stocks: masterData.stocks.map(stock => {
+            const priceAtWeek = stock.prices[date];
+            const priceAtInception = stock.prices[masterData.meta.inception_date];
+            
+            let weekly_pct = null;
+            if (weekIndex > 0) {
+              const prevDate = masterData.portfolio_history[weekIndex - 1].date;
+              const prevPrice = stock.prices[prevDate];
+              if (prevPrice && priceAtWeek) {
+                weekly_pct = ((priceAtWeek - prevPrice) / prevPrice) * 100;
+              }
+            }
+            
+            const total_pct = priceAtInception && priceAtWeek 
+              ? ((priceAtWeek - priceAtInception) / priceAtInception) * 100 
+              : 0;
+            
+            return {
+              ...stock,
+              current_value: priceAtWeek ? stock.shares * priceAtWeek : 0,
+              weekly_pct: weekly_pct,
+              total_pct: total_pct
+            };
+          }),
+          portfolio_totals: {
+            current_value: portfolioEntry.value,
+            weekly_pct: portfolioEntry.weekly_pct,
+            total_pct: portfolioEntry.total_pct
+          }
+        };
+        
         document.getElementById('generateBtn').disabled = false;
         document.getElementById('loadingMsg').style.display = 'none';
       } catch (err) {

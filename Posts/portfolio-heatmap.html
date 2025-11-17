@@ -159,42 +159,34 @@
 
 <script>
 (async function init(){
-  // Dynamic weeks
+  // Load consolidated master data
   const weekSelect = document.getElementById('weekSelect');
   const weekMeta = document.getElementById('weekMeta');
+  let masterData = null;
   let availableWeeks = [];
-  const weekDataCache = {};
   let currentWeek = null;
-  let data = null;
   let stocks = [];
 
   let currentView = 'grid'; // 'grid' or 'list'
   let currentMetric = 'total'; // 'weekly' or 'total'
 
-  async function discoverWeeks(max = 60){
-    const found = [];
-    let started = false;
-    let misses = 0;
-    for(let i=1;i<=max;i++){
-      const id = `W${i}`;
-      try {
-        const res = await fetch(`../Data/${id}/master.json`, {method:'HEAD'});
-        if(res.ok){
-          found.push(id);
-          started = true;
-          misses = 0;
-        } else if (started){
-          misses++;
-          if(misses >= 3) break; // stop after consecutive misses once sequence started
-        }
-      } catch (e){
-        if(started){
-          misses++;
-          if(misses >= 3) break;
-        }
+  async function loadMasterData(){
+    const res = await fetch('../master data/master.json');
+    masterData = await res.json();
+    
+    // Discover available weeks from portfolio_history
+    // First entry (index 0) is inception (W0), subsequent entries are W1, W2, etc.
+    // Only include weeks that have complete stock price data
+    for (let i = 1; i < masterData.portfolio_history.length; i++) {
+      const weekDate = masterData.portfolio_history[i].date;
+      const hasData = masterData.stocks.every(stock => stock.prices[weekDate] !== undefined);
+      if (hasData) {
+        availableWeeks.push(`W${i}`);
+      } else {
+        console.warn(`Skipping W${i} (${weekDate}) - missing stock price data`);
       }
     }
-    return found;
+    return availableWeeks;
   }
 
   function populateWeekSelect(){
@@ -208,17 +200,76 @@
     });
     weekMeta.textContent = `Latest: ${availableWeeks[availableWeeks.length-1]}`;
   }
+  
+  function hasCompleteStockData(weekIndex) {
+    // Check if all stocks have price data for this week's date
+    const weekDate = masterData.portfolio_history[weekIndex].date;
+    return masterData.stocks.every(stock => stock.prices[weekDate] !== undefined);
+  }
+
+  function extractWeekData(weekIndex){
+    // Extract data for specific week from master data
+    const weekEntry = masterData.portfolio_history[weekIndex];
+    const date = weekEntry.date;
+    
+    // Use pre-calculated metrics from master data stocks array
+    const weekStocks = masterData.stocks.map(stock => {
+      const priceAtWeek = stock.prices[date];
+      const priceAtInception = stock.prices[masterData.meta.inception_date];
+      
+      // Calculate weekly change (compare to previous week)
+      let weekly_pct = 0;
+      if (weekIndex > 1) {
+        const prevDate = masterData.portfolio_history[weekIndex - 1].date;
+        const prevPrice = stock.prices[prevDate];
+        if (prevPrice && priceAtWeek) {
+          weekly_pct = ((priceAtWeek - prevPrice) / prevPrice) * 100;
+        }
+      } else if (weekIndex === 1) {
+        // Week 1 compares to inception (index 0)
+        if (priceAtInception && priceAtWeek) {
+          weekly_pct = ((priceAtWeek - priceAtInception) / priceAtInception) * 100;
+        }
+      }
+      
+      // Calculate total change from inception
+      const total_pct = priceAtInception && priceAtWeek 
+        ? ((priceAtWeek - priceAtInception) / priceAtInception) * 100 
+        : 0;
+      
+      return {
+        ticker: stock.ticker,
+        name: stock.name,
+        shares: stock.shares,
+        current_price: priceAtWeek,
+        current_value: priceAtWeek ? stock.shares * priceAtWeek : 0,
+        weekly_pct: weekly_pct,
+        total_pct: total_pct,
+        prices: stock.prices
+      };
+    });
+    
+    return {
+      date: date,
+      stocks: weekStocks,
+      portfolio: weekEntry
+    };
+  }
 
   async function loadWeek(){
-    if(!currentWeek) return;
-    if(weekDataCache[currentWeek]){
-      data = weekDataCache[currentWeek];
-    } else {
-      const res = await fetch(`../Data/${currentWeek}/master.json`);
-      data = await res.json();
-      weekDataCache[currentWeek] = data;
+    if(!currentWeek || !masterData) return;
+    
+    const weekNum = parseInt(currentWeek.substring(1));
+    // Week numbers map directly to array indices (W1 = index 1, W2 = index 2, etc.)
+    const weekIndex = weekNum;
+    
+    if (weekIndex < 1 || weekIndex >= masterData.portfolio_history.length) {
+      console.error('Invalid week index:', weekIndex);
+      return;
     }
-    stocks = data.stocks;
+    
+    const weekData = extractWeekData(weekIndex);
+    stocks = weekData.stocks;
     renderHeatmap();
   }
 
@@ -250,7 +301,7 @@
         cell.innerHTML = `
           <div class="ticker">${stock.ticker}</div>
           <div class="company">${stock.name}</div>
-          <div class="perf" style="color:${getColor(pct)};">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</div>
+          <div class="perf" style="color:${getColor(pct)};">${pct === null || pct === undefined ? 'N/A' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%'}</div>
           <div class="metric-row">
             <span class="label">Shares:</span>
             <span class="value">${stock.shares.toFixed(2)}</span>
@@ -282,7 +333,7 @@
           <div class="company">${stock.name}</div>
           <div class="perf-bar-container">
             <div class="perf-bar" style="width:${barWidth}%; background:${getColor(pct)}; float:${barAlign};"></div>
-            <div class="perf-label" style="color:${getColor(pct)};">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</div>
+            <div class="perf-label" style="color:${getColor(pct)};">${pct === null || pct === undefined ? 'N/A' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%'}</div>
           </div>
           <div style="text-align:right; font-size:.85rem;">
             <div>${stock.shares.toFixed(2)} shares</div>
@@ -317,7 +368,7 @@
       </div>
       <div class="modal-stat">
         <span class="label">Weekly Performance</span>
-        <span class="value" style="color:${getColor(stock.weekly_pct)};">${stock.weekly_pct > 0 ? '+' : ''}${stock.weekly_pct.toFixed(2)}%</span>
+        <span class="value" style="color:${getColor(stock.weekly_pct || 0)};">${stock.weekly_pct === null || stock.weekly_pct === undefined ? 'N/A' : (stock.weekly_pct > 0 ? '+' : '') + stock.weekly_pct.toFixed(2) + '%'}</span>
       </div>
       <div class="modal-stat">
         <span class="label">Total Performance</span>
@@ -325,7 +376,13 @@
       </div>
       <div class="modal-stat">
         <span class="label">Portfolio Weight</span>
-        <span class="value">${data ? ((stock.current_value / data.portfolio_totals.current_value) * 100).toFixed(2) : '--'}%</span>
+        <span class="value">${(() => {
+          if (!masterData || !currentWeek) return '--';
+          const weekNum = parseInt(currentWeek.substring(1));
+          const weekIndex = weekNum; // Week N maps to index N in portfolio_history
+          const portfolioValue = masterData.portfolio_history[weekIndex]?.value || 0;
+          return portfolioValue > 0 ? ((stock.current_value / portfolioValue) * 100).toFixed(2) : '--';
+        })()}%</span>
       </div>
       <div class="modal-stat">
         <span class="label">Data Week</span>
@@ -395,15 +452,17 @@
     await loadWeek();
   });
 
-  // Discover weeks & initial load
+  // Load master data & initial load
   try {
-    availableWeeks = await discoverWeeks();
+    await loadMasterData();
   } catch (e){
-    console.warn('Week discovery failed, falling back to W5', e);
-    availableWeeks = ['W5'];
+    console.error('Failed to load master data:', e);
+    document.getElementById('heatmapContainer').textContent = 'Error loading portfolio data.';
+    return;
   }
   if(availableWeeks.length === 0){
-    availableWeeks = ['W5'];
+    document.getElementById('heatmapContainer').textContent = 'No weeks available.';
+    return;
   }
   currentWeek = availableWeeks[availableWeeks.length - 1];
   populateWeekSelect();

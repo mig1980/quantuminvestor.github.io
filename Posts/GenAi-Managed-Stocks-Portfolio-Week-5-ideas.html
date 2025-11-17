@@ -121,7 +121,7 @@ TEMPLATE = 'Media/HeroTemplateBase.png'
 OUT = 'Media/W5_auto.webp'
 FONT = 'Media/Fonts/Inter-Bold.ttf'
 
-with open('Data/W5/master.json') as f:
+with open('master data/master.json') as f:
     data = json.load(f)
 pts = [p['genai_norm'] for p in data['normalized_chart']]
 W,H = 1200, 800
@@ -174,7 +174,7 @@ const html = template
 
 <script>
 (async function init(){
-  const res = await fetch('../Data/W5/master.json');
+  const res = await fetch('../master data/master.json');
   const data = await res.json();
   const portfolio = data.portfolio_history;
   const spx = data.benchmarks.sp500.history;

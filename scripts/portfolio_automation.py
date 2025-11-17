@@ -20,10 +20,11 @@ import base64
 
 # Configure paths
 REPO_ROOT = Path(__file__).parent.parent
-DATA_DIR = REPO_ROOT / "Data"
+MASTER_DATA_DIR = REPO_ROOT / "master data"  # Single source of truth: consolidated master.json
+ARCHIVE_DIR = MASTER_DATA_DIR / "archive"    # Timestamped backups
+DATA_DIR = REPO_ROOT / "Data"                # Legacy snapshots (backward compatibility only)
 POSTS_DIR = REPO_ROOT / "Posts"
 PROMPT_DIR = REPO_ROOT / "Prompt"
-ARCHIVE_DIR = DATA_DIR / "archive"
 
 # CSP policy template (blog-friendly: allows CDNs, inline styles, analytics)
 CSP_POLICY_TEMPLATE = (
@@ -89,15 +90,88 @@ class PortfolioAutomation:
         self.seo_json = None
         self.performance_table = None
         self.performance_chart = None
+        
+        # Execution report tracking
+        self.report = {
+            'steps': [],
+            'start_time': datetime.now(),
+            'week_number': self.week_number,
+            'success': False
+        }
     
     def detect_next_week(self):
-        """Auto-detect next week number by scanning Data/ directory"""
+        """Auto-detect next week number from master data file"""
+        master_path = MASTER_DATA_DIR / "master.json"
+        if master_path.exists():
+            try:
+                with open(master_path, 'r', encoding='utf-8') as f:
+                    master = json.load(f)
+                    existing_weeks = len(master.get('portfolio_history', []))
+                    return existing_weeks + 1
+            except Exception as e:
+                print(f"⚠️ Could not read master data: {e}")
+        
+        # Fallback to scanning legacy Data/ directory
         week_folders = sorted([int(d.name[1:]) for d in DATA_DIR.glob('W*') if d.is_dir() and d.name[1:].isdigit()])
         return (week_folders[-1] + 1) if week_folders else 1
+    
+    def add_step(self, name, status, description, details=None):
+        """Add a step to the execution report"""
+        step = {
+            'name': name,
+            'status': status,  # 'success', 'warning', 'error', 'skipped'
+            'description': description,
+            'timestamp': datetime.now().isoformat()
+        }
+        if details:
+            step['details'] = details
+        self.report['steps'].append(step)
+    
+    def print_report(self):
+        """Print formatted execution report"""
+        end_time = datetime.now()
+        duration = (end_time - self.report['start_time']).total_seconds()
+        
+        print("\n" + "="*80)
+        print(f" AUTOMATION EXECUTION REPORT - Week {self.report['week_number']}")
+        print("="*80)
+        print(f"Started:  {self.report['start_time'].strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Finished: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Duration: {duration:.1f} seconds")
+        print(f"Status:   {'✅ SUCCESS' if self.report['success'] else '❌ FAILED'}")
+        print("\n" + "-"*80)
+        print("EXECUTION STEPS:")
+        print("-"*80)
+        
+        for i, step in enumerate(self.report['steps'], 1):
+            status_icon = {
+                'success': '✅',
+                'warning': '⚠️',
+                'error': '❌',
+                'skipped': '⊘'
+            }.get(step['status'], '•')
+            
+            print(f"\n{i}. {status_icon} {step['name']}")
+            print(f"   Status: {step['status'].upper()}")
+            print(f"   {step['description']}")
+            if 'details' in step:
+                for key, value in step['details'].items():
+                    print(f"   {key}: {value}")
+        
+        print("\n" + "="*80)
+        
+        # Summary counts
+        success_count = sum(1 for s in self.report['steps'] if s['status'] == 'success')
+        warning_count = sum(1 for s in self.report['steps'] if s['status'] == 'warning')
+        error_count = sum(1 for s in self.report['steps'] if s['status'] == 'error')
+        
+        print(f"SUMMARY: {success_count} succeeded, {warning_count} warnings, {error_count} errors")
+        print("="*80 + "\n")
     
     def load_prompts(self):
         """Load all prompt markdown files (A, B, C, D)"""
         prompts = {}
+        missing = []
         for letter in ['A', 'B', 'C', 'D']:
             prompt_file = PROMPT_DIR / f"Prompt-{letter}-v5.4{letter}.md"
             if prompt_file.exists():
@@ -106,23 +180,46 @@ class PortfolioAutomation:
             else:
                 print(f"⚠️ Warning: {prompt_file.name} not found")
                 prompts[letter] = f"# Prompt {letter} (placeholder)"
+                missing.append(letter)
+        
+        if missing:
+            self.add_step("Load Prompts", "warning", 
+                         f"Loaded prompts but {len(missing)} file(s) missing",
+                         {'missing_prompts': ', '.join([f"Prompt-{l}" for l in missing])})
+        else:
+            self.add_step("Load Prompts", "success", 
+                         "All 4 prompt files loaded successfully")
+        
         return prompts
     
     def load_master_json(self):
-        """Load previous week's master.json as baseline"""
-        prev_week = self.week_number - 1
-        if prev_week < 1:
-            raise ValueError("Cannot load previous master.json for Week 1. Provide baseline manually.")
+        """Load consolidated master.json (single source of truth)"""
+        master_path = MASTER_DATA_DIR / "master.json"
+        if not master_path.exists():
+            self.add_step("Load Master Data", "error", 
+                         f"Master data file not found at {master_path}")
+            raise ValueError(f"Master data file not found: {master_path}")
         
-        prev_master_path = DATA_DIR / f"W{prev_week}" / "master.json"
-        if not prev_master_path.exists():
-            raise ValueError(f"Previous week's master.json not found: {prev_master_path}")
-        
-        with open(prev_master_path, 'r', encoding='utf-8') as f:
-            self.master_json = json.load(f)
-        
-        print(f"✓ Loaded baseline from Week {prev_week}: {prev_master_path}")
-        return self.master_json
+        try:
+            with open(master_path, 'r', encoding='utf-8') as f:
+                self.master_json = json.load(f)
+            
+            existing_weeks = len(self.master_json.get('portfolio_history', []))
+            print(f"✓ Loaded consolidated master.json ({existing_weeks} weeks): {master_path}")
+            
+            self.add_step("Load Master Data", "success", 
+                         f"Loaded master.json with {existing_weeks} existing weeks",
+                         {'file_path': str(master_path)})
+            
+            return self.master_json
+        except json.JSONDecodeError as e:
+            self.add_step("Load Master Data", "error", 
+                         f"Invalid JSON format in master.json: {str(e)}")
+            raise
+        except Exception as e:
+            self.add_step("Load Master Data", "error", 
+                         f"Failed to load master.json: {str(e)}")
+            raise
     
     def call_gpt4(self, system_prompt, user_message, temperature=0.7):
         """Wrapper for OpenAI API calls with error handling"""
@@ -152,9 +249,10 @@ class PortfolioAutomation:
         """Prompt A: Data Engine - Update master.json with new week's data"""
         print("\n📊 Running Prompt A: Data Engine...")
         
-        system_prompt = "You are the GenAi Chosen Data Engine. Follow Prompt A specifications exactly."
-        
-        user_message = f"""
+        try:
+            system_prompt = "You are the GenAi Chosen Data Engine. Follow Prompt A specifications exactly."
+            
+            user_message = f"""
 {self.prompts['A']}
 
 ---
@@ -167,52 +265,75 @@ Here is last week's master.json:
 
 Generate the updated master.json for Week {self.week_number}.
 """
-        
-        response = self.call_gpt4(system_prompt, user_message)
-        
-        # Extract JSON from response
-        json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
-        if json_match:
-            self.master_json = json.loads(json_match.group(1))
-        else:
-            # Try to parse entire response as JSON
-            try:
-                self.master_json = json.loads(response)
-            except json.JSONDecodeError:
-                raise ValueError("Prompt A did not return valid JSON. Check response format.")
-        
-        # Enforce evaluation date override if set
-        if self.eval_date and self.master_json.get('meta', {}).get('current_date') != self.eval_date:
-            self.master_json['meta']['current_date'] = self.eval_date
+            
+            response = self.call_gpt4(system_prompt, user_message)
+            
+            # Extract JSON from response
+            json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
+            if json_match:
+                self.master_json = json.loads(json_match.group(1))
+            else:
+                # Try to parse entire response as JSON
+                try:
+                    self.master_json = json.loads(response)
+                except json.JSONDecodeError:
+                    self.add_step("Prompt A - Data Engine", "error", 
+                                 "AI response did not contain valid JSON format")
+                    raise ValueError("Prompt A did not return valid JSON. Check response format.")
+            
+            # Enforce evaluation date override if set
+            if self.eval_date and self.master_json.get('meta', {}).get('current_date') != self.eval_date:
+                self.master_json['meta']['current_date'] = self.eval_date
 
-        # Save updated master.json
-        current_week_dir = DATA_DIR / f"W{self.week_number}"
-        current_week_dir.mkdir(exist_ok=True)
-        
-        master_path = current_week_dir / "master.json"
-        with open(master_path, 'w') as f:
-            json.dump(self.master_json, f, indent=2)
-        
-        # Archive copy
-        ARCHIVE_DIR.mkdir(exist_ok=True)
-        eval_date = self.master_json['meta']['current_date'].replace('-', '')
-        archive_path = ARCHIVE_DIR / f"master-{eval_date}.json"
-        with open(archive_path, 'w') as f:
-            json.dump(self.master_json, f, indent=2)
-        
-        print(f"✓ Prompt A completed - master.json updated for Week {self.week_number}")
-        
-        # Generate hero image then snippet share card immediately after data update
-        try:
-            self.generate_hero_image()
+            # Save to consolidated master data (primary location)
+            MASTER_DATA_DIR.mkdir(exist_ok=True)
+            master_path = MASTER_DATA_DIR / "master.json"
+            with open(master_path, 'w') as f:
+                json.dump(self.master_json, f, indent=2)
+            
+            # Archive timestamped backup
+            ARCHIVE_DIR.mkdir(exist_ok=True)
+            eval_date = self.master_json['meta']['current_date'].replace('-', '')
+            archive_path = ARCHIVE_DIR / f"master-{eval_date}.json"
+            with open(archive_path, 'w') as f:
+                json.dump(self.master_json, f, indent=2)
+            
+            # Optional: Legacy week snapshot (backward compatibility)
+            current_week_dir = DATA_DIR / f"W{self.week_number}"
+            current_week_dir.mkdir(exist_ok=True)
+            legacy_path = current_week_dir / "master.json"
+            with open(legacy_path, 'w') as f:
+                json.dump(self.master_json, f, indent=2)
+            
+            print(f"✓ Prompt A completed for Week {self.week_number}")
+            print(f"  → Primary: {master_path}")
+            print(f"  → Archive: {archive_path}")
+            print(f"  → Legacy:  {legacy_path} (optional)")
+            
+            self.add_step("Prompt A - Data Engine", "success", 
+                         f"Updated master.json with Week {self.week_number} data",
+                         {'primary_file': str(master_path), 'archive_file': str(archive_path)})
+            
+            # Generate hero image then snippet share card immediately after data update
+            try:
+                self.generate_hero_image()
+            except Exception as e:
+                print(f"⚠️ Hero image generation failed: {e}")
+                self.add_step("Generate Hero Image", "error", 
+                             f"Failed to generate hero image: {str(e)}")
+            try:
+                self.generate_snippet_card()
+            except Exception as e:
+                print(f"⚠️ Snippet card generation failed: {e}")
+                self.add_step("Generate Snippet Card", "error", 
+                             f"Failed to generate snippet card: {str(e)}")
+            
+            return self.master_json
+            
         except Exception as e:
-            print(f"⚠️ Hero image generation failed: {e}")
-        try:
-            self.generate_snippet_card()
-        except Exception as e:
-            print(f"⚠️ Snippet card generation failed: {e}")
-        
-        return self.master_json
+            self.add_step("Prompt A - Data Engine", "error", 
+                         f"Prompt A execution failed: {str(e)}")
+            raise
 
     # ===================== ALPHA VANTAGE DATA ENGINE =====================
     def _latest_market_date(self):
@@ -444,21 +565,30 @@ Generate the updated master.json for Week {self.week_number}.
             "normalized_chart": prev_master['normalized_chart'] + [normalized_entry]
         }
 
-        # Persist
-        current_week_dir = DATA_DIR / f"W{self.week_number}"
-        current_week_dir.mkdir(exist_ok=True)
-        master_path = current_week_dir / "master.json"
+        # Save to consolidated master data (primary location)
+        MASTER_DATA_DIR.mkdir(exist_ok=True)
+        master_path = MASTER_DATA_DIR / "master.json"
         with open(master_path, 'w') as f:
             json.dump(updated_master, f, indent=2)
 
-        # Archive
+        # Archive timestamped backup
         ARCHIVE_DIR.mkdir(exist_ok=True)
         archive_path = ARCHIVE_DIR / f"master-{new_date.replace('-', '')}.json"
         with open(archive_path, 'w') as f:
             json.dump(updated_master, f, indent=2)
 
+        # Optional: Legacy week snapshot (backward compatibility)
+        current_week_dir = DATA_DIR / f"W{self.week_number}"
+        current_week_dir.mkdir(exist_ok=True)
+        legacy_path = current_week_dir / "master.json"
+        with open(legacy_path, 'w') as f:
+            json.dump(updated_master, f, indent=2)
+
         self.master_json = updated_master
-        print(f"✓ Alpha Vantage data engine completed - master.json updated for Week {self.week_number}")
+        print(f"✓ Alpha Vantage data engine completed for Week {self.week_number}")
+        print(f"  → Primary: {master_path}")
+        print(f"  → Archive: {archive_path}")
+        print(f"  → Legacy:  {legacy_path} (optional)")
         # Generate hero image then snippet share card for alphavantage path
         try:
             self.generate_hero_image()
@@ -554,10 +684,18 @@ Generate the updated master.json for Week {self.week_number}.
             d.text((padding, height-padding-40), date_range, font=footer_font, fill=(190,190,190,230))
         d.text((width-padding-330, height-padding-40), 'quantuminvestor.net', font=footer_font, fill=(190,190,210,230))
 
-        out_path = REPO_ROOT / 'Media' / f"W{self.week_number}-card.png"
-        out_path.parent.mkdir(exist_ok=True)
-        img.convert('RGB').save(out_path, format='PNG')
-        print(f"✓ Snippet card generated: {out_path}")
+        try:
+            out_path = REPO_ROOT / 'Media' / f"W{self.week_number}-card.png"
+            out_path.parent.mkdir(exist_ok=True)
+            img.convert('RGB').save(out_path, format='PNG')
+            print(f"✓ Snippet card generated: {out_path}")
+            self.add_step("Generate Snippet Card", "success", 
+                         f"Created 1200x630 social preview card",
+                         {'output_file': str(out_path)})
+        except Exception as e:
+            self.add_step("Generate Snippet Card", "error", 
+                         f"Failed to save snippet card: {str(e)}")
+            raise
 
     # ===================== HERO IMAGE GENERATION (Remote + Overlay) =====================
     def generate_hero_image(self, query: str = "futuristic finance data"):
@@ -686,18 +824,27 @@ Generate the updated master.json for Week {self.week_number}.
         if date_range:
             draw.text((padding, height-padding-44), date_range, font=footer_font, fill=(200,200,205,240))
         draw.text((width-padding-360, height-padding-44), 'quantuminvestor.net', font=footer_font, fill=(200,200,215,240))
-        out_path = REPO_ROOT / 'Media' / f"W{self.week_number}.webp"
-        out_path.parent.mkdir(exist_ok=True)
-        img.convert('RGB').save(out_path, format='WEBP', quality=90)
-        print(f"✓ Hero image generated: {out_path} ({source_note})")
+        try:
+            out_path = REPO_ROOT / 'Media' / f"W{self.week_number}.webp"
+            out_path.parent.mkdir(exist_ok=True)
+            img.convert('RGB').save(out_path, format='WEBP', quality=90)
+            print(f"✓ Hero image generated: {out_path} ({source_note})")
+            self.add_step("Generate Hero Image", "success", 
+                         f"Created 1200x800 hero image ({source_note})",
+                         {'output_file': str(out_path), 'image_source': source_note})
+        except Exception as e:
+            self.add_step("Generate Hero Image", "error", 
+                         f"Failed to save hero image: {str(e)}")
+            raise
     
     def run_prompt_b(self):
         """Prompt B: Narrative Writer - Generate HTML content"""
         print("\n📝 Running Prompt B: Narrative Writer...")
         
-        system_prompt = "You are the GenAi Chosen Narrative Writer. Follow Prompt B specifications exactly."
-        
-        user_message = f"""
+        try:
+            system_prompt = "You are the GenAi Chosen Narrative Writer. Follow Prompt B specifications exactly."
+            
+            user_message = f"""
 {self.prompts['B']}
 
 ---
@@ -714,35 +861,51 @@ Generate:
 
 This is for Week {self.week_number}.
 """
-        
-        response = self.call_gpt4(system_prompt, user_message)
-        
-        # Extract narrative HTML
-        html_match = re.search(r'```html\s*(<div class="prose.*?</div>)\s*```', response, re.DOTALL)
-        if html_match:
-            self.narrative_html = html_match.group(1)
-        else:
-            # Try without code blocks
-            html_match = re.search(r'(<div class="prose prose-invert max-w-none">.*?</div>)', response, re.DOTALL)
+            
+            response = self.call_gpt4(system_prompt, user_message)
+            
+            # Extract narrative HTML
+            html_match = re.search(r'```html\s*(<div class="prose.*?</div>)\s*```', response, re.DOTALL)
             if html_match:
                 self.narrative_html = html_match.group(1)
             else:
-                raise ValueError("Could not extract narrative HTML from Prompt B response")
-        
-        # Extract SEO JSON
-        json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
-        if json_match:
-            try:
-                self.seo_json = json.loads(json_match.group(1))
-            except json.JSONDecodeError as e:
-                print(f"⚠️ Failed to parse SEO JSON: {e}")
+                # Try without code blocks
+                html_match = re.search(r'(<div class="prose prose-invert max-w-none">.*?</div>)', response, re.DOTALL)
+                if html_match:
+                    self.narrative_html = html_match.group(1)
+                else:
+                    self.add_step("Prompt B - Narrative Writer", "error", 
+                                 "Could not extract narrative HTML from AI response")
+                    raise ValueError("Could not extract narrative HTML from Prompt B response")
+            
+            # Extract SEO JSON
+            seo_status = "success"
+            json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
+            if json_match:
+                try:
+                    self.seo_json = json.loads(json_match.group(1))
+                except json.JSONDecodeError as e:
+                    print(f"⚠️ Failed to parse SEO JSON: {e}")
+                    self.seo_json = self.generate_fallback_seo()
+                    seo_status = "warning"
+            else:
+                print("⚠️ No SEO JSON found, generating fallback")
                 self.seo_json = self.generate_fallback_seo()
-        else:
-            print("⚠️ No SEO JSON found, generating fallback")
-            self.seo_json = self.generate_fallback_seo()
-        
-        print("✓ Prompt B completed - narrative and SEO generated")
-        return self.narrative_html, self.seo_json
+                seo_status = "warning"
+            
+            print("✓ Prompt B completed - narrative and SEO generated")
+            
+            self.add_step("Prompt B - Narrative Writer", seo_status, 
+                         "Generated narrative HTML and SEO metadata",
+                         {'narrative_length': f"{len(self.narrative_html)} chars",
+                          'seo_metadata': 'extracted' if seo_status == 'success' else 'fallback used'})
+            
+            return self.narrative_html, self.seo_json
+            
+        except Exception as e:
+            self.add_step("Prompt B - Narrative Writer", "error", 
+                         f"Prompt B execution failed: {str(e)}")
+            raise
     
     def generate_fallback_seo(self):
         """Generate fallback SEO metadata if extraction fails"""
@@ -951,39 +1114,56 @@ Generate:
 This is for Week {self.week_number}.
 """
         
-        response = self.call_gpt4(system_prompt, user_message)
-        
-        # Extract table HTML (including nested divs and table)
-        table_match = re.search(r'<div class="myblock-performance-snapshot">.*?</table>\s*</div>', response, re.DOTALL)
-        if table_match:
-            self.performance_table = table_match.group(0)
-        else:
-            print("⚠️ Could not extract performance table from Prompt C response")
-            self.performance_table = "<!-- Performance table not generated -->"
-        
-        # Extract chart HTML (entire container including legend)
-        # Use a better pattern that captures nested divs properly
-        chart_start = response.find('<div class="myblock-chart-container">')
-        if chart_start != -1:
-            # Find matching closing div by counting nested divs
-            depth = 0
-            i = chart_start
-            while i < len(response):
-                if response[i:i+4] == '<div':
-                    depth += 1
-                elif response[i:i+6] == '</div>':
-                    depth -= 1
-                    if depth == 0:
-                        self.performance_chart = response[chart_start:i+6]
-                        break
-                i += 1
-        
-        if not self.performance_chart:
-            print("⚠️ Could not extract performance chart from Prompt C response")
-            self.performance_chart = "<!-- Performance chart not generated -->"
-        
-        print("✓ Prompt C completed - visuals generated")
-        return self.performance_table, self.performance_chart
+        try:
+            response = self.call_gpt4(system_prompt, user_message)
+            
+            table_status = "success"
+            chart_status = "success"
+            
+            # Extract table HTML (including nested divs and table)
+            table_match = re.search(r'<div class="myblock-performance-snapshot">.*?</table>\s*</div>', response, re.DOTALL)
+            if table_match:
+                self.performance_table = table_match.group(0)
+            else:
+                print("⚠️ Could not extract performance table from Prompt C response")
+                self.performance_table = "<!-- Performance table not generated -->"
+                table_status = "warning"
+            
+            # Extract chart HTML (entire container including legend)
+            # Use a better pattern that captures nested divs properly
+            chart_start = response.find('<div class="myblock-chart-container">')
+            if chart_start != -1:
+                # Find matching closing div by counting nested divs
+                depth = 0
+                i = chart_start
+                while i < len(response):
+                    if response[i:i+4] == '<div':
+                        depth += 1
+                    elif response[i:i+6] == '</div>':
+                        depth -= 1
+                        if depth == 0:
+                            self.performance_chart = response[chart_start:i+6]
+                            break
+                    i += 1
+            
+            if not self.performance_chart:
+                print("⚠️ Could not extract performance chart from Prompt C response")
+                self.performance_chart = "<!-- Performance chart not generated -->"
+                chart_status = "warning"
+            
+            print("✓ Prompt C completed - visuals generated")
+            
+            overall_status = "success" if table_status == "success" and chart_status == "success" else "warning"
+            self.add_step("Prompt C - Visual Generator", overall_status, 
+                         "Generated performance table and chart",
+                         {'table': table_status, 'chart': chart_status})
+            
+            return self.performance_table, self.performance_chart
+            
+        except Exception as e:
+            self.add_step("Prompt C - Visual Generator", "error", 
+                         f"Prompt C execution failed: {str(e)}")
+            raise
     
     def run_prompt_d(self):
         """Prompt D: Final Assembler - Create complete HTML page"""
@@ -1097,12 +1277,39 @@ Generate the complete HTML file for Week {self.week_number}.
             print(f"⚠️ Performance optimization failed: {e}")
 
         # Save to Posts folder
-        output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(final_html)
-        
-        print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
-        return final_html
+        try:
+            output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(final_html)
+            
+            print(f"✓ Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
+            
+            # Validation warnings
+            warnings = []
+            if not final_html.strip().startswith('<!DOCTYPE'):
+                warnings.append("missing DOCTYPE")
+            if '</html>' not in final_html.lower():
+                warnings.append("missing </html>")
+            required_elements = ['<head>', '<body>', '<article>', 'class="prose']
+            missing = [elem for elem in required_elements if elem not in final_html]
+            if missing:
+                warnings.extend(missing)
+            
+            status = "warning" if warnings else "success"
+            details = {'output_file': str(output_path), 'file_size': f"{len(final_html)} bytes"}
+            if warnings:
+                details['validation_warnings'] = ', '.join(warnings)
+            
+            self.add_step("Prompt D - Final Assembler", status, 
+                         "Generated complete HTML page for Week post",
+                         details)
+            
+            return final_html
+            
+        except Exception as e:
+            self.add_step("Prompt D - Final Assembler", "error", 
+                         f"Failed to save final HTML: {str(e)}")
+            raise
 
     def _optimize_performance(self, html: str) -> str:
         """Post-process HTML for performance: hero fetchpriority, lazy load images, remove redundant inline styles."""
@@ -1318,8 +1525,9 @@ Generate the complete HTML file for Week {self.week_number}.
                 self.run_prompt_d()
             else:
                 # Fallback: data-only HTML
-                output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
-                minimal_html = f"""<!DOCTYPE html>
+                try:
+                    output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
+                    minimal_html = f"""<!DOCTYPE html>
 <html lang='en'>
 <head>
   <meta charset='UTF-8'>
@@ -1335,27 +1543,54 @@ Generate the complete HTML file for Week {self.week_number}.
   </article>
 </body>
 </html>"""
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    f.write(minimal_html)
-                print(f"✓ Data-only HTML generated: {output_path.name}")
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(minimal_html)
+                    print(f"✓ Data-only HTML generated: {output_path.name}")
+                    self.add_step("Generate Data-Only HTML", "success", 
+                                 "Created fallback HTML with raw data (no AI narrative)")
+                except Exception as e:
+                    self.add_step("Generate Data-Only HTML", "error", 
+                                 f"Failed to create data-only HTML: {str(e)}")
+                    raise
 
-            self.update_index_pages()
+            try:
+                self.update_index_pages()
+                self.add_step("Update Index Pages", "success", 
+                             "Regenerated posts.html with updated listing")
+            except Exception as e:
+                self.add_step("Update Index Pages", "warning", 
+                             f"Failed to update index pages: {str(e)}")
 
+            # Mark overall success
+            self.report['success'] = True
+            
             print(f"\n{'='*60}")
-            print(f"✅ SUCCESS! Week {self.week_number} generated successfully")
+            print(f"✅ SUCCESS! Week {self.week_number} generated")
             print(f"{'='*60}")
             print(f"\nGenerated files:")
-            print(f"  - Data/W{self.week_number}/master.json")
-            print(f"  - Posts/GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html")
-            print(f"  - Media/W{self.week_number}-card.png (snippet card)")
-            print(f"  - Media/W{self.week_number}.webp (hero image)")
+            print(f"  PRIMARY:")
+            print(f"    • master data/master.json (consolidated, Week {self.week_number} appended)")
+            print(f"    • Posts/GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html")
+            print(f"  ASSETS:")
+            print(f"    • Media/W{self.week_number}.webp (hero image)")
+            print(f"    • Media/W{self.week_number}-card.png (snippet card)")
+            print(f"  BACKUPS:")
+            print(f"    • master data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")
+            print(f"    • Data/W{self.week_number}/master.json (legacy compatibility)")
             if not self.ai_enabled:
-                print("    (Data-only mode: enable OPENAI_API_KEY for full narrative)")
-            print(f"  - Data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")
+                print(f"\n  NOTE: Data-only mode (enable OPENAI_API_KEY for full narrative)")
+            
+            # Print detailed execution report
+            self.print_report()
+            
         except Exception as e:
+            self.report['success'] = False
             print(f"\n❌ ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
+            
+            # Print report even on failure
+            self.print_report()
             sys.exit(1)
 
 def main():

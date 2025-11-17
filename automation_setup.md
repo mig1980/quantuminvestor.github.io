@@ -4,18 +4,23 @@ Lightweight reference for generating a new weekly portfolio update (data, hero i
 
 ---
 ## 1. Overview
-Pipeline (when API key present):
-Prompt A (data update) → Hero Image (remote fetch or fallback) → Snippet Card → Prompt B (narrative) → Prompt C (visuals) → Prompt D (assembly + TLDR) → Index update.
+**Data Architecture**: Single consolidated `master data/master.json` serves as source of truth for entire system.
+
+**Pipeline Flow** (when API keys available):
+1. **Data Update**: Prompt A (AI) OR Alpha Vantage API → Updates master.json
+2. **Asset Generation**: Hero image + Snippet card
+3. **Content Creation**: Prompt B (narrative) → Prompt C (visuals) → Prompt D (assembly)
+4. **Publishing**: Posts index update
 
 ### 1A. Workflow Chart
 
 ```mermaid
 flowchart TD
   A[Start Weekly Run] --> B[Detect next week number]
-  B --> C[Load previous week's master.json]
+  B --> C[Load consolidated master data/master.json]
   C --> D{Data Source}
-  D -->|alphavantage| D1[Fetch quotes + benchmarks (rate limited)] --> D2[Recalculate metrics & build new master.json]
-  D -->|ai (Prompt A)| D3[Prompt A: Update master.json]
+  D -->|alphavantage| D1[Fetch quotes + benchmarks (rate limited)] --> D2[Append new week to master data/master.json]
+  D -->|ai (Prompt A)| D3[Prompt A: Append new week to master data/master.json]
   D2 --> E[Generate hero image + snippet card]
   D3 --> E[Generate hero image + snippet card]
   E --> F{AI Narrative Enabled? (OPENAI_API_KEY)}
@@ -34,7 +39,7 @@ flowchart TD
   E4 --> E
 
   subgraph Outputs
-    O1[Data/WN/master.json]
+    O1[master data/master.json (updated)]
     O2[Media/WN.webp]
     O3[Media/WN-card.png]
     O4[Posts/Week-N HTML]
@@ -77,12 +82,19 @@ Extensibility Hooks:
 - Additional attribution sidecar and dashboards can hook after master.json creation.
 
 
-Artifacts produced for Week N:
-- `Data/WN/master.json` (updated dataset)
+**Artifacts produced for Week N**:
+
+*Primary:*
+- `master data/master.json` (consolidated, Week N appended)
+- `Posts/GenAi-Managed-Stocks-Portfolio-Week-N.html`
+
+*Assets:*
 - `Media/WN.webp` (hero image)
-- `Media/WN-card.png` (social/share card)
-- `Posts/GenAi-Managed-Stocks-Portfolio-Week-N.html` (final post)
-- `Data/archive/master-YYYYMMDD.json` (archived snapshot)
+- `Media/WN-card.png` (snippet card)
+
+*Backups:*
+- `master data/archive/master-YYYYMMDD.json` (timestamped)
+- `Data/WN/master.json` (legacy compatibility)
 
 ---
 ## 2. Prerequisites
@@ -145,31 +157,41 @@ Post HTML (`Posts/GenAi-Managed-Stocks-Portfolio-Week-N.html`):
 - Injects TLDR strip automatically (week, total, alpha) if missing.
 - Embeds narrative + performance table + chart (positions derived from headings).
 
-Archive (`Data/archive/master-YYYYMMDD.json`):
-- Snapshot of master.json for reproducibility.
+Archive (`master data/archive/master-YYYYMMDD.json`):
+- Timestamped backup for reproducibility and rollback.
 
 ---
-## 7. Folder Structure (Relevant Parts)
+## 7. Folder Structure
 ```
-Data/WN/            # master.json (latest week)
-Media/WN.webp       # hero image
-Media/WN-card.png   # snippet card
-Posts/Week-N.html   # final post
-Prompt/Prompt-A...  # prompt specs (A–D)
-scripts/portfolio_automation.py
-scripts/hero_image_generator.py      # standalone hero tool (optional manual use)
-scripts/snippet_card_generator.py    # standalone snippet tool (fallback/manual)
+master data/
+  master.json              # Single source of truth (consolidated)
+  archive/                 # Timestamped backups
+Data/WN/                   # Legacy snapshots (backward compatibility)
+Media/
+  WN.webp                  # Hero images
+  WN-card.png              # Snippet cards
+Posts/
+  GenAi-Managed-Stocks-Portfolio-Week-N.html
+Prompt/
+  Prompt-A-v5.4A.md        # Data Engine spec
+  Prompt-B-v5.4B.md        # Narrative Writer spec
+  Prompt-C-v5.4C.md        # Visual Generator spec
+  Prompt-D-v5.4D.md        # Final Assembler spec
+scripts/
+  portfolio_automation.py  # Main automation
+  hero_image_generator.py  # Standalone hero tool
+  snippet_card_generator.py # Standalone snippet tool
 ```
 
 ---
 ## 8. Standalone Asset Regeneration
 Hero image (custom query):
 ```powershell
-python scripts/hero_image_generator.py --week 7 --master Data/W6/master.json --out Media/W7.webp --query "futuristic finance networks"
+python scripts/hero_image_generator.py --week 7 --master "master data/master.json" --out Media/W7.webp --query "futuristic finance networks"
 ```
 Snippet card (custom title):
 ```powershell
-python scripts/snippet_card_generator.py --week 7 --master Data/W6/master.json --out Media/W7-card.png --title "Week 7 Performance Snapshot"
+python scripts/snippet_card_generator.py --week 7 --master "master data/master.json" --out Media/W7-card.png --title "Week 7 Performance Snapshot"
 ```
 
 ---
@@ -201,15 +223,18 @@ Outputs simplified HTML with raw master.json for auditing.
 ---
 ## 12. Common Commands Cheat Sheet
 ```powershell
-# Full weekly generation (AI)
+# Full weekly generation (AI data engine + narrative)
 python scripts/portfolio_automation.py --week auto
 
-# Alpha Vantage mode
+# Alpha Vantage data source (real-time API)
 python scripts/portfolio_automation.py --week auto --data-source alphavantage
 
-# Manual asset refresh after data update
-python scripts/hero_image_generator.py --week 8 --master Data/W7/master.json --out Media/W8.webp
-python scripts/snippet_card_generator.py --week 8 --master Data/W7/master.json --out Media/W8-card.png
+# Manual evaluation date override
+python scripts/portfolio_automation.py --week auto --eval-date 2025-11-20
+
+# Regenerate assets using current master.json
+python scripts/hero_image_generator.py --week 8 --master "master data/master.json" --out Media/W8.webp
+python scripts/snippet_card_generator.py --week 8 --master "master data/master.json" --out Media/W8-card.png
 ```
 
 ---
@@ -223,4 +248,120 @@ python scripts/snippet_card_generator.py --week 8 --master Data/W7/master.json -
 Run one command; receive standardized data, visuals, and post. Optional provider keys enhance hero imagery; absence never blocks publication. All critical transforms deterministic and archived.
 
 ---
-Revision: Integrated hero + snippet generation | Date: 2025-11-15
+
+## 15. API Keys Reference
+
+### Required API Keys for Automation
+
+#### Primary Data Source Options (Choose One):
+
+**1. `OPENAI_API_KEY`** (Required for full automation)
+- **Used for**: AI-generated narratives (Prompts A, B, C, D)
+- **Model**: `gpt-4-turbo-preview` (default) or configurable via `--model`
+- **Without this**: Script runs in "data-only mode" (no narrative generation)
+- **Set as**: Environment variable or pass via `--api-key` argument
+
+**2. `ALPHAVANTAGE_API_KEY`** (Alternative for data updates)
+- **Used for**: Fetching real-time stock prices via Alpha Vantage API
+- **Alternative to**: AI-generated price data (Prompt A)
+- **Usage**: `--data-source alphavantage` flag
+- **Set as**: Environment variable or pass via `--alphavantage-key` argument
+
+#### Optional API Keys (For Enhanced Features):
+
+**3. `PEXELS_API_KEY`** (Optional - Hero Images)
+- **Used for**: Fetching stock photos for hero images from Pexels
+- **Fallback**: Script generates gradient backgrounds if unavailable
+- **Get it from**: https://www.pexels.com/api/
+
+**4. `PIXABAY_API_KEY`** (Optional - Hero Images)
+- **Used for**: Backup image provider if Pexels fails
+- **Fallback**: Same as above - gradient backgrounds
+- **Get it from**: https://pixabay.com/api/docs/
+
+---
+
+### Recommended Setup Configurations
+
+**Minimum Viable (Full Automation):**
+```powershell
+$Env:OPENAI_API_KEY = "sk-...your-key..."
+```
+
+**Data-Only Mode:**
+```powershell
+$Env:ALPHAVANTAGE_API_KEY = "...your-key..."
+```
+
+**Full Featured (Best Experience):**
+```powershell
+$Env:OPENAI_API_KEY = "sk-...your-key..."
+$Env:ALPHAVANTAGE_API_KEY = "...your-key..."
+$Env:PEXELS_API_KEY = "...your-key..."
+$Env:PIXABAY_API_KEY = "...your-key..."
+```
+
+---
+
+### How to Set API Keys
+
+**Windows PowerShell (Current Session Only):**
+```powershell
+$Env:OPENAI_API_KEY = "your-key-here"
+$Env:ALPHAVANTAGE_API_KEY = "your-key-here"
+$Env:PEXELS_API_KEY = "your-key-here"
+$Env:PIXABAY_API_KEY = "your-key-here"
+```
+
+**Windows PowerShell (Permanent - User Level):**
+```powershell
+[System.Environment]::SetEnvironmentVariable('OPENAI_API_KEY', 'your-key', 'User')
+[System.Environment]::SetEnvironmentVariable('ALPHAVANTAGE_API_KEY', 'your-key', 'User')
+[System.Environment]::SetEnvironmentVariable('PEXELS_API_KEY', 'your-key', 'User')
+[System.Environment]::SetEnvironmentVariable('PIXABAY_API_KEY', 'your-key', 'User')
+```
+
+**Command Line Arguments (Alternative to Environment Variables):**
+```powershell
+python scripts/portfolio_automation.py --week auto --api-key "your-openai-key" --alphavantage-key "your-av-key"
+```
+
+---
+
+### API Key Priority & Behavior
+
+| Scenario | OPENAI_API_KEY | ALPHAVANTAGE_API_KEY | Result |
+|----------|----------------|---------------------|---------|
+| **Full Automation** | ✓ Set | Optional | AI data + narrative + visuals |
+| **Alpha Vantage Data** | ✓ Set | ✓ Set | Real-time data + narrative |
+| **Data-Only Mode** | ✗ Not Set | ✓ Set | Real-time data, no narrative |
+| **Error** | ✗ Not Set | ✗ Not Set | Script fails - need at least one |
+
+**Image Keys**: Both Pexels and Pixabay are optional. Without them, hero images use attractive gradient backgrounds with overlaid metrics.
+
+---
+
+### Where to Get API Keys
+
+1. **OpenAI**: https://platform.openai.com/api-keys
+   - Sign up and create a new API key
+   - Requires credit card for usage beyond free tier
+
+2. **Alpha Vantage**: https://www.alphavantage.co/support/#api-key
+   - Free tier: 25 requests/day, 5 requests/minute
+   - Premium tiers available for higher limits
+
+3. **Pexels**: https://www.pexels.com/api/
+   - Free API with 200 requests/hour
+   - No credit card required
+
+4. **Pixabay**: https://pixabay.com/api/docs/
+   - Free API with rate limits
+   - Registration required
+
+---
+
+**Bottom Line**: You need **at least one** of `OPENAI_API_KEY` or `ALPHAVANTAGE_API_KEY` to run the automation. The image API keys are nice-to-have bonuses that enhance hero images but are not required for core functionality.
+
+---
+Revision: Added API Keys Reference section | Date: 2025-11-17

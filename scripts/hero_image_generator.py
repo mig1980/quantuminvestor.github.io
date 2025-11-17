@@ -9,7 +9,9 @@ Providers (priority order):
   3. Lummi.ai (stub – requires env LUMMI_API_KEY, implement endpoint later)
 
 Usage (PowerShell):
-  python scripts/hero_image_generator.py --week 6 --master Data/W5/master.json --out Media/W6.webp --query "futuristic finance data"
+  python scripts/hero_image_generator.py --week 6 --master "master data/master.json" --out Media/W6.webp --query "futuristic finance data"
+
+Note: Always use consolidated master data/master.json (single source of truth)
 
 Environment variables:
   $Env:PEXELS_API_KEY

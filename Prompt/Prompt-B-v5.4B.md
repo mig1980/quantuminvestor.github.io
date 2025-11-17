@@ -17,15 +17,13 @@ You do **not** build tables or charts from scratch; you only reference them.
 ## INPUT
 
 You receive:
+- `master.json` from `master data/` folder (consolidated, single source of truth)
 
-- `master.json`
+Optional inputs:
+- `performance_table.html` (from Prompt C)
+- `performance_chart.svg` (from Prompt C)
 
-You may also receive (optional):
-
-- `performance_table.html`
-- `performance_chart.svg`
-
-If those are provided, you must assume they are correct and **not regenerate or modify them** (other than embedding them in the narrative where indicated).
+If visual components are provided, embed them as-is without modification.
 
 ---
 
@@ -45,21 +43,14 @@ Do NOT include the TLDR summary strip. That component is injected by Prompt D. B
 
 ### Paragraphs
 
-- Use utility classes ONLY (best practice for maintainability). Avoid inline styles.
-  - Intro paragraph:
-    ```html
-    <p class="text-xl text-gray-300 mb-6"> ... </p>
-    ```
-  - Standard paragraphs:
-    ```html
-    <p class="text-gray-300 mb-6"> ... </p>
-    ```
-- Spacing: `mb-6` ≈ 1.5rem. Headings use `mt-12 mb-6` (3rem top / 1.5rem bottom).
-- Each paragraph should be **3–5 sentences**, focused on a single idea.
-- Each paragraph must contain **one key bolded phrase**, usually at the start:
-  ```html
-  <p class="text-gray-300 mb-6"><strong>This week, the GenAi Chosen portfolio finished essentially flat</strong>, slipping just -0.07% ...</p>
-  ```
+Utility classes only (no inline styles):
+- Intro: `<p class="text-xl text-gray-300 mb-6">`
+- Standard: `<p class="text-gray-300 mb-6">`
+
+Rules:
+- 3–5 sentences per paragraph, focused on single idea
+- Start each with **bolded key phrase**
+- Example: `<strong>This week, the GenAi Chosen portfolio finished essentially flat</strong>, ...`
 
 ### Headings
 

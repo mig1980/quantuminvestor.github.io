@@ -3,7 +3,9 @@
 Generates a social preview card (1200x630 PNG) similar to Playwright template when Node/Playwright unavailable.
 
 Usage:
-  python scripts/snippet_card_generator.py --week 6 --master Data/W5/master.json --out Media/W6-card.png --title "Week 6 Performance Snapshot"
+  python scripts/snippet_card_generator.py --week 6 --master "master data/master.json" --out Media/W6-card.png --title "Week 6 Performance Snapshot"
+
+Note: Always use consolidated master data/master.json (single source of truth)
 
 Design:
  - Radial purple-to-black gradient

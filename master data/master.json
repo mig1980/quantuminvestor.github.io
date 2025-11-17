@@ -12,13 +12,15 @@
       "shares": 5.39,
       "prices": {
         "2025-10-09": 185.47,
+        "2025-10-16": 178.12,
         "2025-10-23": 180.48,
+        "2025-10-30": 194.55,
         "2025-11-06": 175.05,
         "2025-11-13": 172.14
       },
-      "current_value": 1019,
+      "current_value": 928,
       "weekly_pct": -1.66,
-      "total_pct": -7.2
+      "total_pct": -7.19
     },
     {
       "ticker": "NEM",
@@ -26,12 +28,14 @@
       "shares": 11.73,
       "prices": {
         "2025-10-09": 85.21,
+        "2025-10-16": 87.65,
         "2025-10-23": 88.91,
+        "2025-10-30": 86.32,
         "2025-11-06": 82.53,
         "2025-11-13": 89.72
       },
       "current_value": 1052,
-      "weekly_pct": 8.72,
+      "weekly_pct": 8.71,
       "total_pct": 5.29
     },
     {
@@ -40,13 +44,15 @@
       "shares": 4.51,
       "prices": {
         "2025-10-09": 221.7,
+        "2025-10-16": 224.35,
         "2025-10-23": 226.41,
+        "2025-10-30": 245.18,
         "2025-11-06": 278.47,
         "2025-11-13": 262.56
       },
       "current_value": 1184,
-      "weekly_pct": -5.72,
-      "total_pct": 18.4
+      "weekly_pct": -5.71,
+      "total_pct": 18.43
     },
     {
       "ticker": "GEV",
@@ -54,12 +60,14 @@
       "shares": 1.58,
       "prices": {
         "2025-10-09": 634.27,
+        "2025-10-16": 611.42,
         "2025-10-23": 595.15,
+        "2025-10-30": 572.89,
         "2025-11-06": 550.17,
         "2025-11-13": 558.17
       },
       "current_value": 882,
-      "weekly_pct": 1.46,
+      "weekly_pct": 1.45,
       "total_pct": -12.0
     },
     {
@@ -68,13 +76,15 @@
       "shares": 8.35,
       "prices": {
         "2025-10-09": 119.7,
+        "2025-10-16": 123.45,
         "2025-10-23": 125.72,
+        "2025-10-30": 138.92,
         "2025-11-06": 163.6,
         "2025-11-13": 157.16
       },
       "current_value": 1312,
       "weekly_pct": -3.94,
-      "total_pct": 31.28
+      "total_pct": 31.29
     },
     {
       "ticker": "GE",
@@ -82,7 +92,9 @@
       "shares": 3.34,
       "prices": {
         "2025-10-09": 299.35,
+        "2025-10-16": 302.18,
         "2025-10-23": 305.52,
+        "2025-10-30": 307.89,
         "2025-11-06": 305.27,
         "2025-11-13": 304.17
       },
@@ -96,11 +108,13 @@
       "shares": 12.61,
       "prices": {
         "2025-10-09": 79.27,
+        "2025-10-16": 75.43,
         "2025-10-23": 69.67,
+        "2025-10-30": 72.11,
         "2025-11-06": 78.66,
         "2025-11-13": 79.36
       },
-      "current_value": 1000,
+      "current_value": 1001,
       "weekly_pct": 0.89,
       "total_pct": 0.11
     },
@@ -110,11 +124,13 @@
       "shares": 5.96,
       "prices": {
         "2025-10-09": 167.82,
+        "2025-10-16": 165.27,
         "2025-10-23": 163.81,
+        "2025-10-30": 167.94,
         "2025-11-06": 170.1,
         "2025-11-13": 166.15
       },
-      "current_value": 991,
+      "current_value": 990,
       "weekly_pct": -2.32,
       "total_pct": -1.0
     },
@@ -124,13 +140,15 @@
       "shares": 5.3,
       "prices": {
         "2025-10-09": 188.72,
+        "2025-10-16": 195.84,
         "2025-10-23": 201.17,
+        "2025-10-30": 203.45,
         "2025-11-06": 205.6,
         "2025-11-13": 201.3
       },
-      "current_value": 1066,
+      "current_value": 1067,
       "weekly_pct": -2.09,
-      "total_pct": 6.68
+      "total_pct": 6.67
     },
     {
       "ticker": "RCL",
@@ -138,19 +156,21 @@
       "shares": 3.26,
       "prices": {
         "2025-10-09": 306.99,
+        "2025-10-16": 314.67,
         "2025-10-23": 320.26,
+        "2025-10-30": 297.58,
         "2025-11-06": 253.57,
         "2025-11-13": 265.42
       },
-      "current_value": 866,
+      "current_value": 865,
       "weekly_pct": 4.67,
-      "total_pct": -13.51
+      "total_pct": -13.54
     }
   ],
   "portfolio_totals": {
-    "current_value": 10388,
-    "weekly_pct": -0.07,
-    "total_pct": 3.88
+    "current_value": 10297,
+    "weekly_pct": -0.08,
+    "total_pct": 2.97
   },
   "benchmarks": {
     "sp500": {
@@ -239,95 +259,95 @@
   "portfolio_history": [
     {
       "date": "2025-10-09",
-      "value": 10000,
+      "value": 10001,
       "weekly_pct": null,
       "total_pct": 0.0
     },
     {
       "date": "2025-10-16",
-      "value": 10389,
-      "weekly_pct": 3.89,
-      "total_pct": 3.89
+      "value": 10006,
+      "weekly_pct": 0.05,
+      "total_pct": 0.06
     },
     {
       "date": "2025-10-23",
-      "value": 10548,
-      "weekly_pct": 1.53,
-      "total_pct": 5.48
+      "value": 10012,
+      "weekly_pct": 0.06,
+      "total_pct": 0.12
     },
     {
       "date": "2025-10-30",
-      "value": 10481,
-      "weekly_pct": -0.64,
-      "total_pct": 4.81
+      "value": 10219,
+      "weekly_pct": 2.07,
+      "total_pct": 2.19
     },
     {
       "date": "2025-11-06",
-      "value": 10396,
-      "weekly_pct": -0.81,
-      "total_pct": 3.96
+      "value": 10344,
+      "weekly_pct": 1.22,
+      "total_pct": 3.44
     },
     {
       "date": "2025-11-13",
-      "value": 10388,
-      "weekly_pct": -0.07,
-      "total_pct": 3.88
+      "value": 10298,
+      "weekly_pct": -0.44,
+      "total_pct": 2.98
     }
   ],
   "normalized_chart": [
     {
       "date": "2025-10-09",
-      "portfolio_value": 10000,
-      "genai_norm": 100.0,
+      "portfolio_value": 10001,
+      "genai_norm": 100.01,
       "spx_close": 6735,
       "btc_close": 121706,
-      "spx_norm": 100.70275119617224,
-      "btc_norm": 98.66480750366834
+      "spx_norm": 100.7,
+      "btc_norm": 98.66
     },
     {
       "date": "2025-10-16",
-      "portfolio_value": 10389,
-      "genai_norm": 103.88999999999999,
+      "portfolio_value": 10006,
+      "genai_norm": 100.06,
       "spx_close": 6646,
       "btc_close": 107198,
-      "spx_norm": 99.372009569378,
-      "btc_norm": 86.9034397217741
+      "spx_norm": 99.37,
+      "btc_norm": 86.9
     },
     {
       "date": "2025-10-23",
-      "portfolio_value": 10548,
-      "genai_norm": 105.47999999999999,
+      "portfolio_value": 10012,
+      "genai_norm": 100.12,
       "spx_close": 6738,
       "btc_close": 109070,
-      "spx_norm": 100.74760765550239,
-      "btc_norm": 88.42103556459917
+      "spx_norm": 100.75,
+      "btc_norm": 88.42
     },
     {
       "date": "2025-10-30",
-      "portfolio_value": 10481,
-      "genai_norm": 104.81,
+      "portfolio_value": 10219,
+      "genai_norm": 102.19,
       "spx_close": 6822,
       "btc_close": 108306,
-      "spx_norm": 102.0035885167464,
-      "btc_norm": 87.80167486806157
+      "spx_norm": 102.0,
+      "btc_norm": 87.8
     },
     {
       "date": "2025-11-06",
-      "portfolio_value": 10396,
-      "genai_norm": 103.96000000000001,
+      "portfolio_value": 10344,
+      "genai_norm": 103.44,
       "spx_close": 6720.32,
       "btc_close": 101301,
-      "spx_norm": 100.48325358851675,
-      "btc_norm": 82.12285068056715
+      "spx_norm": 100.48,
+      "btc_norm": 82.12
     },
     {
       "date": "2025-11-13",
-      "portfolio_value": 10388,
-      "genai_norm": 103.88,
+      "portfolio_value": 10298,
+      "genai_norm": 102.98,
       "spx_close": 6737.49,
       "btc_close": 99697,
-      "spx_norm": 100.73998205741626,
-      "btc_norm": 80.82251749045423
+      "spx_norm": 100.74,
+      "btc_norm": 80.82
     }
   ]
 }

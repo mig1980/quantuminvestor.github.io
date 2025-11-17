@@ -18,21 +18,14 @@ You do **not** generate the TLDR summary strip. That is handled by Prompt D.
 
 ## INPUT
 
-You receive:
+`master.json` from `master data/` folder (consolidated, single source of truth).
 
-- `master.json`
+Read from it:
+- Portfolio: inception value, portfolio_history array, latest totals
+- Benchmarks: S&P 500 and Bitcoin history arrays (synchronized with portfolio)
+- Normalized data: `normalized_chart` array with all three assets at base 100
 
-From it, you must read:
-
-- Portfolio inception value, history, and latest totals.
-- S&P 500 benchmark history and latest totals.
-- Bitcoin benchmark history and latest totals.
-- Normalized values (from `normalized_chart`) for:
-  - GenAi Chosen
-  - S&P 500
-  - Bitcoin
-
-You **must not** recalculate historical values from scratch. Use the data `master.json` provides.
+**Critical**: Never recalculate. Use existing data from `master.json`.
 
 ---
 

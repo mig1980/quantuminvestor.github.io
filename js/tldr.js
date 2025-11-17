@@ -25,20 +25,23 @@
   }
 
   async function fetchDataForWeek(weekNum){
-    const base = window.location.pathname.includes('/Posts/') ? '../Data' : 'Data';
-    // Primary: exact week
-    let data = await fetchJson(`${base}/W${weekNum}/master.json`);
+    // Load from consolidated master data folder
+    const base = window.location.pathname.includes('/Posts/') ? '../master data' : 'master data';
+    let data = await fetchJson(`${base}/master.json`);
     if(data) return data;
-    // Fallback 1: previous week (handles early publication when current not yet committed)
+    
+    // Fallback to legacy weekly folders if consolidated file not available
+    const legacyBase = window.location.pathname.includes('/Posts/') ? '../Data' : 'Data';
+    data = await fetchJson(`${legacyBase}/W${weekNum}/master.json`);
+    if(data) return data;
+    
+    // Fallback to previous week (handles early publication)
     if(weekNum > 1){
-      data = await fetchJson(`${base}/W${weekNum-1}/master.json`);
+      data = await fetchJson(`${legacyBase}/W${weekNum-1}/master.json`);
       if(data) return data;
     }
-    // Fallback 2: bootstrap seed W0
-    data = await fetchJson(`${base}/W0/master.json`);
-    if(data) return data;
-    // Fallback 3: legacy root master.json (if ever present)
-    return await fetchJson(`${base}/master.json`);
+    
+    return null;
   }
 
   async function populate(){
@@ -70,9 +73,12 @@
         safeSet(weekEl,'--'); safeSet(totalEl,'--'); safeSet(alphaEl,'--');
         return;
       }
-      // Map week number to index if available; fallback to last entry
-      const pEntry = ph[weekNum] || ph[ph.length-1];
-      const spxEntry = spx[weekNum] || spx[spx.length-1];
+      // Extract week-specific entry
+      // Index 0 = inception (W0), Week 1 = index 1, Week 2 = index 2, etc.
+      // Week number maps directly to array index
+      const weekIndex = weekNum;
+      const pEntry = ph[weekIndex] || ph[ph.length-1];
+      const spxEntry = spx[weekIndex] || spx[spx.length-1];
       safeSet(weekEl, fmt(pEntry.weekly_pct));
       safeSet(totalEl, fmt(pEntry.total_pct));
       if(alphaEl){

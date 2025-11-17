@@ -67,7 +67,7 @@
                 <p class="mb-4">Quantum Investor Digest is a fully automated, AI-assisted content pipeline that produces a weekly performance update for the GenAI-managed stock portfolio. The system is orchestrated by a Python script, <code>scripts/portfolio_automation.py</code>, which coordinates data ingestion, analysis, AI calls, and HTML generation.</p>
                 <h3 class="text-xl font-semibold mb-3">High-Level Architecture</h3>
                 <ul class="list-disc list-inside mb-4">
-                    <li><strong>Data Layer</strong> – Historical prices, benchmarks, and portfolio history live in the <code>Data/</code> directory, versioned by week (<code>Data/W1</code>, <code>Data/W2</code>, ...).</li>
+                    <li><strong>Data Layer</strong> – Historical prices, benchmarks, and portfolio history live in the consolidated <code>master data/master.json</code> file. Legacy weekly snapshots remain in <code>Data/W*</code> folders for reference.</li>
                     <li><strong>AI Layer</strong> – A sequence of prompts (Prompt A → B → C → D) run against OpenAI models to generate narrative, SEO metadata, and visuals.</li>
                     <li><strong>Presentation Layer</strong> – Final posts are emitted as static HTML into <code>Posts/</code>, styled with <code>styles.css</code> and hydrated with small JS utilities like <code>tldr.js</code>.</li>
                 </ul>
@@ -126,7 +126,7 @@
                         <div>
                             <h3 class="font-semibold mb-1">Market Data &amp; Benchmarks</h3>
                             <p class="text-sm text-gray-300 mb-1">Alpha Vantage and structured CSV/JSON files for prices, history, and benchmark series.</p>
-                            <p class="text-xs text-gray-500">Files: <code>Data/master.json</code>, weekly <code>Data/W*</code> snapshots.</p>
+                            <p class="text-xs text-gray-500">Files: <code>master data/master.json</code> (consolidated), legacy <code>Data/W*</code> snapshots.</p>
                         </div>
                     </div>
 

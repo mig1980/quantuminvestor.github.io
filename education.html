@@ -80,7 +80,9 @@
 │   └── posts.html
 │
 └── Data/                (JSON data files)
-    └── master.json          (Portfolio data)</code></pre>
+    └── master.json          (Legacy weekly data)
+master data/
+    └── master.json          (Consolidated portfolio data)</code></pre>
                     </div>
 
                     <p class="text-gray-300 mb-4">
@@ -424,7 +426,7 @@ menuClose.addEventListener('click', closeMenu);</code></pre>
                     </p>
                     
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
-                        <h4 class="text-lg font-semibold mb-3">Data/master.json Structure</h4>
+                        <h4 class="text-lg font-semibold mb-3">master data/master.json Structure</h4>
                         <pre class="text-sm text-gray-300 overflow-x-auto"><code>{
   "meta": {
     "portfolio_name": "GenAi Chosen",
@@ -452,7 +454,7 @@ menuClose.addEventListener('click', closeMenu);</code></pre>
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
                         <pre class="text-sm text-gray-300 overflow-x-auto"><code>// Fetch data from JSON file
 async function loadData() {
-    const response = await fetch('Data/master.json');
+    const response = await fetch('master data/master.json');
     const data = await response.json();
     
     // Use the data
