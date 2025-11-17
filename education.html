@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How This Website Is Built - Quantum Investor Digest</title>
+    <meta name="description" content="Learn how the Quantum Investor Digest website is built. A comprehensive guide to HTML, CSS, JavaScript, and modern web development practices for beginners.">
+    <meta name="author" content="Michael Gavrilov">
+    <meta name="theme-color" content="#000000">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="canonical" href="https://quantuminvestor.net/education.html">
+    <link rel="icon" href="Media/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/template-loader.js" defer nonce="qi123"></script>
+    <script src="js/mobile-menu.js" defer nonce="qi123"></script>
+</head>
+<body data-theme="default">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- Header -->
+    <div data-template="header" data-root-path=""></div>
+
+    <main id="main-content" class="container mx-auto px-4 py-12" role="main">
+        <article class="max-w-3xl mx-auto">
+            <div class="mb-12">
+                <h1 class="text-4xl font-bold mb-6">How This Website Is Built</h1>
+                <p class="text-xl text-gray-400">A Comprehensive Guide for Beginners</p>
+            </div>
+
+            <div class="space-y-12">
+                <!-- Introduction -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">Introduction</h2>
+                    <p class="text-gray-300 mb-4">
+                        Welcome! This guide will teach you how the Quantum Investor Digest website is built from scratch. 
+                        By the end of this tutorial, you'll understand every component and be able to create a similar website yourself. 
+                        We'll cover the HTML structure, CSS styling, JavaScript functionality, and the overall architecture.
+                    </p>
+                    <p class="text-gray-300 mb-4">
+                        <strong>What you'll learn:</strong> HTML document structure, CSS styling and responsive design, JavaScript for dynamic behavior, 
+                        file organization, and best practices for modern web development.
+                    </p>
+                </section>
+
+                <!-- Website Architecture -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">1. Website Architecture & File Structure</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Understanding the Framework</h3>
+                    <p class="text-gray-300 mb-4">
+                        This is a <strong>static website</strong>, meaning the pages are pre-built HTML files that don't require a server-side 
+                        language like PHP or a database. This makes it fast, secure, and easy to host.
+                    </p>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">File Organization</h4>
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>My-blog/
+├── index.html           (Homepage)
+├── about.html           (About page)
+├── education.html       (This page)
+├── Disclosures.html     (Legal disclosures)
+├── styles.css           (All styling)
+├── CNAME                (Domain configuration)
+│
+├── js/                  (JavaScript files)
+│   ├── template-loader.js   (Loads header/footer)
+│   ├── mobile-menu.js       (Mobile navigation)
+│   └── tldr.js              (Dashboard metrics)
+│
+├── templates/           (Reusable components)
+│   ├── header.html          (Site header)
+│   └── footer.html          (Site footer)
+│
+├── Media/               (Images & graphics)
+│   └── PostImages/
+│
+├── Posts/               (Blog articles)
+│   └── posts.html
+│
+└── Data/                (JSON data files)
+    └── master.json          (Portfolio data)</code></pre>
+                    </div>
+
+                    <p class="text-gray-300 mb-4">
+                        <strong>Why this structure?</strong> Separation of concerns - HTML for content, CSS for styling, JavaScript for behavior, 
+                        and data in JSON files. This makes the site maintainable and scalable.
+                    </p>
+                </section>
+
+                <!-- HTML Structure -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">2. HTML: The Structure</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">What is HTML?</h3>
+                    <p class="text-gray-300 mb-4">
+                        HTML (HyperText Markup Language) is the skeleton of every webpage. It defines the structure and content using 
+                        <strong>tags</strong> (elements enclosed in angle brackets like <code class="text-purple-400">&lt;div&gt;</code>).
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Anatomy of an HTML Document</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Page Title&lt;/title&gt;
+    &lt;link rel="stylesheet" href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;...&lt;/header&gt;
+    &lt;main&gt;...&lt;/main&gt;
+    &lt;footer&gt;...&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                    </div>
+
+                    <h4 class="text-lg font-semibold mb-3 mt-6">Breaking It Down:</h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-300 mb-6">
+                        <li><code class="text-purple-400">&lt;!DOCTYPE html&gt;</code> - Tells the browser this is HTML5</li>
+                        <li><code class="text-purple-400">&lt;html lang="en"&gt;</code> - Root element, language is English</li>
+                        <li><code class="text-purple-400">&lt;head&gt;</code> - Contains metadata (not visible on page)</li>
+                        <li><code class="text-purple-400">&lt;meta charset="UTF-8"&gt;</code> - Character encoding for text</li>
+                        <li><code class="text-purple-400">&lt;meta name="viewport"...&gt;</code> - Makes site responsive on mobile</li>
+                        <li><code class="text-purple-400">&lt;title&gt;</code> - Shows in browser tab</li>
+                        <li><code class="text-purple-400">&lt;link rel="stylesheet"&gt;</code> - Loads CSS file</li>
+                        <li><code class="text-purple-400">&lt;body&gt;</code> - Contains visible content</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Key HTML Elements Used</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Semantic HTML5 Tags</h4>
+                        <ul class="list-disc list-inside space-y-2 text-gray-300">
+                            <li><code class="text-purple-400">&lt;header&gt;</code> - Site header with logo and navigation</li>
+                            <li><code class="text-purple-400">&lt;main&gt;</code> - Main content area</li>
+                            <li><code class="text-purple-400">&lt;article&gt;</code> - Self-contained content (blog posts)</li>
+                            <li><code class="text-purple-400">&lt;section&gt;</code> - Thematic grouping of content</li>
+                            <li><code class="text-purple-400">&lt;nav&gt;</code> - Navigation links</li>
+                            <li><code class="text-purple-400">&lt;footer&gt;</code> - Site footer</li>
+                            <li><code class="text-purple-400">&lt;h1&gt;, &lt;h2&gt;, &lt;h3&gt;</code> - Headings (h1 is most important)</li>
+                            <li><code class="text-purple-400">&lt;p&gt;</code> - Paragraphs</li>
+                            <li><code class="text-purple-400">&lt;a href=""&gt;</code> - Links</li>
+                            <li><code class="text-purple-400">&lt;img src="" alt=""&gt;</code> - Images</li>
+                            <li><code class="text-purple-400">&lt;div&gt;</code> - Generic container</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">SEO Meta Tags</h3>
+                    <p class="text-gray-300 mb-4">
+                        These tags in the <code class="text-purple-400">&lt;head&gt;</code> help search engines understand your page:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;meta name="description" content="Page description for Google"&gt;
+&lt;meta name="author" content="Michael Gavrilov"&gt;
+&lt;link rel="canonical" href="https://quantuminvestor.net/page.html"&gt;
+
+&lt;!-- Open Graph (for social media sharing) --&gt;
+&lt;meta property="og:title" content="Page Title"&gt;
+&lt;meta property="og:description" content="Description"&gt;
+&lt;meta property="og:image" content="image-url.jpg"&gt;
+
+&lt;!-- Twitter Cards --&gt;
+&lt;meta name="twitter:card" content="summary_large_image"&gt;</code></pre>
+                    </div>
+                </section>
+
+                <!-- CSS Styling -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">3. CSS: The Styling</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">What is CSS?</h3>
+                    <p class="text-gray-300 mb-4">
+                        CSS (Cascading Style Sheets) controls how HTML elements look - colors, sizes, spacing, layout, and animations. 
+                        This site uses one main CSS file (<code class="text-purple-400">styles.css</code>) that contains all styling rules.
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">CSS Syntax</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>selector {
+    property: value;
+}
+
+/* Example */
+h1 {
+    font-size: 2.25rem;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+}</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">CSS Variables (Custom Properties)</h3>
+                    <p class="text-gray-300 mb-4">
+                        This site uses CSS variables to store colors and values that can be reused throughout the stylesheet:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>:root {
+    --primary: #a855f7;           /* Purple accent color */
+    --primary-dark: #7c3aed;      /* Darker purple */
+    --bg-black: #000000;          /* Background black */
+    --bg-gray-900: #111111;       /* Dark gray */
+    --bg-gray-800: #1a1a1a;       /* Medium gray */
+    --text-white: #E0E0E0;        /* Off-white text */
+    --text-gray-400: #9ca3af;     /* Gray text */
+    --border-gray-800: #1a1a1a;   /* Border color */
+}
+
+/* Use variables like this: */
+.button {
+    background-color: var(--primary);
+    color: var(--text-white);
+}</code></pre>
+                    </div>
+                    <p class="text-gray-300 mb-4">
+                        <strong>Why use variables?</strong> If you want to change the purple color site-wide, you only need to update 
+                        <code class="text-purple-400">--primary</code> in one place instead of hundreds of locations.
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Utility-First CSS Classes</h3>
+                    <p class="text-gray-300 mb-4">
+                        This site uses a utility-first approach (inspired by Tailwind CSS). Small, reusable classes that do one thing:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>/* Spacing */
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+.mb-8 { margin-bottom: 2rem; }
+
+/* Layout */
+.flex { display: flex; }
+.grid { display: grid; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+/* Typography */
+.text-xl { font-size: 1.25rem; }
+.font-bold { font-weight: 700; }
+.text-gray-400 { color: var(--text-gray-400); }
+
+/* Example usage in HTML */
+&lt;div class="flex items-center justify-between px-4 py-12"&gt;
+    &lt;h1 class="text-xl font-bold"&gt;Title&lt;/h1&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Responsive Design</h3>
+                    <p class="text-gray-300 mb-4">
+                        The site adapts to different screen sizes using <strong>media queries</strong>:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>/* Desktop (default) */
+.grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Tablet (1024px and below) */
+@media (max-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile (640px and below) */
+@media (max-width: 640px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}</code></pre>
+                    </div>
+                    <p class="text-gray-300 mb-4">
+                        <strong>Breakpoints used:</strong>
+                        <br>• Desktop: Default styles
+                        <br>• Tablet: max-width: 1024px and 768px
+                        <br>• Mobile: max-width: 640px and 375px
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">CSS Grid & Flexbox</h3>
+                    <p class="text-gray-300 mb-4">
+                        Two powerful layout systems used throughout the site:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Grid (for 2D layouts)</h4>
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);  /* 3 equal columns */
+    gap: 1.5rem;                            /* Space between items */
+}</code></pre>
+                        <h4 class="text-lg font-semibold mb-3 mt-4">Flexbox (for 1D layouts)</h4>
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>.flex {
+    display: flex;
+    align-items: center;       /* Vertical centering */
+    justify-content: space-between;  /* Space items apart */
+    gap: 1rem;                 /* Space between items */
+}</code></pre>
+                    </div>
+                </section>
+
+                <!-- JavaScript -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">4. JavaScript: The Behavior</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">What is JavaScript?</h3>
+                    <p class="text-gray-300 mb-4">
+                        JavaScript makes websites interactive and dynamic. It can respond to user actions, load content, manipulate the page, 
+                        and fetch data from external sources.
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Template Loader (template-loader.js)</h3>
+                    <p class="text-gray-300 mb-4">
+                        This script loads the header and footer on every page, so you don't have to copy/paste them:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>// 1. Finds elements with data-template attribute
+&lt;div data-template="header" data-root-path=""&gt;&lt;/div&gt;
+
+// 2. Fetches the template file
+fetch('templates/header.html')
+
+// 3. Replaces placeholder with template content
+element.innerHTML = html;
+
+// 4. Handles relative paths
+// Root pages use: data-root-path=""
+// Posts folder uses: data-root-path="../"</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Mobile Menu (mobile-menu.js)</h3>
+                    <p class="text-gray-300 mb-4">
+                        Controls the hamburger menu on mobile devices:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>// 1. Get DOM elements
+const menuButton = document.getElementById('mobile-menu-button');
+const menuOverlay = document.getElementById('mobile-menu-overlay');
+
+// 2. Open menu function
+function openMenu() {
+    menuOverlay.classList.add('active');  // Shows overlay
+    document.body.style.overflow = 'hidden';  // Prevents scrolling
+}
+
+// 3. Close menu function
+function closeMenu() {
+    menuOverlay.classList.remove('active');  // Hides overlay
+    document.body.style.overflow = '';  // Restores scrolling
+}
+
+// 4. Event listeners
+menuButton.addEventListener('click', openMenu);
+menuClose.addEventListener('click', closeMenu);</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Key JavaScript Concepts</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <ul class="list-disc list-inside space-y-2 text-gray-300">
+                            <li><strong>DOM (Document Object Model)</strong> - JavaScript representation of HTML</li>
+                            <li><strong>querySelector/getElementById</strong> - Find elements in HTML</li>
+                            <li><strong>addEventListener</strong> - Respond to user actions (clicks, keyboard)</li>
+                            <li><strong>fetch()</strong> - Load data from files or APIs</li>
+                            <li><strong>async/await</strong> - Handle asynchronous operations</li>
+                            <li><strong>classList</strong> - Add/remove CSS classes dynamically</li>
+                            <li><strong>IIFE</strong> - Immediately Invoked Function Expression (keeps code private)</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Script Loading</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;script src="js/template-loader.js" defer nonce="qi123"&gt;&lt;/script&gt;
+
+/* defer = Wait until HTML is parsed before executing
+   nonce = Security feature (Content Security Policy)
+   Ensures only authorized scripts run */</code></pre>
+                    </div>
+                </section>
+
+                <!-- Component Architecture -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">5. Component Architecture</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Reusable Templates</h3>
+                    <p class="text-gray-300 mb-4">
+                        The header and footer are stored in separate files and loaded dynamically:
+                    </p>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">templates/header.html</h4>
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;header class="border-b border-gray-800 py-6"&gt;
+    &lt;div class="container mx-auto px-4"&gt;
+        &lt;div class="flex items-center justify-between"&gt;
+            &lt;a href="{{rootPath}}index.html"&gt;
+                &lt;img src="{{rootPath}}Media/Full-Logo.webp" alt="Logo"&gt;
+            &lt;/a&gt;
+            &lt;nav&gt;
+                &lt;a href="{{rootPath}}index.html"&gt;Home&lt;/a&gt;
+                &lt;a href="{{rootPath}}Posts/posts.html"&gt;Blog&lt;/a&gt;
+                &lt;a href="{{rootPath}}about.html"&gt;About&lt;/a&gt;
+            &lt;/nav&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/header&gt;
+
+/* {{rootPath}} is replaced with "" for root pages
+   or "../" for pages in subfolders */</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Benefits of This Approach</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-300 mb-6">
+                        <li><strong>DRY (Don't Repeat Yourself)</strong> - Update header once, changes everywhere</li>
+                        <li><strong>Maintainability</strong> - Easier to manage and update</li>
+                        <li><strong>Consistency</strong> - Same header/footer across all pages</li>
+                        <li><strong>Performance</strong> - Templates cached by browser after first load</li>
+                    </ul>
+                </section>
+
+                <!-- Data Management -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">6. Data Management with JSON</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">What is JSON?</h3>
+                    <p class="text-gray-300 mb-4">
+                        JSON (JavaScript Object Notation) is a format for storing and exchanging data. It's human-readable and easy 
+                        for machines to parse.
+                    </p>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Data/master.json Structure</h4>
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>{
+  "meta": {
+    "portfolio_name": "GenAi Chosen",
+    "inception_date": "2025-10-09",
+    "current_date": "2025-11-13"
+  },
+  "stocks": [
+    {
+      "ticker": "PLTR",
+      "name": "Palantir Technologies",
+      "shares": 5.39,
+      "current_value": 1019,
+      "weekly_pct": -1.66,
+      "total_pct": -7.2
+    }
+  ],
+  "benchmarks": {
+    "sp500": { ... },
+    "bitcoin": { ... }
+  }
+}</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Loading JSON with JavaScript</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>// Fetch data from JSON file
+async function loadData() {
+    const response = await fetch('Data/master.json');
+    const data = await response.json();
+    
+    // Use the data
+    console.log(data.portfolio_totals.current_value);
+}</code></pre>
+                    </div>
+
+                    <p class="text-gray-300 mb-4">
+                        <strong>Why separate data from HTML?</strong> You can update portfolio numbers without touching HTML code. 
+                        The TLDR strip and charts load data dynamically from this JSON file.
+                    </p>
+                </section>
+
+                <!-- Security & Performance -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">7. Security & Performance Best Practices</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Content Security Policy (CSP)</h3>
+                    <p class="text-gray-300 mb-4">
+                        Protects against XSS (Cross-Site Scripting) attacks:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               script-src 'self' 'nonce-qi123'; 
+               style-src 'self'; 
+               img-src 'self' data: https:;"&gt;
+
+/* Explanation:
+   default-src 'self' = Only load resources from same domain
+   script-src 'self' 'nonce-qi123' = Scripts from same domain + nonce
+   img-src = Images can be from same domain, data URIs, or HTTPS */</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Image Optimization</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>&lt;img src="Media/Hero.webp" 
+     alt="Descriptive alt text"
+     width="1200" 
+     height="800"
+     loading="lazy"           &lt;!-- Lazy load off-screen images --&gt;
+     fetchpriority="high"     &lt;!-- Priority for important images --&gt;
+     decoding="async"&gt;        &lt;!-- Decode without blocking --&gt;
+
+/* WebP format = Smaller file size, faster loading
+   Alt text = Accessibility for screen readers
+   Width/height = Prevents layout shift */</code></pre>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Performance Optimizations</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-300 mb-6">
+                        <li><strong>Minification</strong> - Remove unnecessary characters from code</li>
+                        <li><strong>Caching</strong> - Browser stores files locally for faster repeat visits</li>
+                        <li><strong>Preload</strong> - Load critical resources early</li>
+                        <li><strong>Defer scripts</strong> - Load JavaScript after HTML parsing</li>
+                        <li><strong>Responsive images</strong> - Serve appropriate sizes for device</li>
+                    </ul>
+                </section>
+
+                <!-- Accessibility -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">8. Accessibility (a11y)</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Why Accessibility Matters</h3>
+                    <p class="text-gray-300 mb-4">
+                        Making websites usable by everyone, including people with disabilities who use screen readers or keyboard navigation.
+                    </p>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Key Accessibility Features</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>/* Semantic HTML */
+&lt;main role="main"&gt;     &lt;!-- Identifies main content --&gt;
+&lt;nav aria-label="Primary"&gt;  &lt;!-- Labels navigation type --&gt;
+
+/* Alt text for images */
+&lt;img src="logo.webp" alt="Quantum Investor Digest Logo"&gt;
+
+/* Skip link for keyboard users */
+&lt;a href="#main-content" class="skip-link"&gt;Skip to main content&lt;/a&gt;
+
+/* ARIA attributes */
+&lt;button aria-label="Open mobile menu" aria-expanded="false"&gt;
+
+/* Focus styles for keyboard navigation */
+a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}</code></pre>
+                    </div>
+                </section>
+
+                <!-- Hosting & Deployment -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">9. Hosting & Deployment</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">GitHub Pages</h3>
+                    <p class="text-gray-300 mb-4">
+                        This site is hosted on <strong>GitHub Pages</strong>, a free hosting service for static websites:
+                    </p>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">Steps to Deploy</h4>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-300">
+                            <li>Create a GitHub account</li>
+                            <li>Create a repository named: <code class="text-purple-400">username.github.io</code></li>
+                            <li>Upload your website files to the repository</li>
+                            <li>Go to Settings → Pages → Enable GitHub Pages</li>
+                            <li>Your site is live at: <code class="text-purple-400">https://username.github.io</code></li>
+                        </ol>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Custom Domain (CNAME)</h3>
+                    <p class="text-gray-300 mb-4">
+                        The <code class="text-purple-400">CNAME</code> file tells GitHub to serve the site at a custom domain:
+                    </p>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <pre class="text-sm text-gray-300 overflow-x-auto"><code>/* CNAME file contents */
+quantuminvestor.net
+
+/* Configure DNS settings at your domain registrar:
+   A record: 185.199.108.153
+   CNAME: username.github.io */</code></pre>
+                    </div>
+                </section>
+
+                <!-- Building Your Own Site -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">10. Building Your Own Website</h2>
+                    
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Step-by-Step Guide</h3>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                        <ol class="list-decimal list-inside space-y-3 text-gray-300">
+                            <li><strong>Set up your project folder</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Create folders: css/, js/, images/, templates/</li>
+                                    <li>Create: index.html, styles.css</li>
+                                </ul>
+                            </li>
+                            <li><strong>Build the HTML structure</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Start with index.html</li>
+                                    <li>Add DOCTYPE, html, head, body tags</li>
+                                    <li>Add meta tags for SEO and responsiveness</li>
+                                </ul>
+                            </li>
+                            <li><strong>Create the header and footer templates</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Save as templates/header.html and footer.html</li>
+                                    <li>Use {{rootPath}} placeholders for paths</li>
+                                </ul>
+                            </li>
+                            <li><strong>Write your CSS</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Define CSS variables for colors</li>
+                                    <li>Create utility classes</li>
+                                    <li>Add media queries for responsive design</li>
+                                </ul>
+                            </li>
+                            <li><strong>Add JavaScript functionality</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Copy template-loader.js to load templates</li>
+                                    <li>Add mobile-menu.js for navigation</li>
+                                    <li>Test in browser console</li>
+                                </ul>
+                            </li>
+                            <li><strong>Test locally</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Use VS Code Live Server extension</li>
+                                    <li>Or run: <code class="text-purple-400">python -m http.server 8000</code></li>
+                                    <li>Check responsive design in DevTools</li>
+                                </ul>
+                            </li>
+                            <li><strong>Deploy to GitHub Pages</strong>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                    <li>Push to GitHub repository</li>
+                                    <li>Enable Pages in repository settings</li>
+                                    <li>Visit your live site!</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-3 mt-6">Essential Tools</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-300 mb-6">
+                        <li><strong>Code Editor</strong> - Visual Studio Code (free)</li>
+                        <li><strong>Browser</strong> - Chrome/Firefox with DevTools</li>
+                        <li><strong>Version Control</strong> - Git and GitHub</li>
+                        <li><strong>Image Optimization</strong> - Squoosh.app or TinyPNG</li>
+                        <li><strong>Testing</strong> - Chrome DevTools, Lighthouse</li>
+                    </ul>
+                </section>
+
+                <!-- Learning Resources -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">11. Learning Resources</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">HTML & CSS</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-300">
+                                <li>MDN Web Docs - Mozilla's comprehensive web documentation</li>
+                                <li>freeCodeCamp - Free interactive courses</li>
+                                <li>CSS-Tricks - Articles and guides</li>
+                                <li>Web.dev - Google's web development resources</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">JavaScript</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-300">
+                                <li>JavaScript.info - Modern JavaScript tutorial</li>
+                                <li>Eloquent JavaScript (free book)</li>
+                                <li>MDN JavaScript Guide</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Git & GitHub</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-300">
+                                <li>GitHub Skills - Interactive Git tutorials</li>
+                                <li>Git documentation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Key Takeaways -->
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">Key Takeaways</h2>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <ul class="list-disc list-inside space-y-3 text-gray-300">
+                            <li><strong>HTML</strong> provides structure (the skeleton)</li>
+                            <li><strong>CSS</strong> provides presentation (the skin)</li>
+                            <li><strong>JavaScript</strong> provides behavior (the muscles)</li>
+                            <li><strong>Separation of concerns</strong> keeps code organized and maintainable</li>
+                            <li><strong>Responsive design</strong> ensures the site works on all devices</li>
+                            <li><strong>Semantic HTML</strong> improves accessibility and SEO</li>
+                            <li><strong>Reusable components</strong> (templates) reduce code duplication</li>
+                            <li><strong>Static sites</strong> are fast, secure, and easy to host</li>
+                            <li><strong>GitHub Pages</strong> offers free hosting for static websites</li>
+                            <li><strong>Progressive learning</strong> - start simple, add complexity gradually</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Final Note -->
+                <section class="border-t border-gray-800 pt-8 mt-12">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-500">Final Note</h2>
+                    <p class="text-gray-300 mb-4">
+                        Building websites is a skill learned through practice. Start with a simple single-page site, then gradually 
+                        add features. Study the source code of sites you admire (right-click → View Page Source). Most importantly, 
+                        experiment and don't be afraid to break things - that's how you learn!
+                    </p>
+                    <p class="text-gray-300">
+                        You can view the complete source code for this website on GitHub. Every line is there for you to study, 
+                        copy, and learn from. Good luck with your web development journey!
+                    </p>
+                </section>
+            </div>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <div data-template="footer" data-root-path=""></div>
+</body>
+</html>

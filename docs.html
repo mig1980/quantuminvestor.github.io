@@ -68,7 +68,7 @@
                 <h3 class="text-xl font-semibold mb-3">High-Level Architecture</h3>
                 <ul class="list-disc list-inside mb-4">
                     <li><strong>Data Layer</strong> – Historical prices, benchmarks, and portfolio history live in the <code>Data/</code> directory, versioned by week (<code>Data/W1</code>, <code>Data/W2</code>, ...).</li>
-                    <li><strong>AI Layer</strong> – A sequence of prompts (Prompt A → B → C → D) run against an LLM to generate narrative, SEO metadata, and visuals.</li>
+                    <li><strong>AI Layer</strong> – A sequence of prompts (Prompt A → B → C → D) run against OpenAI models to generate narrative, SEO metadata, and visuals.</li>
                     <li><strong>Presentation Layer</strong> – Final posts are emitted as static HTML into <code>Posts/</code>, styled with <code>styles.css</code> and hydrated with small JS utilities like <code>tldr.js</code>.</li>
                 </ul>
 
@@ -114,7 +114,7 @@
                         </div>
                         <div>
                             <h3 class="font-semibold mb-1">LLM &amp; Prompting</h3>
-                            <p class="text-sm text-gray-300 mb-1">LLM APIs for Prompts A–D to generate structured data, narrative, SEO, and visuals.</p>
+                            <p class="text-sm text-gray-300 mb-1">OpenAI models via API for Prompts A–D to generate structured data, narrative, SEO, and visuals.</p>
                             <p class="text-xs text-gray-500">Specs: Prompt gallery below, <code>Prompt/Prompt-A–D</code> prompt documents.</p>
                         </div>
                     </div>
@@ -187,7 +187,7 @@
                 <h3 class="text-xl font-semibold mb-3">GenAI Decision Process</h3>
                 <ul class="list-disc list-inside mb-4">
                     <li><strong>Input Signals</strong> – Recent returns, drawdowns, sector tilts, and simple risk flags derived from <code>master.json</code>.</li>
-                    <li><strong>LLM Role</strong> – The model acts as an analyst and editor, proposing changes and explaining the rationale, but is constrained by explicit rules in the prompts.</li>
+                    <li><strong>OpenAI Model Role</strong> – The OpenAI model acts as an analyst and editor, proposing changes and explaining the rationale, but is constrained by explicit rules in the prompts.</li>
                     <li><strong>Guardrails</strong> – Prompts discourage concentrated bets, unsupported macro calls, and excessive turnover. The system favors incremental adjustments.</li>
                     <li><strong>Human Oversight</strong> – Final allocations are always reviewed by a human before being written to production data.</li>
                 </ul>
