@@ -25,14 +25,15 @@ POSTS_DIR = REPO_ROOT / "Posts"
 PROMPT_DIR = REPO_ROOT / "Prompt"
 ARCHIVE_DIR = DATA_DIR / "archive"
 
-# CSP policy template (per-run nonce, no unsafe-inline)
+# CSP policy template (blog-friendly: allows CDNs, inline styles, analytics)
 CSP_POLICY_TEMPLATE = (
     "default-src 'self'; "
-    "script-src 'self' 'nonce-{nonce}'; "
-    "style-src 'self'; "
-    "img-src 'self' data: https:; "
-    "font-src 'self' data:; "
-    "connect-src 'self'; "
+    "script-src 'self' 'nonce-{nonce}' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+    "img-src 'self' data: https: http:; "
+    "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+    "connect-src 'self' https://www.google-analytics.com https://stats.g.doubleclick.net; "
+    "frame-src 'self' https://www.youtube.com https://player.vimeo.com; "
     "frame-ancestors 'self'; "
     "base-uri 'self'; "
     "form-action 'self';"

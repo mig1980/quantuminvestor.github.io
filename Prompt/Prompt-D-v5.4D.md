@@ -65,12 +65,16 @@ Populate `<head>` using `seo.json` and the Week 5 conventions:
 - `<meta name="viewport" content="width=device-width, initial-scale=1.0">`
 - `<title>` – from `seo.title`
 - `<meta name="description" content="...">` – from `seo.description`
-- Author, theme-color, referrer:
+- **Security Headers** (REQUIRED for all pages):
   ```html
   <meta name="author" content="Michael Gavrilov">
   <meta name="theme-color" content="#000000">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Content-Security-Policy" content="[CSP policy from automation]">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   ```
+  Note: The CSP policy and nonce value are injected by the automation layer.
 - Canonical:
   ```html
   <link rel="canonical" href="[seo.canonicalUrl]">
@@ -97,16 +101,19 @@ Populate `<head>` using `seo.json` and the Week 5 conventions:
   <meta name="twitter:description" content="[seo.twitterDescription]">
   <meta name="twitter:image" content="[seo.twitterImage]">
   ```
-- Include CSS and JS includes (STRICT CSP – NO inline script/style; every inline JSON-LD must carry the nonce attribute provided by the automation layer; DO NOT emit `unsafe-inline` anywhere):
+- **CSS and JavaScript includes** (with CSP-compliant nonce attributes):
   ```html
   <link rel="stylesheet" href="../styles.css">
-  <script src="../js/template-loader.js" defer nonce="{{nonce}}"></script>
-  <script src="../js/mobile-menu.js" defer nonce="{{nonce}}"></script>
-  <script src="../js/tldr.js" defer nonce="{{nonce}}"></script>
-  <script type="application/ld+json" nonce="{{nonce}}">{...}</script>
-  <script type="application/ld+json" nonce="{{nonce}}">{...}</script>
+  <script src="../js/template-loader.js" defer nonce="qi123"></script>
+  <script src="../js/mobile-menu.js" defer nonce="qi123"></script>
+  <script src="../js/tldr.js" defer nonce="qi123"></script>
   ```
-  (The automation layer replaces `{{nonce}}` with a per-build random value.)
+- **JSON-LD Structured Data** - CRITICAL: ALL `<script type="application/ld+json">` blocks MUST include the `nonce` attribute for CSP compliance:
+  ```html
+  <script type="application/ld+json" nonce="qi123">{...BlogPosting schema...}</script>
+  <script type="application/ld+json" nonce="qi123">{...BreadcrumbList schema...}</script>
+  ```
+  Note: The automation layer uses `nonce="qi123"` as the standard value across all pages.
 
 ### INLINE VISUAL + TLDR CSS
 

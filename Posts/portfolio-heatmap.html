@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portfolio Stock Heatmap – GenAi Portfolio</title>
+  <meta name="description" content="Interactive heatmap visualization of individual stock performance in the AI-managed portfolio." />
+  <link rel="canonical" href="https://quantuminvestor.net/Posts/portfolio-heatmap.html" />
+  <link rel="icon" href="../Media/favicon.ico" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="../js/template-loader.js" defer></script>
+  <script src="../js/mobile-menu.js" defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    
+    .view-toggle { display:flex; gap:.75rem; margin:1.5rem 0; }
+    .view-toggle button { background:#181818; border:1px solid #282828; padding:.6rem 1.2rem; font-size:.85rem; border-radius:.5rem; cursor:pointer; transition:all .2s; }
+    .view-toggle button.active { background:#7e5bef; border-color:#9575ff; color:white; }
+    
+    .heatmap-container { display:grid; gap:.5rem; margin:2rem 0; }
+    
+    /* Grid view */
+    .heatmap-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:.75rem; }
+    .heat-cell { 
+      position:relative; 
+      padding:1.25rem 1rem; 
+      border-radius:.75rem; 
+      border:1px solid rgba(255,255,255,.1); 
+      cursor:pointer;
+      transition:all .25s ease;
+      display:flex;
+      flex-direction:column;
+      gap:.5rem;
+    }
+    .heat-cell:hover { transform:translateY(-4px); border-color:rgba(255,255,255,.3); box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    .heat-cell .ticker { font-size:1.1rem; font-weight:700; letter-spacing:.02em; }
+    .heat-cell .company { font-size:.7rem; color:#999; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .heat-cell .perf { font-size:1.5rem; font-weight:700; margin:.25rem 0; }
+    .heat-cell .metric-row { display:flex; justify-content:space-between; font-size:.7rem; }
+    .heat-cell .label { color:#777; }
+    .heat-cell .value { font-weight:600; }
+    
+    /* List view */
+    .heatmap-list { display:flex; flex-direction:column; gap:.5rem; }
+    .heat-row { 
+      display:grid; 
+      grid-template-columns: 80px 1fr 120px 120px 120px; 
+      gap:1rem; 
+      align-items:center; 
+      padding:1rem 1.25rem; 
+      background:#0c0c0c; 
+      border:1px solid #222; 
+      border-radius:.5rem;
+      cursor:pointer;
+      transition:all .2s;
+    }
+    .heat-row:hover { background:#141414; border-color:#333; }
+    .heat-row .ticker { font-weight:700; font-size:1rem; }
+    .heat-row .company { font-size:.8rem; color:#aaa; }
+    .heat-row .perf-bar-container { position:relative; height:24px; background:#1a1a1a; border-radius:.3rem; overflow:hidden; }
+    .heat-row .perf-bar { height:100%; border-radius:.3rem; transition:width .3s; }
+    .heat-row .perf-label { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:.75rem; font-weight:700; z-index:1; }
+    
+    /* Modal */
+    .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.85); z-index:100; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+    .modal-overlay.active { display:flex; }
+    .modal-content { background:#0f0f0f; border:1px solid #333; border-radius:1rem; padding:2rem; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative; }
+    .modal-close { position:absolute; top:1rem; right:1rem; background:#1a1a1a; border:1px solid #333; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center; }
+    .modal-close:hover { background:#252525; }
+    .modal-header { margin-bottom:1.5rem; }
+    .modal-ticker { font-size:1.8rem; font-weight:700; }
+    .modal-company { font-size:.9rem; color:#999; margin-top:.25rem; }
+    .modal-perf { font-size:2.5rem; font-weight:800; margin:1rem 0; }
+    .modal-stats { display:grid; gap:1rem; }
+    .modal-stat { display:flex; justify-content:space-between; padding:.75rem; background:#141414; border:1px solid #252525; border-radius:.5rem; }
+    .modal-stat .label { color:#888; font-size:.85rem; }
+    .modal-stat .value { font-weight:700; font-size:1rem; }
+    .price-history { margin-top:1.5rem; }
+    .price-history h3 { font-size:.9rem; color:#aaa; margin-bottom:.75rem; text-transform:uppercase; letter-spacing:.05em; }
+    .price-list { display:flex; flex-direction:column; gap:.5rem; }
+    .price-item { display:flex; justify-content:space-between; padding:.5rem .75rem; background:#0a0a0a; border-radius:.4rem; font-size:.85rem; }
+    
+    .legend { display:flex; gap:1.5rem; align-items:center; margin:1rem 0; font-size:.75rem; }
+    .legend-item { display:flex; align-items:center; gap:.5rem; }
+    .legend-box { width:20px; height:20px; border-radius:.3rem; }
+
+    /* Week selector */
+    .week-toggle { display:flex; align-items:center; gap:.5rem; margin:1rem 0 0 0; flex-wrap:wrap; }
+    .week-toggle label { font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:#888; }
+    #weekSelect { background:#181818; color:#eee; border:1px solid #282828; padding:.45rem .75rem; border-radius:.5rem; font-size:.8rem; cursor:pointer; }
+    #weekSelect:focus { outline:2px solid #7e5bef; outline-offset:2px; }
+    .week-badge { background:#222; padding:.35rem .6rem; border-radius:.4rem; font-size:.65rem; letter-spacing:.05em; color:#bbb; }
+    
+    @media (max-width:768px){
+      .heat-row { grid-template-columns: 70px 1fr 100px; gap:.5rem; padding:.75rem 1rem; }
+      .heat-row .metric-row { display:none; }
+      .heatmap-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <div data-template="header" data-root-path="../"></div>
+  <main class="container mx-auto px-4 py-10 max-w-6xl">
+    <h1 class="text-3xl font-bold mb-2">Portfolio Stock Heatmap</h1>
+    <p class="text-gray-400 mb-4 text-sm">Interactive visualization of individual stock performance. Click any stock for detailed breakdown.</p>
+    <div class="week-toggle">
+      <label for="weekSelect">Week</label>
+      <select id="weekSelect"></select>
+      <span id="weekMeta" class="week-badge" title="Auto-selected latest week"></span>
+    </div>
+
+    <div class="view-toggle">
+      <button id="btnGrid" class="active">Grid View</button>
+      <button id="btnList">List View</button>
+      <button id="btnWeekly" data-metric="weekly">Weekly %</button>
+      <button id="btnTotal" data-metric="total" class="active">Total %</button>
+    </div>
+    
+    <div class="legend">
+      <div class="legend-item"><div class="legend-box" style="background:#16a34a;"></div><span>Strong Gain (&gt;10%)</span></div>
+      <div class="legend-item"><div class="legend-box" style="background:#22c55e;"></div><span>Moderate Gain (5-10%)</span></div>
+      <div class="legend-item"><div class="legend-box" style="background:#4ade80;"></div><span>Slight Gain (0-5%)</span></div>
+      <div class="legend-item"><div class="legend-box" style="background:#333;"></div><span>Flat</span></div>
+      <div class="legend-item"><div class="legend-box" style="background:#f87171;"></div><span>Loss (&lt;0%)</span></div>
+    </div>
+    
+    <div id="heatmapContainer" class="heatmap-container"></div>
+    
+    <div class="panel mt-8" style="background:#0c0c0c; border:1px solid #222; padding:1.5rem; border-radius:.75rem;">
+      <h2 class="text-xl font-bold mb-3">About This Visualization</h2>
+      <p class="text-sm text-gray-300 leading-relaxed">
+        The heatmap provides an at-a-glance view of portfolio composition and individual stock performance. 
+        Color intensity represents performance magnitude—darker greens indicate stronger gains, while reds show losses. 
+        Each cell displays the ticker, company name, current performance percentage, shares held, and current value. 
+        Toggle between weekly and total performance metrics to analyze different timeframes. 
+        Click any stock to view detailed price history and position sizing.
+      </p>
+    </div>
+  </main>
+  
+  <!-- Modal -->
+  <div id="modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-close" id="modalClose">×</div>
+      <div class="modal-header">
+        <div class="modal-ticker" id="modalTicker">--</div>
+        <div class="modal-company" id="modalCompany">--</div>
+      </div>
+      <div class="modal-perf" id="modalPerf">--</div>
+      <div class="modal-stats" id="modalStats"></div>
+      <div class="price-history">
+        <h3>Price History</h3>
+        <div class="price-list" id="priceList"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div data-template="footer" data-root-path="../"></div>
+
+<script>
+(async function init(){
+  // Dynamic weeks
+  const weekSelect = document.getElementById('weekSelect');
+  const weekMeta = document.getElementById('weekMeta');
+  let availableWeeks = [];
+  const weekDataCache = {};
+  let currentWeek = null;
+  let data = null;
+  let stocks = [];
+
+  let currentView = 'grid'; // 'grid' or 'list'
+  let currentMetric = 'total'; // 'weekly' or 'total'
+
+  async function discoverWeeks(max = 60){
+    const found = [];
+    let started = false;
+    let misses = 0;
+    for(let i=1;i<=max;i++){
+      const id = `W${i}`;
+      try {
+        const res = await fetch(`../Data/${id}/master.json`, {method:'HEAD'});
+        if(res.ok){
+          found.push(id);
+          started = true;
+          misses = 0;
+        } else if (started){
+          misses++;
+          if(misses >= 3) break; // stop after consecutive misses once sequence started
+        }
+      } catch (e){
+        if(started){
+          misses++;
+          if(misses >= 3) break;
+        }
+      }
+    }
+    return found;
+  }
+
+  function populateWeekSelect(){
+    weekSelect.innerHTML = '';
+    availableWeeks.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w;
+      opt.textContent = w;
+      if(w === currentWeek) opt.selected = true;
+      weekSelect.appendChild(opt);
+    });
+    weekMeta.textContent = `Latest: ${availableWeeks[availableWeeks.length-1]}`;
+  }
+
+  async function loadWeek(){
+    if(!currentWeek) return;
+    if(weekDataCache[currentWeek]){
+      data = weekDataCache[currentWeek];
+    } else {
+      const res = await fetch(`../Data/${currentWeek}/master.json`);
+      data = await res.json();
+      weekDataCache[currentWeek] = data;
+    }
+    stocks = data.stocks;
+    renderHeatmap();
+  }
+
+  function getColor(pct) {
+    if (pct >= 10) return '#16a34a';
+    if (pct >= 5) return '#22c55e';
+    if (pct >= 0) return '#4ade80';
+    if (pct > -5) return '#f87171';
+    if (pct > -10) return '#ef4444';
+    return '#dc2626';
+  }
+
+  function renderHeatmap() {
+    const container = document.getElementById('heatmapContainer');
+    container.innerHTML = '';
+    if(!stocks || !stocks.length){
+      container.textContent = 'No data available for selected week.';
+      return;
+    }
+
+    if (currentView === 'grid') {
+      container.className = 'heatmap-container heatmap-grid';
+      stocks.forEach(stock => {
+        const pct = currentMetric === 'weekly' ? stock.weekly_pct : stock.total_pct;
+        const cell = document.createElement('div');
+        cell.className = 'heat-cell';
+        cell.style.background = `linear-gradient(135deg, ${getColor(pct)}22 0%, ${getColor(pct)}11 100%)`;
+        cell.style.borderColor = `${getColor(pct)}44`;
+        cell.innerHTML = `
+          <div class="ticker">${stock.ticker}</div>
+          <div class="company">${stock.name}</div>
+          <div class="perf" style="color:${getColor(pct)};">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</div>
+          <div class="metric-row">
+            <span class="label">Shares:</span>
+            <span class="value">${stock.shares.toFixed(2)}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">Value:</span>
+            <span class="value">$${stock.current_value.toLocaleString()}</span>
+          </div>
+        `;
+        cell.addEventListener('click', () => openModal(stock));
+        container.appendChild(cell);
+      });
+    } else {
+      container.className = 'heatmap-container heatmap-list';
+      const sorted = [...stocks].sort((a, b) => {
+        const aVal = currentMetric === 'weekly' ? a.weekly_pct : a.total_pct;
+        const bVal = currentMetric === 'weekly' ? b.weekly_pct : b.total_pct;
+        return bVal - aVal;
+      });
+      sorted.forEach(stock => {
+        const pct = currentMetric === 'weekly' ? stock.weekly_pct : stock.total_pct;
+        const row = document.createElement('div');
+        row.className = 'heat-row';
+        const maxPct = Math.max(...stocks.map(s => Math.abs(currentMetric === 'weekly' ? s.weekly_pct : s.total_pct)));
+        const barWidth = Math.min(100, (Math.abs(pct) / maxPct) * 100);
+        const barAlign = pct >= 0 ? 'left' : 'right';
+        row.innerHTML = `
+          <div class="ticker">${stock.ticker}</div>
+          <div class="company">${stock.name}</div>
+          <div class="perf-bar-container">
+            <div class="perf-bar" style="width:${barWidth}%; background:${getColor(pct)}; float:${barAlign};"></div>
+            <div class="perf-label" style="color:${getColor(pct)};">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</div>
+          </div>
+          <div style="text-align:right; font-size:.85rem;">
+            <div>${stock.shares.toFixed(2)} shares</div>
+          </div>
+          <div style="text-align:right; font-weight:600; font-size:.9rem;">
+            $${stock.current_value.toLocaleString()}
+          </div>
+        `;
+        row.addEventListener('click', () => openModal(stock));
+        container.appendChild(row);
+      });
+    }
+  }
+
+  function openModal(stock) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTicker').textContent = stock.ticker;
+    document.getElementById('modalCompany').textContent = stock.name;
+    const pct = currentMetric === 'weekly' ? stock.weekly_pct : stock.total_pct;
+    const perfEl = document.getElementById('modalPerf');
+    perfEl.textContent = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+    perfEl.style.color = getColor(pct);
+    const statsEl = document.getElementById('modalStats');
+    statsEl.innerHTML = `
+      <div class="modal-stat">
+        <span class="label">Shares Held</span>
+        <span class="value">${stock.shares.toFixed(4)}</span>
+      </div>
+      <div class="modal-stat">
+        <span class="label">Current Value</span>
+        <span class="value">$${stock.current_value.toLocaleString()}</span>
+      </div>
+      <div class="modal-stat">
+        <span class="label">Weekly Performance</span>
+        <span class="value" style="color:${getColor(stock.weekly_pct)};">${stock.weekly_pct > 0 ? '+' : ''}${stock.weekly_pct.toFixed(2)}%</span>
+      </div>
+      <div class="modal-stat">
+        <span class="label">Total Performance</span>
+        <span class="value" style="color:${getColor(stock.total_pct)};">${stock.total_pct > 0 ? '+' : ''}${stock.total_pct.toFixed(2)}%</span>
+      </div>
+      <div class="modal-stat">
+        <span class="label">Portfolio Weight</span>
+        <span class="value">${data ? ((stock.current_value / data.portfolio_totals.current_value) * 100).toFixed(2) : '--'}%</span>
+      </div>
+      <div class="modal-stat">
+        <span class="label">Data Week</span>
+        <span class="value">${currentWeek}</span>
+      </div>
+    `;
+    const priceList = document.getElementById('priceList');
+    priceList.innerHTML = '';
+    const prices = stock.prices || {};
+    const dates = Object.keys(prices).sort();
+    dates.forEach((date, idx) => {
+      const price = prices[date];
+      const prevPrice = idx > 0 ? prices[dates[idx - 1]] : price;
+      const change = prevPrice ? ((price - prevPrice) / prevPrice) * 100 : 0;
+      const item = document.createElement('div');
+      item.className = 'price-item';
+      item.innerHTML = `
+        <span>${new Date(date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</span>
+        <span style="font-weight:600;">$${price.toFixed(2)}</span>
+        ${idx > 0 ? `<span style="color:${change >= 0 ? '#4ade80' : '#f87171'};">${change > 0 ? '+' : ''}${change.toFixed(2)}%</span>` : '<span>—</span>'}
+      `;
+      priceList.appendChild(item);
+    });
+    modal.classList.add('active');
+  }
+
+  document.getElementById('modalClose').addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('active');
+  });
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') {
+      document.getElementById('modal').classList.remove('active');
+    }
+  });
+
+  // View toggles
+  document.getElementById('btnGrid').addEventListener('click', () => {
+    currentView = 'grid';
+    document.getElementById('btnGrid').classList.add('active');
+    document.getElementById('btnList').classList.remove('active');
+    renderHeatmap();
+  });
+  document.getElementById('btnList').addEventListener('click', () => {
+    currentView = 'list';
+    document.getElementById('btnList').classList.add('active');
+    document.getElementById('btnGrid').classList.remove('active');
+    renderHeatmap();
+  });
+
+  // Metric toggles
+  document.getElementById('btnWeekly').addEventListener('click', () => {
+    currentMetric = 'weekly';
+    document.getElementById('btnWeekly').classList.add('active');
+    document.getElementById('btnTotal').classList.remove('active');
+    renderHeatmap();
+  });
+  document.getElementById('btnTotal').addEventListener('click', () => {
+    currentMetric = 'total';
+    document.getElementById('btnTotal').classList.add('active');
+    document.getElementById('btnWeekly').classList.remove('active');
+    renderHeatmap();
+  });
+
+  // Week change
+  weekSelect.addEventListener('change', async () => {
+    currentWeek = weekSelect.value;
+    await loadWeek();
+  });
+
+  // Discover weeks & initial load
+  try {
+    availableWeeks = await discoverWeeks();
+  } catch (e){
+    console.warn('Week discovery failed, falling back to W5', e);
+    availableWeeks = ['W5'];
+  }
+  if(availableWeeks.length === 0){
+    availableWeeks = ['W5'];
+  }
+  currentWeek = availableWeeks[availableWeeks.length - 1];
+  populateWeekSelect();
+  await loadWeek();
+})();
+</script>
+</body>
+</html>

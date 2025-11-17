@@ -45,7 +45,7 @@ Do NOT include the TLDR summary strip. That component is injected by Prompt D. B
 
 ### Paragraphs
 
-- Use utility classes ONLY (strict CSP forbids inline `style=`). No inline styles.
+- Use utility classes ONLY (best practice for maintainability). Avoid inline styles.
   - Intro paragraph:
     ```html
     <p class="text-xl text-gray-300 mb-6"> ... </p>

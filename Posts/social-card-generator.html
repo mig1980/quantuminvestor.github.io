@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Social Media Card Generator – GenAi Portfolio</title>
+  <meta name="description" content="Generate shareable Twitter and LinkedIn cards for AI-managed portfolio updates." />
+  <link rel="canonical" href="https://quantuminvestor.net/Posts/social-card-generator.html" />
+  <link rel="icon" href="../Media/favicon.ico" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="../js/template-loader.js" defer></script>
+  <script src="../js/mobile-menu.js" defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    
+    .control-panel { background:#0c0c0c; border:1px solid #222; padding:1.5rem; border-radius:.75rem; margin-bottom:2rem; }
+    .control-row { display:flex; gap:1rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .control-row label { font-size:.85rem; color:#aaa; min-width:120px; }
+    .control-row select, .control-row input { background:#161616; border:1px solid #333; padding:.6rem 1rem; border-radius:.5rem; color:#fff; font-size:.9rem; }
+    .control-row button { background:#7e5bef; border:none; padding:.7rem 1.5rem; border-radius:.5rem; cursor:pointer; font-weight:600; transition:all .2s; }
+    .control-row button:hover { background:#9575ff; transform:translateY(-1px); }
+    .control-row button:disabled { opacity:.4; cursor:not-allowed; }
+    
+    .platform-tabs { display:flex; gap:.75rem; margin-bottom:1.5rem; }
+    .platform-tab { background:#181818; border:1px solid #282828; padding:.6rem 1.5rem; border-radius:.5rem; cursor:pointer; transition:all .2s; font-size:.9rem; }
+    .platform-tab.active { background:#7e5bef; border-color:#9575ff; }
+    
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:1.5rem; margin-bottom:2rem; }
+    .card-wrapper { background:#0f0f0f; border:1px solid #252525; border-radius:.75rem; padding:1.25rem; }
+    .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .card-title { font-size:.85rem; font-weight:600; color:#aaa; text-transform:uppercase; letter-spacing:.05em; }
+    .card-actions { display:flex; gap:.5rem; }
+    .card-actions button { background:#1a1a1a; border:1px solid #333; padding:.4rem .8rem; font-size:.7rem; border-radius:.4rem; cursor:pointer; transition:all .2s; }
+    .card-actions button:hover { background:#252525; border-color:#444; }
+    
+    /* Card Canvas Containers */
+    .card-canvas-wrapper { position:relative; border-radius:.5rem; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+    
+    /* Twitter Card (1200x675) */
+    .twitter-card { 
+      width:600px; 
+      height:337.5px; 
+      position:relative; 
+      background:linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:2rem;
+      color:#fff;
+      font-family:system-ui, -apple-system, sans-serif;
+    }
+    
+    /* LinkedIn Card (1200x627) */
+    .linkedin-card {
+      width:600px;
+      height:313.5px;
+      position:relative;
+      background:linear-gradient(135deg, #0e0e0e 0%, #1e1e1e 100%);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:2rem;
+      color:#fff;
+      font-family:system-ui, -apple-system, sans-serif;
+    }
+    
+    .card-header-text { z-index:2; }
+    .card-week { font-size:1.1rem; color:#999; font-weight:500; letter-spacing:.05em; }
+    .card-headline { font-size:2rem; font-weight:800; line-height:1.2; margin-top:.5rem; }
+    .card-metrics { display:flex; gap:2rem; margin-top:1rem; flex-wrap:wrap; }
+    .card-metric { display:flex; flex-direction:column; }
+    .card-metric-label { font-size:.7rem; color:#888; text-transform:uppercase; letter-spacing:.08em; }
+    .card-metric-value { font-size:1.8rem; font-weight:700; margin-top:.25rem; }
+    .card-metric-value.positive { color:#4ade80; }
+    .card-metric-value.negative { color:#f87171; }
+    
+    .card-chart { position:absolute; bottom:2rem; right:2rem; width:250px; height:100px; opacity:.3; z-index:1; }
+    .card-chart svg { width:100%; height:100%; }
+    
+    .card-footer { display:flex; justify-content:space-between; align-items:center; z-index:2; }
+    .card-branding { font-size:.8rem; color:#666; font-weight:600; letter-spacing:.05em; }
+    .card-logo { width:32px; height:32px; background:#7e5bef; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; }
+    
+    /* Style variations */
+    .style-minimal { background:linear-gradient(135deg, #000 0%, #1a1a1a 100%); }
+    .style-vibrant { background:linear-gradient(135deg, #1e1b4b 0%, #7e22ce 100%); }
+    .style-clean { background:#fff; color:#000; }
+    .style-clean .card-week { color:#666; }
+    .style-clean .card-branding { color:#999; }
+    .style-clean .card-metric-label { color:#666; }
+    
+    .info-box { background:#0a0a0a; border:1px solid #222; padding:1rem 1.25rem; border-radius:.5rem; margin-top:2rem; font-size:.85rem; color:#aaa; line-height:1.6; }
+    .info-box strong { color:#fff; }
+    
+    @media (max-width:768px) {
+      .cards-grid { grid-template-columns:1fr; }
+      .twitter-card, .linkedin-card { transform:scale(0.8); transform-origin:top left; }
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <div id="password-gate-overlay" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:9999;">
+    <form id="password-gate-form" style="background:#111;padding:2rem;border:1px solid #333;border-radius:.75rem;max-width:320px;width:100%;font-family:system-ui;">
+      <h2 style="margin:0 0 1rem;font-size:1.2rem;color:#fff;">Protected Page</h2>
+      <p style="font-size:.75rem;color:#999;line-height:1.3;margin:0 0 1rem;">Enter password to view content.</p>
+      <input type="password" id="password-gate-input" placeholder="Password" style="width:100%;padding:.6rem .8rem;background:#1a1a1a;border:1px solid #333;border-radius:.5rem;color:#fff;margin-bottom:1rem;" />
+      <button type="submit" style="width:100%;background:#7e5bef;border:none;padding:.6rem 1rem;border-radius:.5rem;font-weight:600;cursor:pointer;">Unlock</button>
+      <div id="password-gate-error" style="color:#f87171;font-size:.7rem;margin-top:.75rem;display:none;"></div>
+      <div style="color:#666;font-size:.65rem;margin-top:1rem;line-height:1.2;">Light obfuscation only. Sensitive content should not rely on this.</div>
+    </form>
+  </div>
+  <div data-template="header" data-root-path="../"></div>
+  <main class="container mx-auto px-4 py-10 max-w-7xl">
+    <h1 class="text-3xl font-bold mb-2">Social Media Card Generator</h1>
+    <p class="text-gray-400 mb-6 text-sm">Generate professional shareable cards for Twitter and LinkedIn with auto-populated portfolio metrics.</p>
+    
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="control-row">
+        <label for="weekSelect">Select Week:</label>
+        <select id="weekSelect">
+          <option value="">-- Choose Week --</option>
+        </select>
+        <button id="generateBtn" disabled>Generate Cards</button>
+      </div>
+      <div id="loadingMsg" style="display:none; color:#7e5bef; font-size:.85rem;">Loading data...</div>
+      <div id="errorMsg" style="display:none; color:#f87171; font-size:.85rem;"></div>
+    </div>
+    
+    <!-- Platform Tabs -->
+    <div class="platform-tabs">
+      <div class="platform-tab active" data-platform="twitter">Twitter (1200×675)</div>
+      <div class="platform-tab" data-platform="linkedin">LinkedIn (1200×627)</div>
+    </div>
+    
+    <!-- Cards Grid -->
+    <div id="cardsContainer" class="cards-grid"></div>
+    
+    <!-- Info Box -->
+    <div class="info-box">
+      <strong>How to use:</strong><br>
+      1. Select a week from the dropdown<br>
+      2. Click "Generate Cards" to create preview cards<br>
+      3. Switch between Twitter and LinkedIn formats using tabs<br>
+      4. Download individual cards as PNG images (right-click → Save Image)<br>
+      5. Copy card HTML to integrate elsewhere<br><br>
+      <strong>Card Styles:</strong> Each platform generates 3 design variations (Minimal, Vibrant, Clean) optimized for social media engagement.
+    </div>
+  </main>
+  <div data-template="footer" data-root-path="../"></div>
+
+<script>
+(function(){
+  let weekData = null;
+  let availableWeeks = [];
+  
+  // Available card styles
+  const cardStyles = {
+    twitter: [
+      { id: 'minimal', name: 'Minimal Dark', class: 'style-minimal' },
+      { id: 'vibrant', name: 'Vibrant Purple', class: 'style-vibrant' },
+      { id: 'clean', name: 'Clean Light', class: 'style-clean' }
+    ],
+    linkedin: [
+      { id: 'minimal', name: 'Professional Dark', class: 'style-minimal' },
+      { id: 'vibrant', name: 'Bold Purple', class: 'style-vibrant' },
+      { id: 'clean', name: 'Corporate Light', class: 'style-clean' }
+    ]
+  };
+  
+  let currentPlatform = 'twitter';
+  
+  // Initialize
+  async function init() {
+    // Discover available weeks
+    for (let i = 1; i <= 10; i++) {
+      try {
+        const res = await fetch(`../Data/W${i}/master.json`);
+        if (res.ok) {
+          availableWeeks.push(i);
+        }
+      } catch (e) {
+        break;
+      }
+    }
+    
+    const weekSelect = document.getElementById('weekSelect');
+    availableWeeks.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w;
+      opt.textContent = `Week ${w}`;
+      weekSelect.appendChild(opt);
+    });
+    
+    weekSelect.addEventListener('change', async (e) => {
+      const week = e.target.value;
+      if (!week) {
+        document.getElementById('generateBtn').disabled = true;
+        return;
+      }
+      
+      document.getElementById('loadingMsg').style.display = 'block';
+      document.getElementById('errorMsg').style.display = 'none';
+      
+      try {
+        const res = await fetch(`../Data/W${week}/master.json`);
+        if (!res.ok) throw new Error('Failed to load data');
+        weekData = await res.json();
+        weekData.weekNumber = week;
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('loadingMsg').style.display = 'none';
+      } catch (err) {
+        document.getElementById('errorMsg').textContent = `Error loading Week ${week} data: ${err.message}`;
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('generateBtn').disabled = true;
+      }
+    });
+    
+    document.getElementById('generateBtn').addEventListener('click', generateCards);
+    
+    // Platform tabs
+    document.querySelectorAll('.platform-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentPlatform = tab.dataset.platform;
+        if (weekData) generateCards();
+      });
+    });
+  }
+  
+  function generateCards() {
+    if (!weekData) return;
+    
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    
+    const styles = cardStyles[currentPlatform];
+    const portfolio = weekData.portfolio_history;
+    const latest = portfolio[portfolio.length - 1];
+    const spx = weekData.benchmarks.sp500.history[weekData.benchmarks.sp500.history.length - 1];
+    
+    const weeklyPct = latest.weekly_pct !== null ? latest.weekly_pct : 0;
+    const totalPct = latest.total_pct;
+    const alpha = totalPct - spx.total_pct;
+    
+    // Generate mini sparkline data
+    const sparkData = portfolio.map(p => p.total_pct);
+    
+    styles.forEach((style, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'card-wrapper';
+      
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      header.innerHTML = `
+        <div class="card-title">Option ${idx + 1}: ${style.name}</div>
+        <div class="card-actions">
+          <button onclick="downloadCard('card-${currentPlatform}-${idx}', 'GenAi-Portfolio-Week${weekData.weekNumber}-${currentPlatform}-${style.id}.png')">Download PNG</button>
+          <button onclick="copyCardHTML('card-${currentPlatform}-${idx}')">Copy HTML</button>
+        </div>
+      `;
+      
+      const canvasWrapper = document.createElement('div');
+      canvasWrapper.className = 'card-canvas-wrapper';
+      
+      const card = document.createElement('div');
+      card.id = `card-${currentPlatform}-${idx}`;
+      card.className = currentPlatform === 'twitter' ? 'twitter-card' : 'linkedin-card';
+      card.classList.add(style.class);
+      
+      // Card content
+      const headline = totalPct >= 0 ? 
+        `Portfolio Up ${totalPct.toFixed(2)}% Since Inception` :
+        `Portfolio Performance: ${totalPct.toFixed(2)}%`;
+      
+      card.innerHTML = `
+        <div class="card-header-text">
+          <div class="card-week">Week ${weekData.weekNumber} Update</div>
+          <div class="card-headline">${headline}</div>
+          <div class="card-metrics">
+            <div class="card-metric">
+              <div class="card-metric-label">Weekly</div>
+              <div class="card-metric-value ${weeklyPct >= 0 ? 'positive' : 'negative'}">${weeklyPct >= 0 ? '+' : ''}${weeklyPct.toFixed(2)}%</div>
+            </div>
+            <div class="card-metric">
+              <div class="card-metric-label">Alpha vs SPX</div>
+              <div class="card-metric-value ${alpha >= 0 ? 'positive' : 'negative'}">${alpha >= 0 ? '+' : ''}${alpha.toFixed(2)}%</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-chart">
+          <svg viewBox="0 0 250 100" xmlns="http://www.w3.org/2000/svg">
+            ${generateSparklinePath(sparkData)}
+          </svg>
+        </div>
+        
+        <div class="card-footer">
+          <div class="card-branding">quantuminvestor.net</div>
+          <div class="card-logo">Q</div>
+        </div>
+      `;
+      
+      canvasWrapper.appendChild(card);
+      wrapper.appendChild(header);
+      wrapper.appendChild(canvasWrapper);
+      container.appendChild(wrapper);
+    });
+  }
+  
+  function generateSparklinePath(data) {
+    if (data.length === 0) return '';
+    
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    
+    let path = '';
+    data.forEach((val, i) => {
+      const x = (i / (data.length - 1)) * 250;
+      const y = 100 - ((val - min) / range) * 80 - 10; // 10px padding
+      path += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+    });
+    
+    return `<path d="${path.trim()}" fill="none" stroke="#7e5bef" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  
+  // Global functions for buttons
+  window.downloadCard = async function(cardId, filename) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    
+    // Use html2canvas library (you'll need to include it)
+    // For now, show instructions
+    alert('To download cards:\n\n1. Right-click on the card\n2. Select "Save Image As..."\n3. Save as PNG\n\nAlternatively, take a screenshot of the card area.\n\nFor automated export, integrate html2canvas or similar library.');
+  };
+  
+  window.copyCardHTML = function(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    
+    const html = card.outerHTML;
+    navigator.clipboard.writeText(html).then(() => {
+      alert('Card HTML copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy HTML. Check console for details.');
+    });
+  };
+  
+  init();
+})();
+</script>
+
+<!-- Optional: Include html2canvas for automated PNG export -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> -->
+<!-- 
+<script>
+// Enhanced download function with html2canvas
+window.downloadCard = async function(cardId, filename) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  
+  const scale = 2; // 2x for high resolution
+  const canvas = await html2canvas(card, {
+    scale: scale,
+    backgroundColor: null,
+    logging: false
+  });
+  
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+};
+</script>
+-->
+
+<script src="../js/password-gate.js" data-password-hash="18ae8ef593e3ad19525954a455f81cc50b0b5e6462dc95468eb4d43f9d8ea17d"></script>
+</body>
+</html>

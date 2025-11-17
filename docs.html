@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#000000">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https: http:; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://www.google-analytics.com https://stats.g.doubleclick.net; frame-src 'self' https://www.youtube.com https://player.vimeo.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="canonical" href="https://quantuminvestor.net/docs.html">
     <link rel="icon" href="Media/favicon.ico" type="image/x-icon">
@@ -85,7 +85,7 @@
                 <h3 class="text-xl font-semibold mb-3">Security &amp; Performance Hardening</h3>
                 <p class="mb-3">The site is hardened as a static, CSP-protected deployment:</p>
                 <ul class="list-disc list-inside mb-4">
-                    <li><strong>Content Security Policy</strong> – A strict CSP disables inline scripts and restricts assets to <code>'self'</code>, with a nonce-based allowlist for JS.</li>
+                    <li><strong>Content Security Policy</strong> – A blog-friendly CSP allows inline styles, popular CDNs (jsdelivr, cdnjs), Google Analytics, and Google Fonts, while maintaining nonce-based script validation and blocking unauthorized external resources.</li>
                     <li><strong>Static Generation</strong> – All weekly posts are pre-rendered HTML files, reducing attack surface and improving performance.</li>
                     <li><strong>Image Optimization</strong> – Weekly hero and snippet images are generated with Pillow and exported as optimized WEBP/PNG assets.</li>
                     <li><strong>Accessibility</strong> – Skip links, semantic headings, and ARIA attributes make the content screen-reader friendly.</li>

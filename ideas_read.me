@@ -77,3 +77,109 @@ I’d skip official OS branding and instead keep the VS Code + GitHub combo as y
 If you want, you can put the downloaded files under Media/logos/ (e.g., Media/logos/python.png, Media/logos/vscode.png, Media/logos/github.svg, etc.), tell me the final filenames, and I’ll update the Tools & Stack section in docs.html to use <img> tags with those logos.
 
 GPT-5.1 (Preview) • 1x
+
+============================================
+Deep Expansion & Innovation Idea Bank (2025)
+============================================
+
+Strategic North Stars (Differentiators)
+- Living AI Portfolio Companion: A persistent AI persona ("Portfolio Steward") that summarizes weekly shifts, explains rationale vs benchmarks, answers user questions (fine-tuned retrieval over past `W*/master.json`, `narrative.html`, performance tables).
+- Explainable Alpha Explorer: Interactive panel where each position shows: (1) hypothesis at entry, (2) factor decomposition (value/momentum/quality), (3) sentiment overlay, (4) confidence decay curve.
+- Counterfactual Sandbox: Users toggle macro events (rate cut, earnings surprise) and see simulated portfolio re-weight suggestions (client-side Monte Carlo + scenario mapping).
+- Trust & Provenance Ledger: Hash each weekly dataset (`master.json`, `normalized_chart.csv`) and display a tamper-evident chain with timestamps.
+- Narrative Delta Lens: Highlight only what changed this week vs last (positions added/trimmed, risk metrics shift) in a succinct diff card.
+
+Advanced Data / Quant Features
+- Rolling Factor Heatmap: Compute weekly z-scores for factors (size, value, momentum) across holdings; animate over time.
+- Drawdown Storyline: Annotated chart overlay showing causes of largest drawdowns (earnings miss, macro headline) + recovery steps.
+- Adaptive Risk Budget Dial: Real-time indicator showing current risk utilization (e.g., VaR vs configured ceiling) with explanation.
+- Attribution Tree: Sunburst visualization splitting returns into allocation effect vs selection effect at sector/stock level.
+- Regime Detector: Label each week with regime tag (Volatile, Trending, Mean-Reverting) derived from price dispersion + autocorr metrics; display tag badge on weekly posts.
+- Cash vs Opportunity Meter: Simple gauge comparing unallocated cash vs number of screened high conviction candidates.
+- Benchmark Mosaic: Side-by-side micro-sparklines for S&P, Nasdaq, sector ETFs vs portfolio for rapid context.
+
+Interactive & Visualization Enhancements
+- Hoverable Micro-Tooltips: On charts, show "Why this move?" auto-generated sentence referencing `market_data.json`.
+- Animated Position Lifecycle Timeline: Each holding’s vertical timeline (enter → scale → trim → exit) with clickable nodes.
+- SVG-based Progressive Disclosure: Collapsible panels for deeper analytics (already noted) rendered with smooth height transitions.
+- Mobile Swipe Cards: Weekly insight cards (TL;DR bullet + explore button) built from `performance_table.html`.
+- Multi-Layer Canvas Chart: Price, volume anomaly bands, sentiment dots (from external feed later), trade annotations.
+- Visual Confidence Gradient: Color intensity per holding representing predictive confidence score.
+
+AI / ML Layer
+- Retrieval-Augmented Q&A: Index historical weekly HTML posts + JSON; user asks “Why did we increase semiconductors exposure?” → generated answer citing sources.
+- Anomaly Narrator: Detect outlier performance vs peers; auto-generate 2–3 sentence explanation + risk note.
+- Idea Synthesizer: Parse external news API daily; surface 3 candidate tickers with rationale & risk flags.
+- Risk Drift Watchdog: AI monitors metric drift (e.g., average beta creeping up) triggers a sidebar alert.
+- Tag Classification: Auto-label posts with thematic tags (AI, Macro, Earnings) for improved navigation.
+- Strategy Evolution Log: AI summarizes month-over-month changes in decision heuristics.
+
+User Engagement / Community
+- Weekly Poll: “Should we trim Sector X?” Results influence a hypothetical ‘community shadow allocation’ displayed next week.
+- Subscriber Custom Views: Allow saved filters (e.g., only growth holdings, only high conviction). Persist in localStorage first.
+- Feedback Inline Prompts: Under narrative sections a subtle “Was this clear?” thumbs + optional comment.
+- Office Hours Calendar: Embedded schedule where Portfolio Steward does monthly AMA (text transcripts archived).
+- Shareable Snapshot: Generate dynamic OG image summarizing top 5 movers & weekly return %.
+
+Education Layer (Leverage `Education/` Directory)
+- Interactive Glossary: When user hovers on “Sharpe” in a post, glossary tooltip with mini-example.
+- Micro-Labs: Mini client-side labs (e.g., “Adjust volatility threshold and see rebalancing frequency change”).
+- Concept Progress Tracker: Badge system for users who explore 5+ glossary items.
+- Curriculum Pathways: Recommended sequence (Basics → Risk → Attribution → Factor Analysis) with completion indicator.
+
+Automation & Workflow Improvements
+- CI Data Validator: Pre-publish script verifying schema (presence of required keys in `master.json`, consistency of holdings count). Fails build if mismatch.
+- Auto-Changelog Generator: Summarize changes from prior week programmatically (positions diff) appended to post template.
+- Template Token System: Replace placeholders in `templates/` with dynamic weekly stats (max drawdown, turnover) on build.
+- Image Pipeline Enhancer: `hero_image_generator.py` adds overlay of key metrics for week as alt text and accessible caption.
+
+Security / Integrity Extensions
+- CSP + SRI (already ideated): Add nonce for any inline scripts created by dynamic loaders.
+- Read-Only Mode Toggle: Flag ensuring no external forms can inject content if future interactive features added.
+- Performance Budget Monitor: Script logs asset sizes; warn if threshold exceeded (keeping site lean).
+- Dark Deploy Staging: Hidden query param `?preview=next` to test future features safely.
+
+Performance / UX Polish
+- Critical CSS Inlining: Extract above-the-fold CSS from `styles.css` for faster first paint.
+- Font Loading Strategy: Use `font-display: swap` & preconnect for any external fonts.
+- Service Worker (Static Cache): Cache weekly images + JSON; fallback to last snapshot if offline.
+- Smooth Data Skeletons: Skeleton loaders for charts before JSON fetch resolves.
+- Accessibility Contrast Checker: Automated test ensures color ratios meet WCAG AA.
+
+Transparency & Ethics
+- Decision Rationale Disclosure: Document model heuristics in a dedicated `model.html` page with versioning.
+- Error & Limitations Log: Public page listing modeling misses (e.g., position underperformed vs expectation) with lessons.
+- Data Source Ledger: Expand provenance table listing refresh cadence, licensing notes.
+
+Growth & Marketing Hooks
+- Weekly TL;DR Email Export: Generate markdown summary convertible to newsletter.
+- Dynamic OG Meta: Build meta tags per week for social sharing highlighting unique alpha stat.
+- Referral Tracking Param: Append utm fields to outbound educational resource links for analytics.
+- Seasonal Themes: Automatic highlight color shift during earnings season or macro events week tag.
+
+Monetization (If Desired Later)
+- Premium Layer: Deeper scenario sandbox, early access to next-week provisional allocation.
+- API Tier: Expose sanitized endpoints (positions, risk metrics) with key management.
+- Report PDF Generator: One-click export of weekly narrative + charts as branded PDF.
+
+Long-Term Moonshots
+- Reinforcement Simulation Arena: Train a simulated allocation agent on archived weeks to compare vs actual.
+- Cross-Portfolio Correlation Explorer: If multiple strategies added later, matrix showing diversity benefits.
+- ESG / Impact Overlay: Tag holdings with sustainability metrics & display aggregate footprint.
+- Sentiment vs Position Sizing Study: Correlate social sentiment index with actual weighting decisions.
+
+Implementation Starter Notes
+- Begin with low-risk UI: progressive disclosure panels for factor heatmap + attribution tree.
+- Data diff: Write a Python utility extending `portfolio_automation.py` to compute position deltas and JSON diff artifact.
+- Retrieval Q&A: Index `Posts/GenAi-*` HTML + weekly JSON with simple inverted index before scaling to vector search.
+- Attribution: Parse returns per holding from existing CSV; allocate sector classification dictionary.
+- Regime detection: Add function computing realized volatility & breadth; threshold logic for tags.
+
+Quick First Wins (High ROI, Low Effort)
+1. Narrative Delta Lens card under each weekly post.
+2. Factor heatmap (static PNG or SVG) generated server-side.
+3. Glossary tooltips in education pages.
+4. Shareable snapshot OG image generator.
+5. Data validator script in automation pipeline.
+
+Next Step Suggestion: Confirm which 3–5 features to prototype; I can draft scaffolds.
