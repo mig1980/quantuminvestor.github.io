@@ -101,7 +101,8 @@ jobs:
                   "master data/archive/"*.json \
                   "Posts/"*.html \
                   "Media/W"*.webp \
-                  "Data/W"*/
+                  "Data/W"*/ \
+                  "index.html"
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
