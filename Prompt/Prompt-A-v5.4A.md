@@ -127,3 +127,5 @@ Found {count} error(s) in Week {N}:
 
 Review automation script.
 ```
+
+**Note**: The automation script automatically saves this validation report to `Data/W{N}/validation_report.txt` with timestamp and full details.

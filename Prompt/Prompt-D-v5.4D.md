@@ -65,29 +65,31 @@ Use `seo.json` for all meta tags:
 - Security: CSP (from automation), X-Content-Type-Options, X-Frame-Options, referrer
 - Links: canonical, favicon
 - OG/Twitter: type, url, title, description, image, published/modified times
-- Scripts: `../styles.css`, template-loader/mobile-menu/tldr.js with `defer nonce="qi123"`
+- Scripts: `../styles.css` stylesheet, then `../js/template-loader.js`, `../js/mobile-menu.js`, `../js/tldr.js` all with `defer nonce="qi123"`
 - JSON-LD: BlogPosting + BreadcrumbList schemas with `nonce="qi123"`
 
 ### INLINE VISUAL + TLDR CSS
 
-In `<head>`, include a `<style>` block with:
+**CRITICAL**: The automation script now injects complete CSS styles in the `<style>` block within `<head>`. You do NOT need to add CSS manually.
 
-- All `.myblock-chart-*` styles.
-- All `.myblock-performance-snapshot` and `.myblock-portfolio-table` styles.
-- TLDR strip styles (added below).
-- All media queries (for 900px / 768px / 480px breakpoints).
+The automation script's `_apply_standard_head()` method automatically injects:
+- Complete `.myblock-performance-snapshot` and `.myblock-portfolio-table` styles matching Week 5:
+  - Purple header: `#8B7AB8`
+  - White table background
+  - Green text for positive values: `#2E7D32`
+  - Red text for negative values: `#C62828`
+- Complete `.myblock-chart-container`, `.myblock-chart-line-*`, `.myblock-chart-dot-*`, and `.myblock-chart-legend` styles matching Week 5:
+  - Purple GenAi solid line: `#8B7AB8` (3px width)
+  - Green S&P 500 dashed line: `#2E7D32` (2.5px, dasharray 6,4)
+  - Red Bitcoin dotted line: `#C62828` (2.5px, dasharray 2,2)
+- All responsive media queries for mobile/tablet
+- TLDR strip styles (already in global styles.css)
 
-This CSS must match the Week 5 implementation exactly (colors, spacing, typography).
-
-Append TLDR CSS definitions to the end of the `<style>` block (NO inline `style="..."` attributes anywhere in the body – convert spacing to existing utility classes like `.mb-6`, `.mt-12`, etc.):
-```css
-.tldr-strip { display:grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap:.75rem; background:#111; border:1px solid #222; padding:.75rem 1rem; border-radius:.75rem; position:sticky; top:0; z-index:30; }
-.tldr-metric { display:flex; flex-direction:column; align-items:flex-start; }
-.tldr-metric span:first-child { font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:#888; }
-.tldr-metric span:last-child { font-weight:600; font-size:.95rem; }
-.alpha-positive { color:#4ade80; }
-.alpha-negative { color:#f87171; }
-```
+**IMPORTANT**: 
+- Do NOT add any `<style>` blocks to the HTML output
+- Do NOT use inline `style="..."` attributes anywhere in the body
+- Use only utility classes like `.mb-6`, `.mt-12`, `.prose`, etc.
+- CSS is automatically injected by automation - Week 5 styles guaranteed
 
 ### JSON-LD
 
@@ -125,9 +127,26 @@ Inside `<main class="container mx-auto px-4 py-12">`:
 
 ### Hero Block
 
-Use Week 5 pattern with:
-- Date/title from `seo.json`
-- Image: `../Media/W{N}.webp` with `loading="eager" fetchpriority="high"`
+**CRITICAL**: Match Week 5 structure exactly - this order is MANDATORY:
+
+```html
+<div class="mb-8">
+  <div class="flex items-center gap-2 text-sm text-purple-500 mb-4">
+    <time class="text-gray-500" datetime="YYYY-MM-DD">Month Day, Year</time>
+  </div>
+  <h1 class="text-4xl font-bold mb-6">GenAi-Managed Stocks Portfolio Week {N}</h1>
+  <div class="relative h-96 rounded-xl overflow-hidden border border-gray-800 mb-8">
+    <img src="../Media/W{N}.webp" alt="Week {N} AI-managed portfolio performance hero image" width="1200" height="800" class="w-full h-full object-cover" loading="eager" fetchpriority="high" decoding="async">
+  </div>
+</div>
+```
+
+**MANDATORY ORDER (DO NOT REORDER)**:
+1. Date first: `<time>` element with gray text, small size
+2. Title second: `<h1>` with "GenAi-Managed Stocks Portfolio Week {N}"
+3. Image third: In `<div class="relative h-96 rounded-xl overflow-hidden border border-gray-800 mb-8">` container
+
+**NEVER** place the image before the title. This exact structure matches Week 5.
 
 ### TLDR Strip
 

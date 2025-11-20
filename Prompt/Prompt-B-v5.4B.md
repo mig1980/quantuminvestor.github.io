@@ -87,10 +87,28 @@ Your narrative must follow this structure:
        - Mentions approximate **weekly % changes** for key movers.
        - Interprets what that move means in context (e.g., rotation, consolidation, risk).
 
-5. **Performance Snapshot**: 1 paragraph + `<!-- PERFORMANCE TABLE EMBED START/END -->` placeholder
-6. **Performance Since Inception**: 2-3 paragraphs (include normalization sentence) + `<!-- PERFORMANCE CHART EMBED START/END -->` placeholder
+5. **Performance Snapshot**: 
+   - `h2`: `Performance Snapshot`
+   - 1 paragraph before the table: "The table below compares the GenAi Chosen portfolio to the S&P 500 and Bitcoin across key checkpoints. The portfolio remains ahead of both benchmarks on a total-return basis [adjust based on actual data]."
+   - The table will be automatically embedded by the automation script
+   - The table shows EXACTLY 3 rows:
+     1. GenAi Chosen ($) - portfolio dollar values
+     2. S&P 500 (Index) - index values
+     3. Bitcoin ($) - Bitcoin prices
+   - Columns: Asset | Oct 9, 2025 | Nov 6, 2025 | Nov 13, 2025 | Weekly Change | Total Return
+   - NO individual stock details in this table - benchmark comparison only
+   - Match Week 5 table structure exactly
 
-7. **This Week’s Recommendation**
+6. **Performance Since Inception**:
+   - `h2`: `Performance Since Inception`
+   - **EXACTLY 3 paragraphs** before the chart (MANDATORY - automation script looks for 3 paragraphs):
+     1. Paragraph 1: "The chart below shows normalized performance for the portfolio, the S&P 500, and Bitcoin, allowing apples-to-apples comparison regardless of starting price levels."
+     2. Paragraph 2: "All assets are normalized to 100 on the October 9, 2025 inception date, with 100 displayed as the central reference line. Readings above 100 indicate gains since inception; readings below 100 indicate losses."
+     3. Paragraph 3: Compare where GenAi Chosen sits relative to the 100 baseline vs S&P 500 and Bitcoin, highlighting the AI model's performance (e.g., "The GenAi Chosen portfolio holds above the 100 baseline, the S&P 500 sits slightly above it, and Bitcoin remains well below...").
+   - The chart will be automatically embedded by automation script after these 3 paragraphs
+   - **CRITICAL**: Do NOT add fewer or more than 3 paragraphs - the automation script uses regex pattern `(?:<p[^>]*>.*?</p>\s*){3}` to find insertion point
+
+7. **This Week's Recommendation**
    - `h2`: `This Week's Recommendation: [HOLD/REBALANCE/SELL/BUY]`
    - A bullet list with **4–7** items, using the Week 5 style:
      - Each bullet begins with a **bold summary phrase**, followed by details.
@@ -134,8 +152,12 @@ You must also output a `seo.json` object with:
 **CRITICAL IMAGE REQUIREMENTS:**
 - `ogImage` MUST be: `https://quantuminvestor.net/Media/W{week_number}.webp`
 - `twitterImage` MUST be: `https://quantuminvestor.net/Media/W{week_number}.webp`
+- Example for Week 5: `"ogImage": "https://quantuminvestor.net/Media/W5.webp"`
 - Example for Week 6: `"ogImage": "https://quantuminvestor.net/Media/W6.webp"`
-- DO NOT use placeholder names like "genai-week6-hero.png" or "assets/..." - always use the exact format above.
+- DO NOT use placeholder names like "genai-week6-hero.png", "hero-week-6.webp", or "assets/..." 
+- DO NOT use any path other than `/Media/` directory
+- Always use uppercase 'W' followed by week number, then '.webp' extension
+- This URL format is MANDATORY and matches Week 5 reference
 
 ### JSON-LD Objects
 

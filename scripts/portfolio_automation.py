@@ -363,6 +363,7 @@ class PortfolioAutomation:
         - Saved updated master.json
         
         Prompt A validates the calculations are correct.
+        Saves validation report to Data/W{n}/validation_report.txt
         
         Returns:
             Dict with 'status' (pass/fail/unclear/error) and 'report' (str).
@@ -394,6 +395,19 @@ Return a validation report (PASS or FAIL with details).
             
             response = self.call_ai(system_prompt, user_message, temperature=0.3)
             
+            # Save validation report to week's data folder
+            week_dir = DATA_DIR / f"W{self.week_number}"
+            week_dir.mkdir(exist_ok=True)
+            validation_path = week_dir / "validation_report.txt"
+            
+            with open(validation_path, 'w', encoding='utf-8') as f:
+                f.write(f"Prompt A Validation Report - Week {self.week_number}\n")
+                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write("=" * 80 + "\n\n")
+                f.write(response)
+            
+            logging.info(f"Validation report saved to: {validation_path}")
+            
             # Check if validation passed
             validation_passed = '✅' in response or 'PASS' in response.upper()
             validation_failed = '❌' in response or 'FAIL' in response.upper()
@@ -402,7 +416,7 @@ Return a validation report (PASS or FAIL with details).
                 logging.info(f"✅ Prompt A Validation: PASS - Week {self.week_number} calculations verified")
                 self.add_step("Prompt A - Data Validator", "success", 
                              f"All Week {self.week_number} calculations validated",
-                             {'validation_report': response[:500]})
+                             {'validation_report': response[:500], 'report_file': str(validation_path)})
                 return {'status': 'pass', 'report': response}
             
             elif validation_failed:
@@ -410,7 +424,7 @@ Return a validation report (PASS or FAIL with details).
                 logging.warning(f"Validation report:\n{response}")
                 self.add_step("Prompt A - Data Validator", "warning", 
                              f"Validation found errors in Week {self.week_number} calculations",
-                             {'validation_report': response[:500]})
+                             {'validation_report': response[:500], 'report_file': str(validation_path)})
                 return {'status': 'fail', 'report': response}
             
             else:
@@ -418,7 +432,7 @@ Return a validation report (PASS or FAIL with details).
                 logging.warning("Prompt A validation response unclear")
                 self.add_step("Prompt A - Data Validator", "warning", 
                              "Validation response format unclear",
-                             {'validation_report': response[:500]})
+                             {'validation_report': response[:500], 'report_file': str(validation_path)})
                 return {'status': 'unclear', 'report': response}
             
         except Exception as e:
@@ -429,42 +443,19 @@ Return a validation report (PASS or FAIL with details).
             return {'status': 'error', 'report': str(e)}
     
     def _generate_media_assets(self):
-        """Generate hero image using hero_image_generator.py script."""
-        try:
-            # Use standalone hero_image_generator.py for consistency
-            master_path = MASTER_DATA_DIR / "master.json"
-            out_path = REPO_ROOT / 'Media' / f"W{self.week_number}.webp"
-            
-            # Build command to call hero_image_generator.py
-            cmd = [
-                'python',
-                str(REPO_ROOT / 'scripts' / 'hero_image_generator.py'),
-                '--week', str(self.week_number),
-                '--master', str(master_path),
-                '--out', str(out_path),
-                '--query', 'futuristic finance data'
-            ]
-            
-            import subprocess
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            
-            if result.returncode == 0:
-                logging.info(f"Hero image generated: {out_path}")
-                self.add_step("Generate Hero Image", "success", 
-                             f"Generated hero image using hero_image_generator.py",
-                             {'output_file': str(out_path), 'stdout': result.stdout.strip()})
-            else:
-                logging.error(f"Hero image generation failed: {result.stderr}")
-                self.add_step("Generate Hero Image", "error", 
-                             f"hero_image_generator.py failed: {result.stderr}")
-        except subprocess.TimeoutExpired:
-            logging.error("Hero image generation timed out after 60 seconds")
-            self.add_step("Generate Hero Image", "error", 
-                         "Hero image generation timed out")
-        except Exception as e:
-            logging.error(f"Hero image generation failed: {e}")
-            self.add_step("Generate Hero Image", "error", 
-                         f"Failed to generate hero image: {str(e)}")
+        """Hero image generation disabled - manually add W{n}.webp to Media folder."""
+        expected_path = REPO_ROOT / 'Media' / f"W{self.week_number}.webp"
+        if expected_path.exists():
+            logging.info(f"✓ Hero image found: {expected_path}")
+            self.add_step("Check Hero Image", "success",
+                         f"Hero image exists for Week {self.week_number}",
+                         {'image_path': str(expected_path)})
+        else:
+            logging.warning(f"⚠ Hero image not found: {expected_path}")
+            logging.warning(f"  Please manually add W{self.week_number}.webp to Media/ folder")
+            self.add_step("Check Hero Image", "warning",
+                         f"Hero image missing - add W{self.week_number}.webp to Media/ folder manually",
+                         {'expected_path': str(expected_path)})
 
     # ===================== ALPHA VANTAGE DATA ENGINE =====================
     def _latest_market_date(self):
@@ -531,6 +522,7 @@ Return a validation report (PASS or FAIL with details).
         }
         try:
             response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
             data = response.json()
             if 'Realtime Currency Exchange Rate' in data:
                 rate = data['Realtime Currency Exchange Rate']
@@ -1239,7 +1231,254 @@ This is for Week {self.week_number}.
   <script src=\"../js/template-loader.js\" defer nonce=\"{self.nonce}\"></script>
   <script src=\"../js/mobile-menu.js\" defer nonce=\"{self.nonce}\"></script>
   <script src=\"../js/tldr.js\" defer nonce=\"{self.nonce}\"></script>
-    <!-- Component styles moved to global stylesheet -->
+  <style>
+/* Performance table styles */
+.myblock-performance-snapshot {{
+  margin: 20px 0;
+  font-family: inherit;
+  overflow-x: visible;
+}}
+.myblock-portfolio-table {{
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed;
+  contain: layout style;
+}}
+.myblock-portfolio-table thead tr {{
+  background: #8B7AB8;
+  color: white;
+  font-weight: bold;
+}}
+.myblock-portfolio-table th {{
+  padding: 16px 12px;
+  text-align: left;
+  border: 1px solid #E5E5E5;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
+}}
+.myblock-portfolio-table th:not(:first-child) {{
+  text-align: right;
+}}
+.myblock-portfolio-table td {{
+  padding: 14px 12px;
+  border: 1px solid #E5E5E5;
+  font-size: 14px;
+  white-space: nowrap;
+  font-family: inherit;
+}}
+.myblock-portfolio-table .asset-name {{
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  min-width: 120px;
+}}
+.myblock-portfolio-table td:not(.asset-name) {{
+  text-align: right;
+}}
+.myblock-portfolio-table tbody tr:nth-child(even) {{
+  background: #F9F9FB;
+}}
+.myblock-portfolio-table .positive {{
+  color: #2E7D32;
+  font-weight: 600;
+}}
+.myblock-portfolio-table .negative {{
+  color: #C62828;
+  font-weight: 600;
+}}
+.myblock-portfolio-table tbody tr {{
+  transition: background-color 0.2s ease;
+}}
+.myblock-portfolio-table tbody tr:hover {{
+  background: #F8F5FF;
+}}
+@media (max-width: 900px) {{
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {{
+    padding: 10px 8px;
+    font-size: 12px;
+  }}
+  .myblock-portfolio-table th {{
+    font-size: 11px;
+  }}
+  .myblock-portfolio-table .asset-name {{
+    min-width: 100px;
+    font-size: 12px;
+  }}
+}}
+@media (max-width: 768px) {{
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {{
+    padding: 6px 4px;
+    font-size: 11px;
+  }}
+  .myblock-portfolio-table th {{
+    font-size: 10px;
+    line-height: 1.2;
+  }}
+  .myblock-portfolio-table .asset-name {{
+    min-width: 70px;
+    font-size: 11px;
+  }}
+}}
+@media (max-width: 480px) {{
+  .myblock-portfolio-table th,
+  .myblock-portfolio-table td {{
+    padding: 5px 3px;
+    font-size: 10px;
+  }}
+  .myblock-portfolio-table th {{
+    font-size: 9px;
+    line-height: 1.2;
+  }}
+  .myblock-portfolio-table .asset-name {{
+    min-width: 60px;
+    font-size: 10px;
+  }}
+}}
+
+/* Performance chart styles */
+.myblock-chart-container {{
+  width: 100%;
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: inherit;
+  overflow: hidden;
+  box-sizing: border-box;
+}}
+.myblock-chart-title {{
+  font-size: 20px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin-bottom: 20px;
+  text-align: center;
+}}
+.myblock-chart-wrapper {{
+  position: relative;
+  width: 100%;
+  height: 400px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}}
+.myblock-chart-svg {{
+  width: 100%;
+  height: 100%;
+  display: block;
+}}
+.myblock-chart-grid-line {{
+  stroke: #E8E8E8;
+  stroke-width: 1;
+  stroke-dasharray: 4,4;
+}}
+.myblock-chart-axis {{
+  stroke: #2C3E50;
+  stroke-width: 2;
+}}
+.myblock-chart-label {{
+  font-size: 12px;
+  fill: #666;
+  font-family: inherit;
+}}
+.myblock-chart-line-genai {{
+  fill: none;
+  stroke: #8B7AB8;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}}
+.myblock-chart-line-sp500 {{
+  fill: none;
+  stroke: #2E7D32;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6,4;
+}}
+.myblock-chart-line-bitcoin {{
+  fill: none;
+  stroke: #C62828;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2,2;
+}}
+.myblock-chart-dot {{
+  r: 5;
+}}
+.myblock-chart-dot-genai {{
+  fill: #8B7AB8;
+  stroke: #fff;
+  stroke-width: 2;
+}}
+.myblock-chart-dot-sp500 {{
+  fill: #2E7D32;
+  stroke: #fff;
+  stroke-width: 2;
+}}
+.myblock-chart-dot-bitcoin {{
+  fill: #C62828;
+  stroke: #fff;
+  stroke-width: 2;
+}}
+.myblock-chart-legend {{
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}}
+.myblock-chart-legend-item {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #2C3E50;
+}}
+.myblock-chart-legend-line {{
+  width: 30px;
+  height: 3px;
+  border-radius: 2px;
+}}
+.myblock-legend-genai {{
+  background: #8B7AB8;
+}}
+.myblock-legend-sp500 {{
+  background: #2E7D32;
+}}
+.myblock-legend-bitcoin {{
+  background: #C62828;
+}}
+@media screen and (max-width: 768px) {{
+  .myblock-chart-container {{
+    padding: 15px;
+  }}
+  .myblock-chart-wrapper {{
+    height: 300px;
+  }}
+  .myblock-chart-title {{
+    font-size: 18px;
+  }}
+  .myblock-chart-label {{
+    font-size: 10px;
+  }}
+  .myblock-chart-legend {{
+    gap: 15px;
+  }}
+  .myblock-chart-legend-item {{
+    font-size: 12px;
+  }}
+}}
+</style>
     <script type=\"application/ld+json\">{json.dumps(blog_ld, separators=(',',':'))}</script>
     <script type=\"application/ld+json\">{json.dumps(breadcrumbs_ld, separators=(',',':'))}</script>
 </head>"""
@@ -1373,8 +1612,9 @@ This is for Week {self.week_number}.
                 logging.warning("Could not find Performance Snapshot insertion point")
         
         if self.performance_chart and self.performance_chart not in self.narrative_html:
-            # Find insertion point after "Performance Since Inception" section
-            inception_pattern = r'(<h2[^>]*>Performance Since Inception</h2>(?:.*?</p>){2,3})'
+            # Find insertion point after "Performance Since Inception" h2 and 3 paragraphs
+            # Primary pattern: exactly 3 paragraphs (Prompt B requirement)
+            inception_pattern = r'(<h2[^>]*>Performance Since Inception</h2>\s*(?:<p[^>]*>.*?</p>\s*){3})'
             match = re.search(inception_pattern, self.narrative_html, re.DOTALL)
             if match:
                 insert_pos = match.end()
@@ -1383,8 +1623,23 @@ This is for Week {self.week_number}.
                     '\n\n' + self.performance_chart + '\n\n' + 
                     self.narrative_html[insert_pos:]
                 )
+                logging.info("Chart embedded after 3 paragraphs (standard pattern)")
             else:
-                logging.warning("Could not find Performance Since Inception insertion point")
+                logging.warning("Could not find 3 paragraphs after 'Performance Since Inception' - trying fallback")
+                # Fallback pattern (2-4 paragraphs for flexibility)
+                inception_pattern_fallback = r'(<h2[^>]*>Performance Since Inception</h2>\s*(?:<p[^>]*>.*?</p>\s*){2,4})'
+                match = re.search(inception_pattern_fallback, self.narrative_html, re.DOTALL)
+                if match:
+                    insert_pos = match.end()
+                    self.narrative_html = (
+                        self.narrative_html[:insert_pos] + 
+                        '\n\n' + self.performance_chart + '\n\n' + 
+                        self.narrative_html[insert_pos:]
+                    )
+                    logging.info("Chart embedded using fallback pattern (2-4 paragraphs)")
+                else:
+                    logging.error("CRITICAL: Could not find Performance Since Inception section for chart embedding")
+                    logging.error("This may result in chart not appearing in final HTML")
         
         # Extract minimal metadata for Prompt D (doesn't need full data)
         minimal_meta = {
@@ -1738,7 +1993,7 @@ Generate the complete HTML file for Week {self.week_number}.
             for i, val in enumerate(y_labels):
                 y = pad_top + (chart_height * i / 4)
                 y_labels_html.append(f'<text x="{pad_left - 10}" y="{y + 4}" text-anchor="end" class="myblock-chart-label">{val:.0f}</text>')
-                gridlines_html.append(f'<line x1="{pad_left}" y1="{y}" x2="{width - pad_right}" y2="{y}" class="myblock-chart-grid" />')
+                gridlines_html.append(f'<line x1="{pad_left}" y1="{y}" x2="{width - pad_right}" y2="{y}" class="myblock-chart-grid-line" />')
             
             # Generate dots
             dots_html = []
