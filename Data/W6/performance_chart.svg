@@ -1,0 +1,40 @@
+<div class="myblock-chart-container">
+  <div class="myblock-chart-title">Performance Since Inception (Normalized to 100)</div>
+  <div class="myblock-chart-wrapper">
+<svg class="myblock-chart-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chartTitle chartDesc">
+<title id="chartTitle">Normalized Performance Since Inception</title>
+<desc id="chartDesc"> Line chart comparing normalized performance of the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin from October 9, 2025, with all assets normalized to 100 on the inception date and 100 shown as the central reference line. </desc>
+<!--  Grid lines  -->
+<line class="myblock-chart-grid-line" x1="80" y1="50" x2="850" y2="50"/><line class="myblock-chart-grid-line" x1="80" y1="125" x2="850" y2="125"/><line class="myblock-chart-grid-line" x1="80" y1="200" x2="850" y2="200"/><line class="myblock-chart-grid-line" x1="80" y1="275" x2="850" y2="275"/><line class="myblock-chart-grid-line" x1="80" y1="350" x2="850" y2="350"/>
+<!--  Y-axis labels  -->
+<text class="myblock-chart-label" x="65" y="55" text-anchor="end">120</text><text class="myblock-chart-label" x="65" y="130" text-anchor="end">110</text><text class="myblock-chart-label" x="65" y="205" text-anchor="end">100</text><text class="myblock-chart-label" x="65" y="280" text-anchor="end">90</text><text class="myblock-chart-label" x="65" y="355" text-anchor="end">80</text>
+<!--  X-axis labels  -->
+<text class="myblock-chart-label" x="80.0" y="375" text-anchor="middle">Oct 9, 2025</text><text class="myblock-chart-label" x="208.3" y="375" text-anchor="middle">Oct 16, 2025</text><text class="myblock-chart-label" x="336.7" y="375" text-anchor="middle">Oct 23, 2025</text><text class="myblock-chart-label" x="465.0" y="375" text-anchor="middle">Oct 30, 2025</text><text class="myblock-chart-label" x="593.3" y="375" text-anchor="middle">Nov 6, 2025</text><text class="myblock-chart-label" x="721.7" y="375" text-anchor="middle">Nov 13, 2025</text><text class="myblock-chart-label" x="850.0" y="375" text-anchor="middle">Nov 20, 2025</text>
+<!--  Axes  -->
+<line class="myblock-chart-axis" x1="80" y1="50" x2="80" y2="350"/>
+<line class="myblock-chart-axis" x1="80" y1="350" x2="850" y2="350"/>
+<!--  GenAi line  -->
+<polyline class="myblock-chart-line-genai" points="80.0,199.9 208.3,199.5 336.7,199.1 465.0,183.6 593.3,174.2 721.7,177.6 850.0,185.3"/>
+<!--  SPX line  -->
+<polyline class="myblock-chart-line-sp500" points="80.0,194.7 208.3,204.7 336.7,194.4 465.0,185.0 593.3,196.4 721.7,194.5 850.0,205.2"/>
+<!--  BTC line  -->
+<polyline class="myblock-chart-line-bitcoin" points="80.0,210.1 208.3,298.2 336.7,286.9 465.0,291.5 593.3,334.1 721.7,343.9 850.0,422.9"/>
+<circle class="myblock-chart-dot myblock-chart-dot-genai" cx="80.0" cy="199.9"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="80.0" cy="194.7"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="80.0" cy="210.1"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="208.3" cy="199.5"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="208.3" cy="204.7"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="208.3" cy="298.2"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="336.7" cy="199.1"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="336.7" cy="194.4"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="336.7" cy="286.9"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="465.0" cy="183.6"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="465.0" cy="185.0"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="465.0" cy="291.5"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="593.3" cy="174.2"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="593.3" cy="196.4"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="593.3" cy="334.1"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="721.7" cy="177.6"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="721.7" cy="194.5"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="721.7" cy="343.9"/><circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850.0" cy="185.3"/><circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="850.0" cy="205.2"/><circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="850.0" cy="422.9"/>
+</svg>
+
+  </div>
+  <div class="myblock-chart-legend">
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-genai"></div>
+      <span><strong>GenAi Chosen</strong> (+1.96%)</span>
+    </div>
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-sp500"></div>
+      <span><strong>S&amp;P 500</strong> (-0.69%)</span>
+    </div>
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-bitcoin"></div>
+      <span><strong>Bitcoin</strong> (-29.72%)</span>
+    </div>
+  </div>
+</div>
