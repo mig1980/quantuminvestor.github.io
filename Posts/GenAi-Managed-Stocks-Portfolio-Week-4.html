@@ -78,7 +78,7 @@
                 <p class="text-gray-300 mb-6">The table below compares the GenAi Chosen portfolio's performance against the S&amp;P 500 and Bitcoin across key dates since inception.</p>
                 <div class="myblock-performance-snapshot">
                     <table class="myblock-portfolio-table" aria-label="Portfolio performance comparison">
-                        <caption class="sr-only">Comparison of portfolio, S&P 500, and Bitcoin values and returns since inception</caption>
+                        <caption>Portfolio vs Benchmarks Performance (Oct 9 – Nov 6, 2025)</caption>
                         <thead>
                             <tr>
                                 <th scope="col">Asset</th>
@@ -93,14 +93,14 @@
                             <tr>
                                 <td class="asset-name">GenAi Chosen ($)</td>
                                 <td>10,000</td>
-                                <td>10,481</td>
-                                <td>10,396</td>
-                                <td class="negative">-0.81%</td>
-                                <td class="positive">+3.96%</td>
+                                <td>10,219</td>
+                                <td>10,344</td>
+                                <td class="positive">+1.22%</td>
+                                <td class="positive">+3.44%</td>
                             </tr>
                             <tr>
                                 <td class="asset-name">S&amp;P 500 (Index)</td>
-                                <td>6,688</td>
+                                <td>6,735</td>
                                 <td>6,822</td>
                                 <td>6,720</td>
                                 <td class="negative">-1.49%</td>
@@ -108,7 +108,7 @@
                             </tr>
                             <tr>
                                 <td class="asset-name">Bitcoin ($)</td>
-                                <td>123,353</td>
+                                <td>121,706</td>
                                 <td>108,306</td>
                                 <td>101,301</td>
                                 <td class="negative">-6.47%</td>
@@ -141,33 +141,34 @@
                             <text class="myblock-chart-label" x="464" y="375" text-anchor="middle">Oct 23, 2025</text>
                             <text class="myblock-chart-label" x="656" y="375" text-anchor="middle">Oct 30, 2025</text>
                             <text class="myblock-chart-label" x="850" y="375" text-anchor="middle">Nov 6, 2025</text>
+                            <!--  Axes  -->
                             <line class="myblock-chart-axis" x1="80" y1="50" x2="80" y2="350"/>
                             <line class="myblock-chart-axis" x1="80" y1="350" x2="850" y2="350"/>
-                            <polyline class="myblock-chart-line-genai" points="80,200.0 272,175.8 464,163.9 656,168.9 850,175.3"/>
-                            <polyline class="myblock-chart-line-sp500" points="80,200.0 272,214.9 464,204.7 656,195.3 850,206.6"/>
-                            <polyline class="myblock-chart-line-bitcoin" points="80,200.0 272,294.7 464,283.2 656,287.9 850,330.9"/>
+                            <!--  GenAi line  -->
+                            <polyline class="myblock-chart-line-genai" points="80,200.0 272,199.91 464,199.82 656,183.55 850,177.12"/>
+                            <!--  SPX line  -->
+                            <polyline class="myblock-chart-line-sp500" points="80,200 272,204.73 464,194.37 656,185.0 850,197.1"/>
+                            <!--  BTC line  -->
+                            <polyline class="myblock-chart-line-bitcoin" points="80,200 272,298.27 464,286.85 656,291.5 850,334.7"/>
                             <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="80" cy="200.0"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="272" cy="175.8"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="464" cy="163.9"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="656" cy="168.9"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850" cy="175.3"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="80" cy="200.0"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="272" cy="214.9"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="464" cy="204.7"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="656" cy="195.3"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="850" cy="206.6"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="80" cy="200.0"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="272" cy="294.7"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="464" cy="283.2"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="656" cy="287.9"/>
-                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="850" cy="330.9"/>
-                            <text class="myblock-chart-label" x="272" y="167" text-anchor="middle" style="font-weight:600; fill:#8B7AB8;">103.89</text>
-                            <text class="myblock-chart-label" x="464" y="156" text-anchor="middle" style="font-weight:600; fill:#8B7AB8;">105.48</text>
-                            <text class="myblock-chart-label" x="850" y="167" text-anchor="middle" style="font-weight:600; fill:#8B7AB8;">103.96</text>
+                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="272" cy="199.91"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="464" cy="199.82"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="656" cy="183.55"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850" cy="177.12"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="80" cy="200"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="272" cy="204.73"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="464" cy="194.37"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="656" cy="185.0"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="850" cy="197.1"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="80" cy="200"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="272" cy="298.27"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="464" cy="286.85"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="656" cy="291.5"/>
+                            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="850" cy="334.7"/>
                         </svg>
                     </div>
                     <div class="myblock-chart-legend">
-                        <div class="myblock-chart-legend-item"><div class="myblock-chart-legend-line myblock-legend-genai"></div><span><strong>GenAi Chosen</strong> (+3.96%)</span></div>
+                        <div class="myblock-chart-legend-item"><div class="myblock-chart-legend-line myblock-legend-genai"></div><span><strong>GenAi Chosen</strong> (+3.44%)</span></div>
                         <div class="myblock-chart-legend-item"><div class="myblock-chart-legend-line myblock-legend-sp500"></div><span><strong>S&amp;P 500</strong> (+0.48%)</span></div>
                         <div class="myblock-chart-legend-item"><div class="myblock-chart-legend-line myblock-legend-bitcoin"></div><span><strong>Bitcoin</strong> (-17.91%)</span></div>
                     </div>

@@ -104,6 +104,10 @@ All arrays (portfolio_history, sp500, bitcoin, normalized_chart) must have match
 **Formula:** `(current_value / inception_value) × 100` (2 decimals)
 **Baseline:** All inception values must = 100 (±0.1)
 
+### Check 6: Inception Consistency
+
+Verify that `meta.inception_value`, `portfolio_history[0].value`, and `normalized_chart[0].portfolio_value` all match exactly (should all be 10000).
+
 ---
 
 ## OUTPUT FORMAT

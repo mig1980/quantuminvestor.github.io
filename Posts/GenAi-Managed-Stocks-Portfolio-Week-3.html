@@ -116,15 +116,15 @@
       </h2>
 
       <p class="text-gray-300 mb-6">
-        <strong>Into October 23, the portfolio benefitted from broad risk-on sentiment</strong>, with AI, storage, and cyclical names helping lift the GenAi Chosen portfolio more than +5% above its starting value.
+        <strong>Into October 23, the portfolio remained essentially flat</strong>, with the GenAi Chosen portfolio showing minimal movement at just +0.12% above its starting value.
       </p>
 
       <p class="text-gray-300 mb-6">
-        <strong>By October 30, that early strength leveled off</strong>. High-momentum names digested gains, and the broader market shifted into a more mixed tone—still constructive, but no longer in full acceleration mode. The result was a modest -0.64% dip for the portfolio on the week.
+        <strong>By October 30, momentum accelerated</strong>. High-conviction names showed strength, and the broader market shifted into a more constructive tone. The result was a solid +2.07% gain for the portfolio on the week, bringing total returns to +2.19%.
       </p>
 
       <p class="text-gray-300 mb-6">
-        <strong>Bitcoin’s path remains a stark contrast</strong>. While the GenAi Chosen portfolio is up +4.81% since inception, Bitcoin now sits more than -12% below the inception reference level, underscoring how much more punishing crypto has been over this same period.
+        <strong>Bitcoin's path remains a stark contrast</strong>. While the GenAi Chosen portfolio is up +2.19% since inception, Bitcoin now sits more than -11% below the inception reference level, underscoring how much more punishing crypto has been over this same period.
       </p>
 
       <!-- PERFORMANCE SNAPSHOT TABLE -->
@@ -151,28 +151,28 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row" class="asset-name">GenAi Chosen ($)</th>
+              <td class="asset-name">GenAi Chosen ($)</td>
               <td>10,000</td>
-              <td>10,548</td>
-              <td>10,481</td>
-              <td class="negative">-0.64%</td>
-              <td class="positive">+4.81%</td>
+              <td>10,012</td>
+              <td>10,219</td>
+              <td class="positive">+2.07%</td>
+              <td class="positive">+2.19%</td>
             </tr>
             <tr>
-              <th scope="row" class="asset-name">S&amp;P 500 (Index)</th>
-              <td>6,688</td>
+              <td class="asset-name">S&amp;P 500 (Index)</td>
+              <td>6,735</td>
               <td>6,738</td>
               <td>6,822</td>
               <td class="positive">+1.25%</td>
               <td class="positive">+2.00%</td>
             </tr>
             <tr>
-              <th scope="row" class="asset-name">Bitcoin ($)</th>
-              <td>123,353</td>
+              <td class="asset-name">Bitcoin ($)</td>
+              <td>121,706</td>
               <td>109,070</td>
               <td>108,306</td>
               <td class="negative">-0.70%</td>
-              <td class="negative">-12.20%</td>
+              <td class="negative">-11.31%</td>
             </tr>
           </tbody>
         </table>
@@ -223,48 +223,20 @@
             <line class="myblock-chart-axis" x1="80" y1="50" x2="80" y2="350"/>
             <line class="myblock-chart-axis" x1="80" y1="350" x2="850" y2="350"/>
 
-            <!-- Normalized values (all start at 100) -->
-            <!-- GenAi: 100, 105.48, 104.81 -->
-            <!-- S&P 500: 100, 100.75, 102.00 -->
-            <!-- Bitcoin: 100, 88.42, 87.80 -->
-
-            <!-- GenAi line -->
-            <polyline class="myblock-chart-line-genai"
-              points="
-                80,200
-                465,158.9
-                850,163.9
-              "/>
-
-            <!-- S&P 500 line -->
-            <polyline class="myblock-chart-line-sp500"
-              points="
-                80,200
-                465,194.4
-                850,185.0
-              "/>
-
-            <!-- Bitcoin line -->
-            <polyline class="myblock-chart-line-bitcoin"
-              points="
-                80,200
-                465,286.9
-                850,291.5
-              "/>
-
-            <!-- GenAi dots -->
+            <!--  GenAi line  -->
+            <polyline class="myblock-chart-line-genai" points="80,200 465,199.82 850,183.55"/>
+            <!--  SPX line  -->
+            <polyline class="myblock-chart-line-sp500" points="80,200 465,194.37 850,185.0"/>
+            <!--  BTC line  -->
+            <polyline class="myblock-chart-line-bitcoin" points="80,200 465,286.85 850,291.5"/>
             <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="80" cy="200"/>
-            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="465" cy="158.9"/>
-            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850" cy="163.9"/>
-
-            <!-- S&P 500 dots -->
+            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="465" cy="199.82"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-genai" cx="850" cy="183.55"/>
             <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="80" cy="200"/>
-            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="465" cy="194.4"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="465" cy="194.37"/>
             <circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="850" cy="185.0"/>
-
-            <!-- Bitcoin dots -->
             <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="80" cy="200"/>
-            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="465" cy="286.9"/>
+            <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="465" cy="286.85"/>
             <circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="850" cy="291.5"/>
           </svg>
         </div>
@@ -272,7 +244,7 @@
         <div class="myblock-chart-legend">
           <div class="myblock-chart-legend-item">
             <div class="myblock-chart-legend-line myblock-legend-genai"></div>
-            <span><strong>GenAi Chosen</strong> (+4.81%)</span>
+            <span><strong>GenAi Chosen</strong> (+2.19%)</span>
           </div>
           <div class="myblock-chart-legend-item">
             <div class="myblock-chart-legend-line myblock-legend-sp500"></div>
@@ -280,7 +252,7 @@
           </div>
           <div class="myblock-chart-legend-item">
             <div class="myblock-chart-legend-line myblock-legend-bitcoin"></div>
-            <span><strong>Bitcoin</strong> (-12.20%)</span>
+            <span><strong>Bitcoin</strong> (-11.31%)</span>
           </div>
         </div>
       </div>

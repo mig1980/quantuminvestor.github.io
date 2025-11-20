@@ -1922,86 +1922,79 @@ Generate the complete HTML file for Week {self.week_number}.
             if len(normalized_data) < 2:
                 raise ValueError("Need at least 2 data points to generate chart")
             
-            # SVG dimensions and padding
+            # SVG dimensions and padding - Match Week 5 exactly
             width = 900
             height = 400
-            pad_left = 60
-            pad_right = 40
-            pad_top = 40
-            pad_bottom = 60
+            pad_left = 80
+            pad_right = 50
+            pad_top = 50
+            pad_bottom = 50
             chart_width = width - pad_left - pad_right
             chart_height = height - pad_top - pad_bottom
             
-            # Extract values for scaling
-            all_values = []
-            for entry in normalized_data:
-                all_values.extend([
-                    entry.get('genai_norm', 100),
-                    entry.get('spx_norm', 100),
-                    entry.get('btc_norm', 100)
-                ])
+            # FIXED Y-AXIS SCALE: 80 to 120 (normalized baseline 100)
+            # This matches Week 5 standard where all assets start at 100
+            y_min = 80
+            y_max = 120
             
-            y_min = min(all_values)
-            y_max = max(all_values)
+            # Fixed Y-axis labels matching Week 5
+            y_labels = [120, 110, 100, 90, 80]
             
-            # Add padding to y-axis range
-            y_range = y_max - y_min
-            y_min_padded = y_min - y_range * 0.1
-            y_max_padded = y_max + y_range * 0.1
-            
-            # Generate Y-axis labels (5 evenly spaced)
-            y_labels = []
-            for i in range(5):
-                val = y_min_padded + (y_max_padded - y_min_padded) * (4 - i) / 4
-                y_labels.append(round(val, 1))
-            
-            # Coordinate conversion functions
+            # Coordinate conversion functions - Week 5 standard
+            # Y-axis mapping: 80 -> y=350, 100 -> y=200, 120 -> y=50
+            # Formula: y = 200 - (normalized_value - 100) * 7.5
             def x_coord(index):
+                if len(normalized_data) == 1:
+                    return pad_left
                 return pad_left + (index / (len(normalized_data) - 1)) * chart_width
             
             def y_coord(value):
-                return pad_top + (1 - (value - y_min_padded) / (y_max_padded - y_min_padded)) * chart_height
+                # Week 5 formula: y = 200 - (value - 100) * 7.5
+                return 200.0 - (value - 100.0) * 7.5
             
-            # Generate polyline points
+            # Generate polyline points - Week 5 format (1 decimal place)
             genai_points = []
             spx_points = []
             btc_points = []
             
             for i, entry in enumerate(normalized_data):
                 x = x_coord(i)
-                genai_points.append(f"{x},{y_coord(entry.get('genai_norm', 100))}")
-                spx_points.append(f"{x},{y_coord(entry.get('spx_norm', 100))}")
-                btc_points.append(f"{x},{y_coord(entry.get('btc_norm', 100))}")
+                genai_y = y_coord(entry.get('genai_norm', 100))
+                spx_y = y_coord(entry.get('spx_norm', 100))
+                btc_y = y_coord(entry.get('btc_norm', 100))
+                genai_points.append(f"{x:.1f},{genai_y:.1f}")
+                spx_points.append(f"{x:.1f},{spx_y:.1f}")
+                btc_points.append(f"{x:.1f},{btc_y:.1f}")
             
-            # Generate X-axis labels (dates)
-            num_x_labels = min(len(normalized_data), 6)
-            x_label_indices = [int(i * (len(normalized_data) - 1) / (num_x_labels - 1)) for i in range(num_x_labels)]
-            
+            # Generate X-axis labels (dates) - Week 5 style
+            from datetime import datetime
             x_labels_html = []
-            for idx in x_label_indices:
+            for idx in range(len(normalized_data)):
                 entry = normalized_data[idx]
                 date_str = entry.get('date', '')
-                from datetime import datetime
                 date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-                label = date_obj.strftime('%b %-d').replace(' 0', ' ')
+                label = date_obj.strftime('%b %-d, %Y').replace(' 0', ' ')
                 x = x_coord(idx)
-                x_labels_html.append(f'<text x="{x}" y="{height - pad_bottom + 20}" text-anchor="middle" class="myblock-chart-label">{label}</text>')
+                x_labels_html.append(f'<text class="myblock-chart-label" x="{x:.1f}" y="375" text-anchor="middle">{label}</text>')
             
-            # Generate Y-axis labels and gridlines
+            # Generate Y-axis labels and gridlines - Week 5 fixed positions
+            y_grid_positions = [50, 125, 200, 275, 350]  # y=50 (120), y=125 (110), y=200 (100), y=275 (90), y=350 (80)
             y_labels_html = []
             gridlines_html = []
-            for i, val in enumerate(y_labels):
-                y = pad_top + (chart_height * i / 4)
-                y_labels_html.append(f'<text x="{pad_left - 10}" y="{y + 4}" text-anchor="end" class="myblock-chart-label">{val:.0f}</text>')
-                gridlines_html.append(f'<line x1="{pad_left}" y1="{y}" x2="{width - pad_right}" y2="{y}" class="myblock-chart-grid-line" />')
+            for i, (val, y_pos) in enumerate(zip(y_labels, y_grid_positions)):
+                y_labels_html.append(f'<text class="myblock-chart-label" x="65" y="{y_pos + 5}" text-anchor="end">{val}</text>')
+                gridlines_html.append(f'<line class="myblock-chart-grid-line" x1="80" y1="{y_pos}" x2="850" y2="{y_pos}"/>')
             
-            # Generate dots
+            # Generate dots - Week 5 format with proper formatting
             dots_html = []
             for i, entry in enumerate(normalized_data):
                 x = x_coord(i)
-                dots_html.append(f'<circle cx="{x}" cy="{y_coord(entry.get("genai_norm", 100))}" class="myblock-chart-dot myblock-chart-dot-genai" />')
-                dots_html.append(f'<circle cx="{x}" cy="{y_coord(entry.get("spx_norm", 100))}" class="myblock-chart-dot myblock-chart-dot-sp500" />')
-                dots_html.append(f'<circle cx="{x}" cy="{y_coord(entry.get("btc_norm", 100))}" class="myblock-chart-dot myblock-chart-dot-bitcoin" />')
+                genai_y = y_coord(entry.get("genai_norm", 100))
+                spx_y = y_coord(entry.get("spx_norm", 100))
+                btc_y = y_coord(entry.get("btc_norm", 100))
+                dots_html.append(f'<circle class="myblock-chart-dot myblock-chart-dot-genai" cx="{x:.1f}" cy="{genai_y:.1f}"/>')
+                dots_html.append(f'<circle class="myblock-chart-dot myblock-chart-dot-sp500" cx="{x:.1f}" cy="{spx_y:.1f}"/>')
+                dots_html.append(f'<circle class="myblock-chart-dot myblock-chart-dot-bitcoin" cx="{x:.1f}" cy="{btc_y:.1f}"/>')
             
             # Get total returns for legend
             latest = normalized_data[-1]
@@ -2013,43 +2006,31 @@ Generate the complete HTML file for Week {self.week_number}.
                 sign = '+' if val >= 0 else ''
                 return f"{sign}{val:.2f}%"
             
-            # Build chart HTML
+            # Build chart HTML - Week 5 format with clean comments
             chart_html = f'''<div class="myblock-chart-container">
   <div class="myblock-chart-title">Performance Since Inception (Normalized to 100)</div>
   <div class="myblock-chart-wrapper">
-    <svg class="myblock-chart-svg" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chartTitle chartDesc">
-      <title id="chartTitle">Normalized Performance Since Inception</title>
-      <desc id="chartDesc">Line chart comparing normalized performance of the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin from October 9, 2025, with all assets normalized to 100 on the inception date and 100 shown as the central reference line.</desc>
-      
-      <!-- Grid -->
-      <g class="myblock-chart-grid-group">
-        {''.join(gridlines_html)}
-      </g>
-      
-      <!-- Axes -->
-      <line x1="{pad_left}" y1="{pad_top}" x2="{pad_left}" y2="{height - pad_bottom}" class="myblock-chart-axis" />
-      <line x1="{pad_left}" y1="{height - pad_bottom}" x2="{width - pad_right}" y2="{height - pad_bottom}" class="myblock-chart-axis" />
-      
-      <!-- Y-axis labels -->
-      <g class="myblock-chart-labels">
-        {''.join(y_labels_html)}
-      </g>
-      
-      <!-- X-axis labels -->
-      <g class="myblock-chart-labels">
-        {''.join(x_labels_html)}
-      </g>
-      
-      <!-- Lines -->
-      <polyline points="{' '.join(genai_points)}" class="myblock-chart-line-genai" />
-      <polyline points="{' '.join(spx_points)}" class="myblock-chart-line-sp500" />
-      <polyline points="{' '.join(btc_points)}" class="myblock-chart-line-bitcoin" />
-      
-      <!-- Dots -->
-      <g class="myblock-chart-dots">
-        {''.join(dots_html)}
-      </g>
-    </svg>
+<svg class="myblock-chart-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chartTitle chartDesc">
+<title id="chartTitle">Normalized Performance Since Inception</title>
+<desc id="chartDesc"> Line chart comparing normalized performance of the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin from October 9, 2025, with all assets normalized to 100 on the inception date and 100 shown as the central reference line. </desc>
+<!--  Grid lines  -->
+{''.join(gridlines_html)}
+<!--  Y-axis labels  -->
+{''.join(y_labels_html)}
+<!--  X-axis labels  -->
+{''.join(x_labels_html)}
+<!--  Axes  -->
+<line class="myblock-chart-axis" x1="80" y1="50" x2="80" y2="350"/>
+<line class="myblock-chart-axis" x1="80" y1="350" x2="850" y2="350"/>
+<!--  GenAi line  -->
+<polyline class="myblock-chart-line-genai" points="{' '.join(genai_points)}"/>
+<!--  SPX line  -->
+<polyline class="myblock-chart-line-sp500" points="{' '.join(spx_points)}"/>
+<!--  BTC line  -->
+<polyline class="myblock-chart-line-bitcoin" points="{' '.join(btc_points)}"/>
+{''.join(dots_html)}
+</svg>
+
   </div>
   <div class="myblock-chart-legend">
     <div class="myblock-chart-legend-item">
@@ -2303,13 +2284,20 @@ Generate the complete HTML file for Week {self.week_number}.
             if not updated_master:
                 raise ValueError("Data engine failed to generate master.json")
             
-            # Step 2: Optional validation (uses AI to verify calculations)
+            # Step 2: Data validation (ALWAYS run when AI is enabled, non-fatal)
             # NOTE: This returns a dict (not exception) because validation is non-fatal
-            if self.ai_enabled and self.data_source != 'alphavantage':
-                # If AI enabled and NOT in pure data mode, validate calculations
+            # Even if validation fails, we continue with the generated data
+            if self.ai_enabled:
                 validation_result = self.run_prompt_a_validator()
                 if validation_result['status'] == 'fail':
-                    logging.warning("Validation detected errors but continuing with generated data")
+                    logging.warning("⚠ Validation detected calculation inconsistencies - continuing execution")
+                    logging.warning("Review validation report in Data/W{self.week_number}/validation_report.txt")
+                elif validation_result['status'] == 'error':
+                    logging.warning("⚠ Validation step encountered an error - continuing execution")
+                elif validation_result['status'] == 'pass':
+                    logging.info("✅ Validation passed - calculations verified")
+            else:
+                logging.warning("⚠ AI not enabled - skipping Prompt A validation")
             
             # Step 3: Visual generation (deterministic Python, no AI needed)
             self.generate_visuals()
