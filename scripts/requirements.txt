@@ -2,3 +2,7 @@
 openai>=1.0.0                # Azure OpenAI API client
 requests>=2.31.0             # HTTP client for API calls (includes urllib3, certifi)
 Pillow>=10.3.0               # Image processing for hero image generation
+
+# Web API Dependencies
+Flask>=3.0.0                 # Web framework for API server
+flask-cors>=4.0.0            # CORS support for frontend-backend communication
