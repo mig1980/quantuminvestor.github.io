@@ -6,7 +6,7 @@ Workflow:
 1. Fetch prices from APIs (Alpha Vantage, Marketstack, Finnhub)
 2. Calculate all metrics (stocks, portfolio, benchmarks, normalized chart)
 3. Generate visual components (performance table and chart) using Python
-4. Optional: Validate calculations (Prompt A)
+4. Validate calculations (Prompt A - runs when AI enabled)
 5. Generate narrative content (Prompt B)
 6. Assemble final HTML page (Prompt D)
 
@@ -15,8 +15,9 @@ Note: Prompt C eliminated - visual generation now handled by deterministic Pytho
 Error Handling Strategy:
 - FATAL ERRORS (raise ValueError): Missing data, failed calculations, critical API failures
   → These abort the entire pipeline as the script cannot proceed
-- NON-FATAL ERRORS (return dict): Optional validation (Prompt A)
+- NON-FATAL ERRORS (return dict): Validation (Prompt A)
   → Returns {'status': 'pass|fail|error', 'report': str} to allow graceful degradation
+  → Validation always runs when AI enabled, but failures don't abort pipeline
 - TRANSIENT ERRORS (retry with backoff): Network timeouts, rate limits
   → Handled in call_ai() and API fetch methods with exponential backoff
 """
@@ -66,7 +67,7 @@ CSP_POLICY_TEMPLATE = (
 
 class PortfolioAutomation:
     def __init__(self, week_number=None, github_token=None, model="gpt-4.1", 
-                 data_source="ai", alphavantage_key=None, marketstack_key=None, 
+                 data_source="data-only", alphavantage_key=None, marketstack_key=None, 
                  finnhub_key=None, eval_date=None, palette="default"):
         # Configuration
         self.existing_weeks = None  # Initialize before detect_next_week() call
@@ -125,17 +126,17 @@ class PortfolioAutomation:
         
         # Validate configuration
         if self.data_source == 'ai' and not self.ai_enabled:
-            raise ValueError("AI mode requires AZURE_OPENAI_API_KEY. Use --data-source=alphavantage for data-only mode.")
-        if self.data_source == 'alphavantage' and not self.alphavantage_key:
-            raise ValueError("Alpha Vantage mode requires ALPHAVANTAGE_API_KEY environment variable.")
+            raise ValueError("AI mode requires AZURE_OPENAI_API_KEY. Use --data-source=data-only for testing data fetch only.")
+        if self.data_source == 'data-only' and not self.alphavantage_key:
+            raise ValueError("Data-only mode requires ALPHAVANTAGE_API_KEY environment variable.")
         
         # Log data source status
-        if self.data_source == 'alphavantage':
+        if self.data_source == 'data-only':
             logging.info(f"✓ Alpha Vantage enabled (key: {self.alphavantage_key[:8]}...)")
         if self.finnhub_key:
             logging.info(f"✓ Finnhub fallback enabled (key: {self.finnhub_key[:8]}...)")
         if not self.ai_enabled:
-            logging.warning("⚠ Data-only mode: AI narrative disabled")
+            logging.warning("⚠ Data-only mode: Will abort after data fetch (no narrative generation)")
 
         # Finnhub rate limiting: 5 requests/minute = 1 request per 12 seconds
         self.last_finnhub_call = 0  # timestamp of last Finnhub API call
@@ -357,7 +358,7 @@ class PortfolioAutomation:
     def run_prompt_a_validator(self):
         """Prompt A: Data Validator - Validate calculations already performed by automation.
         
-        This is optional QA step. The automation script has already:
+        This step always runs when AI is enabled. The automation script has already:
         - Fetched prices and added to master.json
         - Calculated all metrics (stocks, portfolio, benchmarks, normalized chart)
         - Saved updated master.json
@@ -367,8 +368,12 @@ class PortfolioAutomation:
         
         Returns:
             Dict with 'status' (pass/fail/unclear/error) and 'report' (str).
-            NOTE: Returns dict instead of raising exceptions because validation
-            is non-fatal. Calculations are already complete - this is optional QA.
+            
+        ERROR HANDLING STRATEGY:
+            Returns dict instead of raising exceptions because validation is NON-FATAL.
+            Calculations are already complete and saved - validation failures are logged
+            as warnings but don't abort the pipeline. This allows the workflow to continue
+            even if validation detects minor inconsistencies that can be manually reviewed.
         """
         logging.info("Running Prompt A: Data Validator...")
         
@@ -408,18 +413,40 @@ Return a validation report (PASS or FAIL with details).
             
             logging.info(f"Validation report saved to: {validation_path}")
             
-            # Check if validation passed
-            validation_passed = '✅' in response or 'PASS' in response.upper()
-            validation_failed = '❌' in response or 'FAIL' in response.upper()
+            # Check validation status - use explicit markers first, then fallback to emoji/keyword
+            response_upper = response.upper()
             
-            if validation_passed and not validation_failed:
+            # Priority 1: Explicit status declarations (most reliable)
+            if 'STATUS: PASS' in response_upper or 'VALIDATION: PASS' in response_upper or 'RESULT: PASS' in response_upper:
+                status = 'pass'
+            elif 'STATUS: FAIL' in response_upper or 'VALIDATION: FAIL' in response_upper or 'RESULT: FAIL' in response_upper:
+                status = 'fail'
+            else:
+                # Priority 2: Emoji indicators (less reliable - could appear in historical context)
+                has_pass_emoji = '✅' in response
+                has_fail_emoji = '❌' in response
+                has_pass_word = 'PASS' in response_upper and 'FAILED' not in response_upper
+                has_fail_word = 'FAIL' in response_upper
+                
+                # Determine status based on indicators
+                if has_pass_emoji and not has_fail_emoji and not has_fail_word:
+                    status = 'pass'
+                elif has_fail_emoji or has_fail_word:
+                    status = 'fail'
+                elif has_pass_word and not has_fail_word:
+                    status = 'pass'
+                else:
+                    status = 'unclear'
+            
+            # Log and record results based on status
+            if status == 'pass':
                 logging.info(f"✅ Prompt A Validation: PASS - Week {self.week_number} calculations verified")
                 self.add_step("Prompt A - Data Validator", "success", 
                              f"All Week {self.week_number} calculations validated",
                              {'validation_report': response[:500], 'report_file': str(validation_path)})
                 return {'status': 'pass', 'report': response}
             
-            elif validation_failed:
+            elif status == 'fail':
                 logging.warning(f"❌ Prompt A Validation: FAIL - Found calculation errors in Week {self.week_number}")
                 logging.warning(f"Validation report:\n{response}")
                 self.add_step("Prompt A - Data Validator", "warning", 
@@ -429,9 +456,9 @@ Return a validation report (PASS or FAIL with details).
             
             else:
                 # Ambiguous response
-                logging.warning("Prompt A validation response unclear")
+                logging.warning("Prompt A validation response unclear - review report manually")
                 self.add_step("Prompt A - Data Validator", "warning", 
-                             "Validation response format unclear",
+                             "Validation response format unclear - check report for details",
                              {'validation_report': response[:500], 'report_file': str(validation_path)})
                 return {'status': 'unclear', 'report': response}
             
@@ -687,17 +714,12 @@ Return a validation report (PASS or FAIL with details).
         if self.master_json is None:
             raise ValueError("master.json must be loaded before fetching new data")
 
+        # Date already validated in run() - use cached value
         prev_date = self.master_json['meta']['current_date']
         inception_date = self.master_json['meta']['inception_date']
         inception_value = self.master_json['meta']['inception_value']
-        new_date = self.eval_date if self.eval_date else self._latest_market_date()
+        new_date = self.validated_new_date  # Use pre-validated date from run()
         prev_portfolio_value = self.master_json['portfolio_history'][-1]['value']
-
-        # Avoid duplicate regeneration
-        if new_date == prev_date:
-            error_msg = f"Evaluation date {new_date} equals previous date. Cannot generate duplicate weekly update."
-            logging.error(error_msg)
-            raise ValueError(error_msg)
 
         tickers = [s['ticker'] for s in self.master_json['stocks']]
         logging.info(f"Fetching prices for {len(tickers)} stocks + 2 benchmarks (Alpha Vantage API)")
@@ -1044,7 +1066,14 @@ Return a validation report (PASS or FAIL with details).
         }
     
     def run_prompt_b(self):
-        """Prompt B: Narrative Writer - Generate HTML content"""
+        """Prompt B: Narrative Writer - Generate HTML content
+        
+        ERROR HANDLING STRATEGY:
+            Raises exceptions on failure because narrative generation is FATAL.
+            Unlike Prompt A (validation), this step creates required content for the
+            final HTML page. If narrative generation fails, there's no content to publish,
+            so the entire pipeline must abort.
+        """
         logging.info("Running Prompt B: Narrative Writer...")
         
         try:
@@ -1590,6 +1619,132 @@ This is for Week {self.week_number}.
                          f"Visual generation failed: {str(e)}")
             raise
     
+    def _generate_data_only_report(self):
+        """Generate summary report for data-only mode.
+        
+        Creates a human-readable text report with:
+        - Week metadata
+        - Portfolio performance summary
+        - Individual stock performance
+        - Benchmark comparisons
+        - Data source attribution
+        
+        Saves to: Data/W{n}/data_report.txt
+        """
+        logging.info("Generating data-only summary report...")
+        
+        try:
+            week_dir = DATA_DIR / f"W{self.week_number}"
+            week_dir.mkdir(exist_ok=True)
+            report_path = week_dir / "data_report.txt"
+            
+            # Extract data
+            meta = self.master_json['meta']
+            totals = self.master_json['portfolio_totals']
+            stocks = self.master_json['stocks']
+            ph = self.master_json['portfolio_history']
+            current_entry = ph[-1]
+            prev_entry = ph[-2] if len(ph) > 1 else ph[0]
+            
+            sp500_hist = self.master_json['benchmarks']['sp500']['history']
+            sp500_current = sp500_hist[-1]
+            
+            btc_hist = self.master_json['benchmarks']['bitcoin']['history']
+            btc_current = btc_hist[-1]
+            
+            # Build report
+            report_lines = [
+                "="*80,
+                f" GenAi Chosen Portfolio - Week {self.week_number} Data Report",
+                "="*80,
+                "",
+                "METADATA",
+                "-"*80,
+                f"Portfolio Name:    {meta['portfolio_name']}",
+                f"Inception Date:    {meta['inception_date']}",
+                f"Inception Value:   ${meta['inception_value']:,.2f}",
+                f"Current Date:      {meta['current_date']}",
+                f"Week Number:       {self.week_number}",
+                "",
+                "PORTFOLIO PERFORMANCE",
+                "-"*80,
+                f"Current Value:     ${totals['current_value']:,.2f}",
+                f"Previous Value:    ${prev_entry['value']:,.2f}",
+                f"Weekly Change:     {totals['weekly_pct']:+.2f}%",
+                f"Total Return:      {totals['total_pct']:+.2f}%",
+                f"Dollar Change:     ${totals['current_value'] - prev_entry['value']:+,.2f}",
+                "",
+                "BENCHMARK COMPARISON",
+                "-"*80,
+                f"S&P 500:",
+                f"  Current Price:   ${sp500_current['close']:,.2f}",
+                f"  Weekly Change:   {sp500_current['weekly_pct']:+.2f}%",
+                f"  Total Return:    {sp500_current['total_pct']:+.2f}%",
+                "",
+                f"Bitcoin:",
+                f"  Current Price:   ${btc_current['close']:,.2f}",
+                f"  Weekly Change:   {btc_current['weekly_pct']:+.2f}%",
+                f"  Total Return:    {btc_current['total_pct']:+.2f}%",
+                "",
+                "INDIVIDUAL STOCK PERFORMANCE",
+                "-"*80,
+            ]
+            
+            # Sort stocks by weekly performance
+            sorted_stocks = sorted(stocks, key=lambda s: s['weekly_pct'], reverse=True)
+            
+            for stock in sorted_stocks:
+                ticker = stock['ticker']
+                name = stock['name']
+                shares = stock['shares']
+                current_val = stock['current_value']
+                weekly_pct = stock['weekly_pct']
+                total_pct = stock['total_pct']
+                
+                # Get current and previous prices
+                prices = stock['prices']
+                dates = sorted(prices.keys())
+                current_price = prices[dates[-1]]
+                prev_price = prices[dates[-2]] if len(dates) > 1 else current_price
+                
+                report_lines.extend([
+                    f"{ticker:6s} - {name}",
+                    f"  Shares:          {shares:,}",
+                    f"  Current Price:   ${current_price:,.2f}",
+                    f"  Previous Price:  ${prev_price:,.2f}",
+                    f"  Current Value:   ${current_val:,.2f}",
+                    f"  Weekly Change:   {weekly_pct:+.2f}%",
+                    f"  Total Return:    {total_pct:+.2f}%",
+                    ""
+                ])
+            
+            report_lines.extend([
+                "="*80,
+                "GENERATED FILES",
+                "-"*80,
+                f"• master data/master.json (updated with Week {self.week_number})",
+                f"• master data/archive/master-{meta['current_date'].replace('-', '')}.json (backup)",
+                f"• Data/W{self.week_number}/master.json (legacy snapshot)",
+                f"• Data/W{self.week_number}/performance_table.html (visual)",
+                f"• Data/W{self.week_number}/performance_chart.svg (visual)",
+                f"• Data/W{self.week_number}/data_report.txt (this report)",
+                "",
+                "="*80,
+                "NOTE: Data-only mode completed successfully.",
+                "      Use --data-source=ai for full pipeline with AI narrative generation.",
+                "="*80
+            ])
+            
+            # Write report
+            with open(report_path, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(report_lines))
+            
+            logging.info(f"Data report saved to: {report_path}")
+            
+        except Exception as e:
+            logging.error(f"Failed to generate data report: {e}")
+            raise
+    
     def run_prompt_d(self):
         """Prompt D: Final Assembler - Create complete HTML page"""
         logging.info("Running Prompt D: Final HTML Assembler...")
@@ -2099,10 +2254,11 @@ Generate the complete HTML file for Week {self.week_number}.
             return None
     
     def update_index_pages(self):
-        """Update posts.html with dynamically generated listing from Posts/ directory"""
-        logging.info("Regenerating posts.html listing...")
+        """Update posts.html and index.html with dynamically generated listings from Posts/ directory"""
+        logging.info("Regenerating posts.html and index.html listings...")
         self._regenerate_posts_listing()
-        logging.info("posts.html regenerated with current weekly posts")
+        self._regenerate_index_recent_posts()
+        logging.info("posts.html and index.html regenerated with current weekly posts")
     
     def _regenerate_posts_listing(self):
         """Scan Posts/ directory and rebuild posts.html with standardized head and cards"""
@@ -2269,6 +2425,108 @@ Generate the complete HTML file for Week {self.week_number}.
         
         logging.info(f"Generated posts.html with {len(posts_meta)} weekly posts")
     
+    def _regenerate_index_recent_posts(self):
+        """Update Recent Posts section in index.html with latest 6 posts (if 6 exist)"""
+        logging.info("Updating Recent Posts section in index.html...")
+        
+        # Collect all weekly post metadata (reuse logic from _regenerate_posts_listing)
+        post_files = sorted(
+            POSTS_DIR.glob("GenAi-Managed-Stocks-Portfolio-Week-*.html"),
+            key=lambda p: int(re.search(r'Week-(\d+)', p.name).group(1)),
+            reverse=True
+        )
+        
+        posts_meta = []
+        for post_file in post_files:
+            try:
+                with open(post_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                week_match = re.search(r'Week-(\d+)', post_file.name)
+                if not week_match:
+                    continue
+                
+                week = int(week_match.group(1))
+                
+                # Extract title
+                title_match = re.search(r'<h1[^>]*>(.*?)</h1>', content, re.DOTALL)
+                title = re.sub(r'<[^>]+>', '', title_match.group(1)).strip() if title_match else f"Week {week}"
+                
+                # Extract description from meta tag
+                desc_match = re.search(r'<meta name="description" content="([^"]+)"', content)
+                description = desc_match.group(1) if desc_match else ""
+                
+                # Extract date (split at 'T' to handle ISO timestamps)
+                date_match = re.search(r'<time datetime="([^"]+)"', content)
+                date = date_match.group(1).split('T')[0] if date_match else f"2025-10-{9+week:02d}"
+                
+                posts_meta.append({
+                    'week': week,
+                    'title': title,
+                    'description': description,
+                    'date': date,
+                    'relative_url': f"Posts/{post_file.name}",
+                    'hero': f"Media/W{week}.webp"
+                })
+            except Exception as e:
+                logging.warning(f"Failed to extract metadata from {post_file.name}: {e}")
+        
+        # Take up to 6 most recent posts for index.html
+        recent_posts = posts_meta[:6]
+        
+        # Build HTML cards for recent posts
+        cards_html = []
+        for idx, post in enumerate(recent_posts):
+            date_obj = datetime.strptime(post['date'], '%Y-%m-%d')
+            date_display = date_obj.strftime('%B %d, %Y')
+            
+            # First card gets fetchpriority, rest lazy load
+            loading_attr = 'loading="lazy"' if idx > 0 else 'loading="eager" fetchpriority="high"'
+            
+            card_html = f'''                <!-- Article Card {idx + 1} -->
+                <a href="{post['relative_url']}" class="group">
+                    <div class="space-y-3">
+                        <div class="relative h-48 rounded-lg overflow-hidden border border-gray-800 group-hover:border-purple-500/50 transition-colors">
+                            <img src="{post['hero']}" alt="Week {post['week']} AI-managed portfolio performance" class="w-full h-full object-cover" width="600" height="400" sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" {loading_attr} decoding="async">
+                        </div>
+                        <div>
+                            <h3 class="font-medium group-hover:text-purple-400 transition-colors">{post['title']}</h3>
+                            <p class="text-gray-400 text-sm mt-2 line-clamp-2">{post['description']}</p>
+                            <div class="flex items-center gap-1 mt-3 text-xs text-gray-500">
+                                <time datetime="{post['date']}">{date_display}</time>
+                            </div>
+                        </div>
+                    </div>
+                </a>'''
+            cards_html.append(card_html)
+        
+        # Read current index.html
+        index_path = REPO_ROOT / "index.html"
+        if not index_path.exists():
+            logging.error("index.html not found at root")
+            return
+        
+        with open(index_path, 'r', encoding='utf-8') as f:
+            index_html = f.read()
+        
+        # Replace Recent Posts section (everything between the grid div opening and closing)
+        # Pattern: Find the grid div inside Recent Posts section
+        pattern = r'(<!-- Recent Posts Section -->.*?<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">)(.*?)(</div>\s*</section>)'
+        
+        replacement = r'\1\n' + '\n\n'.join(cards_html) + '\n\n                                            \n            \3'
+        
+        updated_html = re.sub(pattern, replacement, index_html, flags=re.DOTALL)
+        
+        if updated_html == index_html:
+            logging.warning("Could not find Recent Posts section pattern in index.html")
+            return
+        
+        # Write updated index.html
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(updated_html)
+        
+        logging.info(f"Updated index.html Recent Posts with {len(recent_posts)} latest posts")
+    
     def run(self):
         """Execute full pipeline"""
         logging.info("="*60)
@@ -2277,6 +2535,23 @@ Generate the complete HTML file for Week {self.week_number}.
 
         try:
             self.load_master_json()
+            
+            # Validate date immediately after load to fail fast
+            new_date = self.eval_date if self.eval_date else self._latest_market_date()
+            prev_date = self.master_json['meta']['current_date']
+            
+            if new_date == prev_date:
+                error_msg = (
+                    f"Duplicate week detected: Evaluation date {new_date} equals previous date in master.json. "
+                    f"Cannot generate duplicate weekly update. Either wait for market to advance or use --eval-date "
+                    f"to manually specify a future date."
+                )
+                logging.error(error_msg)
+                self.add_step("Validate Date", "error", error_msg)
+                raise ValueError(error_msg)
+            
+            # Cache validated date for use throughout pipeline
+            self.validated_new_date = new_date
             
             # Step 1: Data acquisition and calculation (MUST succeed or abort)
             # Always use Alpha Vantage method - it fetches prices AND calculates metrics
@@ -2313,10 +2588,37 @@ Generate the complete HTML file for Week {self.week_number}.
                 self.run_prompt_d()
                 # If we reached here, all prompts succeeded and file was written
             else:
-                # No AI available - fail fast, don't create incomplete output
-                error_msg = "AI client not initialized - cannot generate narrative content"
-                self.add_step("Generate Weekly Post", "error", error_msg)
-                raise ValueError(error_msg)
+                # Data-only mode: Generate summary report and exit gracefully
+                logging.info("="*60)
+                logging.info("Data-only mode: Generating summary report...")
+                logging.info("="*60)
+                self._generate_data_only_report()
+                self.add_step("Generate Data Report", "success", 
+                             f"Data-only report saved to Data/W{self.week_number}/data_report.txt")
+                self.report['success'] = True
+                
+                logging.info("="*60)
+                logging.info(f"✅ SUCCESS! Week {self.week_number} data collected")
+                logging.info("="*60)
+                logging.info("Generated files:")
+                logging.info("  PRIMARY:")
+                logging.info(f"    • master data/master.json (consolidated, Week {self.week_number} appended)")
+                logging.info(f"    • Data/W{self.week_number}/data_report.txt (summary report)")
+                logging.info("  VISUALS:")
+                logging.info(f"    • Data/W{self.week_number}/performance_table.html")
+                logging.info(f"    • Data/W{self.week_number}/performance_chart.svg")
+                logging.info("  BACKUPS:")
+                logging.info(f"    • master data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")
+                logging.info(f"    • Data/W{self.week_number}/master.json (legacy compatibility)")
+                logging.info("")
+                logging.info("  NOTE: Data-only mode - no HTML article generated")
+                logging.info("        Use --data-source=ai for full pipeline with narrative")
+                
+                # Print detailed execution report
+                self.print_report()
+                # CRITICAL: Exit here to skip Step 5 (update_index_pages) in data-only mode
+                # This return prevents index.html/posts.html updates when no new article was generated
+                return
 
             try:
                 self.update_index_pages()
@@ -2365,8 +2667,8 @@ def main():
                        help='[DEPRECATED] Not used with Azure OpenAI')
     parser.add_argument('--model', type=str, default='gpt-4.1',
                        help='Azure OpenAI deployment name (default: gpt-4.1)')
-    parser.add_argument('--data-source', type=str, choices=['ai', 'alphavantage'], default='alphavantage',
-                       help='Data source: alphavantage (fetch+calculate, optional AI validation) or ai (fetch+calculate+validate with AI)')
+    parser.add_argument('--data-source', type=str, choices=['ai', 'data-only'], default='data-only',
+                       help='Data source: data-only (fetch+calculate, then abort - for testing) or ai (full pipeline with narrative)')
     parser.add_argument('--alphavantage-key', type=str,
                        help='Alpha Vantage API key (default: read from ALPHAVANTAGE_API_KEY env var)')
     parser.add_argument('--marketstack-key', type=str,

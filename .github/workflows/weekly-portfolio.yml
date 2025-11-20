@@ -19,11 +19,11 @@ on:
       data_source:
         description: 'Data source mode'
         required: false
-        default: 'alphavantage'
+        default: 'ai'
         type: choice
         options:
-          - alphavantage
           - ai
+          - data-only
 
 jobs:
   generate-portfolio:
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -x  # Debug mode
           python scripts/portfolio_automation.py \
-            --data-source ${{ github.event.inputs.data_source || 'alphavantage' }} \
+            --data-source ${{ github.event.inputs.data_source || 'ai' }} \
             --week ${{ github.event.inputs.week || 'auto' }} \
             ${{ github.event.inputs.eval_date && format('--eval-date {0}', github.event.inputs.eval_date) || '' }} \
             2>&1 | tee automation.log
