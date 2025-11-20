@@ -141,7 +141,6 @@ class PortfolioAutomation:
 
         # State storage
         self.master_json = None
-        self.existing_weeks = None  # Cached week count from master.json
         self.narrative_html = None
         self.seo_json = None
         self.performance_table = None
