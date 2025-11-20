@@ -271,9 +271,11 @@ class PortfolioAutomation:
             raise
     
     def call_ai(self, system_prompt, user_message, temperature=0.7):
-        """Call GitHub Models AI API"""
+        """Call GitHub Models AI API with automatic fallback to gpt-4o on token limit"""
         if not self.client:
             raise ValueError("AI client not initialized. Set GH_TOKEN environment variable.")
+        
+        current_model = self.model
         
         try:
             response = self.client.complete(
@@ -281,14 +283,34 @@ class PortfolioAutomation:
                     SystemMessage(system_prompt),
                     UserMessage(user_message)
                 ],
-                model=self.model,
+                model=current_model,
                 temperature=temperature
             )
-            logging.info(f"✓ AI response received ({self.model})")
+            logging.info(f"✓ AI response received ({current_model})")
             return response.choices[0].message.content
         except Exception as e:
-            logging.error(f"✗ AI call failed: {e}")
-            raise
+            error_msg = str(e)
+            
+            # Check if it's a token limit error and we haven't already tried fallback
+            if 'tokens_limit_reached' in error_msg and current_model != 'openai/gpt-4o':
+                logging.warning(f"✗ {current_model} token limit exceeded, falling back to gpt-4o...")
+                try:
+                    response = self.client.complete(
+                        messages=[
+                            SystemMessage(system_prompt),
+                            UserMessage(user_message)
+                        ],
+                        model='openai/gpt-4o',
+                        temperature=temperature
+                    )
+                    logging.info(f"✓ AI response received (openai/gpt-4o fallback)")
+                    return response.choices[0].message.content
+                except Exception as fallback_error:
+                    logging.error(f"✗ Fallback to gpt-4o also failed: {fallback_error}")
+                    raise fallback_error
+            else:
+                logging.error(f"✗ AI call failed: {e}")
+                raise
     
     def _purge_and_minify_css(self):
         """CSS optimization (placeholder - not critical for MVP)"""
@@ -1053,6 +1075,78 @@ Generate the updated master.json for Week {self.week_number}.
                          f"Failed to save hero image: {str(e)}")
             raise
     
+    def _extract_narrative_summary(self):
+        """Extract only essential data for Prompt B to reduce token usage"""
+        if not self.master_json:
+            return {}
+        
+        # Get latest entries only
+        ph = self.master_json.get('portfolio_history', [])
+        latest_portfolio = ph[-1] if ph else {}
+        prev_portfolio = ph[-2] if len(ph) > 1 else {}
+        
+        sp500_hist = self.master_json.get('benchmarks', {}).get('sp500', {}).get('history', [])
+        latest_sp500 = sp500_hist[-1] if sp500_hist else {}
+        prev_sp500 = sp500_hist[-2] if len(sp500_hist) > 1 else {}
+        
+        btc_hist = self.master_json.get('benchmarks', {}).get('bitcoin', {}).get('history', [])
+        latest_btc = btc_hist[-1] if btc_hist else {}
+        prev_btc = btc_hist[-2] if len(btc_hist) > 1 else {}
+        
+        # Extract current stocks with only current week data
+        stocks_summary = []
+        for stock in self.master_json.get('stocks', []):
+            stocks_summary.append({
+                'ticker': stock.get('ticker'),
+                'name': stock.get('name'),
+                'shares': stock.get('shares'),
+                'current_value': stock.get('current_value'),
+                'weekly_pct': stock.get('weekly_pct'),
+                'total_pct': stock.get('total_pct')
+            })
+        
+        return {
+            'meta': self.master_json.get('meta', {}),
+            'stocks': stocks_summary,
+            'portfolio_current': {
+                'date': latest_portfolio.get('date'),
+                'value': latest_portfolio.get('value'),
+                'weekly_pct': latest_portfolio.get('weekly_pct'),
+                'total_pct': latest_portfolio.get('total_pct')
+            },
+            'portfolio_previous': {
+                'date': prev_portfolio.get('date'),
+                'value': prev_portfolio.get('value'),
+                'weekly_pct': prev_portfolio.get('weekly_pct'),
+                'total_pct': prev_portfolio.get('total_pct')
+            },
+            'sp500_current': {
+                'date': latest_sp500.get('date'),
+                'close': latest_sp500.get('close'),
+                'weekly_pct': latest_sp500.get('weekly_pct'),
+                'total_pct': latest_sp500.get('total_pct')
+            },
+            'sp500_previous': {
+                'date': prev_sp500.get('date'),
+                'close': prev_sp500.get('close'),
+                'weekly_pct': prev_sp500.get('weekly_pct'),
+                'total_pct': prev_sp500.get('total_pct')
+            },
+            'bitcoin_current': {
+                'date': latest_btc.get('date'),
+                'close': latest_btc.get('close'),
+                'weekly_pct': latest_btc.get('weekly_pct'),
+                'total_pct': latest_btc.get('total_pct')
+            },
+            'bitcoin_previous': {
+                'date': prev_btc.get('date'),
+                'close': prev_btc.get('close'),
+                'weekly_pct': prev_btc.get('weekly_pct'),
+                'total_pct': prev_btc.get('total_pct')
+            },
+            'week_number': self.week_number
+        }
+    
     def run_prompt_b(self):
         """Prompt B: Narrative Writer - Generate HTML content"""
         logging.info("Running Prompt B: Narrative Writer...")
@@ -1060,15 +1154,18 @@ Generate the updated master.json for Week {self.week_number}.
         try:
             system_prompt = "You are the GenAi Chosen Narrative Writer. Follow Prompt B specifications exactly."
             
+            # Extract only essential data to stay under token limit
+            narrative_data = self._extract_narrative_summary()
+            
             user_message = f"""
 {self.prompts['B']}
 
 ---
 
-Here is the updated master.json:
+Here is the summary data for Week {self.week_number}:
 
 ```json
-{json.dumps(self.master_json, indent=2)}
+{json.dumps(narrative_data, indent=2)}
 ```
 
 Generate:
@@ -1273,21 +1370,65 @@ This is for Week {self.week_number}.
             except Exception as e:
                 logging.warning(f"Failed hardening {fp.name}: {e}")
     
+    def _extract_visual_data(self):
+        """Extract only data needed for visuals (table + chart) to reduce tokens"""
+        if not self.master_json:
+            return {}
+        
+        # Get latest 3 entries for table (inception, previous, current)
+        ph = self.master_json.get('portfolio_history', [])
+        inception = ph[0] if ph else {}
+        previous = ph[-2] if len(ph) > 1 else {}
+        current = ph[-1] if ph else {}
+        
+        sp500_hist = self.master_json.get('benchmarks', {}).get('sp500', {}).get('history', [])
+        sp500_inception = sp500_hist[0] if sp500_hist else {}
+        sp500_previous = sp500_hist[-2] if len(sp500_hist) > 1 else {}
+        sp500_current = sp500_hist[-1] if sp500_hist else {}
+        
+        btc_hist = self.master_json.get('benchmarks', {}).get('bitcoin', {}).get('history', [])
+        btc_inception = btc_hist[0] if btc_hist else {}
+        btc_previous = btc_hist[-2] if len(btc_hist) > 1 else {}
+        btc_current = btc_hist[-1] if btc_hist else {}
+        
+        # Get normalized chart data (all entries needed for chart)
+        normalized = self.master_json.get('normalized_chart', [])
+        
+        return {
+            'meta': self.master_json.get('meta', {}),
+            'portfolio_history': [inception, previous, current],
+            'benchmarks': {
+                'sp500': {
+                    'inception_reference': self.master_json.get('benchmarks', {}).get('sp500', {}).get('inception_reference'),
+                    'history': [sp500_inception, sp500_previous, sp500_current]
+                },
+                'bitcoin': {
+                    'inception_reference': self.master_json.get('benchmarks', {}).get('bitcoin', {}).get('inception_reference'),
+                    'history': [btc_inception, btc_previous, btc_current]
+                }
+            },
+            'normalized_chart': normalized,
+            'week_number': self.week_number
+        }
+    
     def run_prompt_c(self):
         """Prompt C: Visual Generator - Create table and chart"""
         logging.info("Running Prompt C: Visual Generator...")
         
         system_prompt = "You are the GenAi Chosen Visual Module Generator. Follow Prompt C specifications exactly."
         
+        # Extract only visual data to stay under token limit
+        visual_data = self._extract_visual_data()
+        
         user_message = f"""
 {self.prompts['C']}
 
 ---
 
-Here is the master.json:
+Here is the visual data for Week {self.week_number}:
 
 ```json
-{json.dumps(self.master_json, indent=2)}
+{json.dumps(visual_data, indent=2)}
 ```
 
 Generate:
@@ -1381,6 +1522,13 @@ This is for Week {self.week_number}.
             else:
                 logging.warning("Could not find Performance Since Inception insertion point")
         
+        # Extract minimal metadata for Prompt D (doesn't need full data)
+        minimal_meta = {
+            'week_number': self.week_number,
+            'current_date': self.master_json.get('meta', {}).get('current_date'),
+            'inception_date': self.master_json.get('meta', {}).get('inception_date')
+        }
+        
         user_message = f"""
 {self.prompts['D']}
 
@@ -1398,9 +1546,10 @@ Here are the components:
 {json.dumps(self.seo_json, indent=2)}
 ```
 
-**master.json (for reference):**
+**metadata:**
 ```json
-{json.dumps(self.master_json, indent=2)}
+{json.dumps(minimal_meta, indent=2)}
+```
 
 Generate the complete HTML file for Week {self.week_number}.
 """
