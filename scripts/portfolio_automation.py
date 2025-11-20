@@ -10,7 +10,9 @@ import json
 import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
-from openai import OpenAI
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
 import re
 import time
 import requests
@@ -18,8 +20,6 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import io
-import base64
-import secrets
 import logging
 
 # Configure logging
@@ -52,21 +52,30 @@ CSP_POLICY_TEMPLATE = (
 )
 
 class PortfolioAutomation:
-    def __init__(self, week_number=None, api_key=None, model="gpt-5.1", data_source="ai", alphavantage_key=None, marketstack_key=None, finnhub_key=None, eval_date=None, palette="default", minify_css=False):
+    def __init__(self, week_number=None, github_token=None, model="openai/gpt-5", 
+                 data_source="ai", alphavantage_key=None, marketstack_key=None, 
+                 finnhub_key=None, eval_date=None, palette="default"):
+        # Configuration
         self.week_number = week_number or self.detect_next_week()
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         self.model = model
         self.data_source = data_source.lower()
+        self.palette = palette
+        self.nonce = 'qi123'
+        self.stylesheet_name = 'styles.css'
+        
+        # API keys
+        self.github_token = github_token or os.getenv('GH_TOKEN')
         self.alphavantage_key = alphavantage_key or os.getenv('ALPHAVANTAGE_API_KEY')
         self.marketstack_key = marketstack_key or os.getenv('MARKETSTACK_API_KEY')
         self.finnhub_key = finnhub_key or os.getenv('FINNHUB_API_KEY')
+        
+        # AI client state
         self.client = None
         self.ai_enabled = False
+        self.ai_provider = 'GitHub Models'
+        
+        # Evaluation date
         self.eval_date = None
-        self.palette = palette  # theme palette selector ("default", "alt", etc.)
-        self.minify_css = minify_css
-        self.nonce = 'qi123'  # Static nonce for consistency with existing pages (static HTML doesn't support dynamic nonces)
-        self.stylesheet_name = 'styles.css'
         
         # Configure HTTP session with retry logic
         self.session = requests.Session()
@@ -88,28 +97,31 @@ class PortfolioAutomation:
             except ValueError:
                 logging.warning(f"Invalid --eval-date '{eval_date}' (expected YYYY-MM-DD). Ignoring override.")
 
-        # Initialize OpenAI client (required unless using alphavantage data-only mode)
-        if self.api_key:
+        # Initialize GitHub Models client
+        if self.github_token:
             try:
-                self.client = OpenAI(api_key=self.api_key)
+                self.client = ChatCompletionsClient(
+                    endpoint="https://models.github.ai/inference",
+                    credential=AzureKeyCredential(self.github_token)
+                )
                 self.ai_enabled = True
-                logging.info(f"OpenAI client initialized (model: {self.model})")
+                logging.info(f"✓ GitHub Models initialized ({self.model})")
             except Exception as e:
-                logging.error(f"Failed to init OpenAI client: {e}")
-        else:
-            if self.data_source == 'ai':
-                raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
-            logging.warning("No OPENAI_API_KEY. Will skip AI narrative (Prompts B-D) and produce data-only output.")
-
-        # Validate Alpha Vantage key if needed
+                logging.error(f"✗ GitHub Models failed: {e}")
+        
+        # Validate configuration
+        if self.data_source == 'ai' and not self.ai_enabled:
+            raise ValueError("AI mode requires GH_TOKEN. Use --data-source=alphavantage for data-only mode.")
+        if self.data_source == 'alphavantage' and not self.alphavantage_key:
+            raise ValueError("Alpha Vantage mode requires ALPHAVANTAGE_API_KEY environment variable.")
+        
+        # Log data source status
         if self.data_source == 'alphavantage':
-            if not self.alphavantage_key:
-                raise ValueError("Alpha Vantage API key required. Set ALPHAVANTAGE_API_KEY environment variable.")
-            logging.info(f"Using Alpha Vantage data source (key: {self.alphavantage_key[:8]}...)")
+            logging.info(f"✓ Alpha Vantage enabled (key: {self.alphavantage_key[:8]}...)")
         if self.finnhub_key:
-            logging.info(f"Finnhub enabled (key: {self.finnhub_key[:8]}...) - will use as secondary source/fallback")
-        else:
-            logging.info("Finnhub API key not set (FINNHUB_API_KEY). Skipping Finnhub fallback.")
+            logging.info(f"✓ Finnhub fallback enabled (key: {self.finnhub_key[:8]}...)")
+        if not self.ai_enabled:
+            logging.warning("⚠ Data-only mode: AI narrative disabled")
 
         # Finnhub rate limiting: 5 requests/minute = 1 request per 12 seconds
         self.last_finnhub_call = 0  # timestamp of last Finnhub API call
@@ -258,23 +270,24 @@ class PortfolioAutomation:
                          f"Failed to load master.json: {str(e)}")
             raise
     
-    def call_gpt4(self, system_prompt, user_message, temperature=0.7):
-        """Wrapper for OpenAI API calls with error handling"""
+    def call_ai(self, system_prompt, user_message, temperature=0.7):
+        """Call GitHub Models AI API"""
         if not self.client:
-            raise ValueError("OpenAI client not initialized. Set OPENAI_API_KEY.")
+            raise ValueError("AI client not initialized. Set GH_TOKEN environment variable.")
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
+            response = self.client.complete(
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
+                    SystemMessage(system_prompt),
+                    UserMessage(user_message)
                 ],
+                model=self.model,
                 temperature=temperature
             )
+            logging.info(f"✓ AI response received ({self.model})")
             return response.choices[0].message.content
         except Exception as e:
-            logging.error(f"GPT-4 API call failed: {e}")
+            logging.error(f"✗ AI call failed: {e}")
             raise
     
     def _purge_and_minify_css(self):
@@ -303,7 +316,7 @@ Here is last week's master.json:
 Generate the updated master.json for Week {self.week_number}.
 """
             
-            response = self.call_gpt4(system_prompt, user_message)
+            response = self.call_ai(system_prompt, user_message)
             
             # Extract JSON from response
             json_match = re.search(r'```json\s*({.*?})\s*```', response, re.DOTALL)
@@ -1065,7 +1078,7 @@ Generate:
 This is for Week {self.week_number}.
 """
             
-            response = self.call_gpt4(system_prompt, user_message)
+            response = self.call_ai(system_prompt, user_message)
             
             # Extract narrative HTML
             html_match = re.search(r'```html\s*(<div class="prose.*?</div>)\s*```', response, re.DOTALL)
@@ -1144,6 +1157,9 @@ This is for Week {self.week_number}.
         published_iso = self.master_json.get('meta', {}).get('current_date', datetime.utcnow().date().isoformat()) + 'T00:00:00Z'
         modified_iso = published_iso
         csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce)
+        
+        # AI provider metadata
+        ai_model_info = f"{self.ai_provider}: {self.model}" if self.ai_provider else "Data-only mode"
         # Derive keywords (fallback: generic terms + tickers)
         tickers = []
         try:
@@ -1187,6 +1203,7 @@ This is for Week {self.week_number}.
   <title>{title}</title>
   <meta name=\"description\" content=\"{meta_desc}\">
   <meta name=\"author\" content=\"Michael Gavrilov\">
+  <meta name=\"generator\" content=\"Portfolio Automation - {ai_model_info}\">
   <meta name=\"theme-color\" content=\"#000000\">
   <meta http-equiv=\"Content-Security-Policy\" content=\"{csp_policy}\">
   <meta name=\"referrer\" content=\"strict-origin-when-cross-origin\">
@@ -1281,7 +1298,7 @@ This is for Week {self.week_number}.
 """
         
         try:
-            response = self.call_gpt4(system_prompt, user_message)
+            response = self.call_ai(system_prompt, user_message)
             
             table_status = "success"
             chart_status = "success"
@@ -1323,8 +1340,6 @@ This is for Week {self.week_number}.
             self.add_step("Prompt C - Visual Generator", overall_status, 
                          "Generated performance table and chart",
                          {'table': table_status, 'chart': chart_status})
-            
-            return self.performance_table, self.performance_chart
             
         except Exception as e:
             self.add_step("Prompt C - Visual Generator", "error", 
@@ -1390,7 +1405,7 @@ Here are the components:
 Generate the complete HTML file for Week {self.week_number}.
 """
         
-        response = self.call_gpt4(system_prompt, user_message, temperature=0.2)
+        response = self.call_ai(system_prompt, user_message, temperature=0.2)
         
         # Extract final HTML
         html_match = re.search(r'<!DOCTYPE html>.*</html>', response, re.DOTALL | re.IGNORECASE)
@@ -1692,12 +1707,16 @@ Generate the complete HTML file for Week {self.week_number}.
             if self.ai_enabled:
                 # All-or-nothing: generate content first, write file only if successful
                 self.run_prompt_b()
+                if not self.narrative_html:
+                    raise ValueError("Prompt B failed to generate narrative HTML")
                 self.run_prompt_c()
-                final_html = self.run_prompt_d()
+                if not self.performance_table or not self.performance_chart:
+                    raise ValueError("Prompt C failed to generate visuals")
+                self.run_prompt_d()
                 # If we reached here, all prompts succeeded and file was written
             else:
                 # No AI available - fail fast, don't create incomplete output
-                error_msg = "AI client not initialized. Cannot generate weekly post without OpenAI API key."
+                error_msg = "AI client not initialized. Cannot generate weekly post without GitHub token."
                 self.add_step("Generate Weekly Post", "error", error_msg)
                 raise ValueError(error_msg)
 
@@ -1725,7 +1744,7 @@ Generate the complete HTML file for Week {self.week_number}.
             logging.info(f"    • master data/archive/master-{self.master_json['meta']['current_date'].replace('-', '')}.json")
             logging.info(f"    • Data/W{self.week_number}/master.json (legacy compatibility)")
             if not self.ai_enabled:
-                logging.info("  NOTE: Data-only mode (enable OPENAI_API_KEY for full narrative)")
+                logging.info("  NOTE: Data-only mode (enable GH_TOKEN for full narrative)")
             
             # Print detailed execution report
             self.print_report()
@@ -1744,12 +1763,12 @@ def main():
     parser = argparse.ArgumentParser(description='Automate weekly portfolio update')
     parser.add_argument('--week', type=str, default='auto', 
                        help='Week number (default: auto-detect next week)')
-    parser.add_argument('--api-key', type=str, 
-                       help='OpenAI API key (default: read from OPENAI_API_KEY env var)')
-    parser.add_argument('--model', type=str, default='gpt-4-turbo-preview',
-                       help='OpenAI model to use (default: gpt-4-turbo-preview)')
+    parser.add_argument('--github-token', type=str, 
+                       help='GitHub Personal Access Token (default: read from GH_TOKEN env var)')
+    parser.add_argument('--model', type=str, default='openai/gpt-5',
+                       help='AI model to use (default: openai/gpt-5 via GitHub Models)')
     parser.add_argument('--data-source', type=str, choices=['ai', 'alphavantage'], default='ai',
-                       help='Data source: ai (Prompt A via GPT-4) or alphavantage (Alpha Vantage API)')
+                       help='Data source: ai (Prompt A via AI) or alphavantage (Alpha Vantage API)')
     parser.add_argument('--alphavantage-key', type=str,
                        help='Alpha Vantage API key (default: read from ALPHAVANTAGE_API_KEY env var)')
     parser.add_argument('--marketstack-key', type=str,
@@ -1767,7 +1786,7 @@ def main():
 
     automation = PortfolioAutomation(
         week_number=week_number,
-        api_key=args.api_key,
+        github_token=args.github_token,
         model=args.model,
         data_source=args.data_source,
         alphavantage_key=args.alphavantage_key,

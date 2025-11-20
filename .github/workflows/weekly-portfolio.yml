@@ -1,0 +1,72 @@
+name: Weekly Portfolio Update
+
+on:
+  schedule:
+    - cron: '45 21 * * 4'  # Every Thursday at 4:45 PM EST (9:45 PM UTC)
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      week:
+        description: 'Week number (leave empty for auto)'
+        required: false
+        default: 'auto'
+      eval_date:
+        description: 'Evaluation date (YYYY-MM-DD, leave empty for latest)'
+        required: false
+
+jobs:
+  generate-portfolio:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for git push
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+      
+      - name: Generate portfolio update
+        env:
+          GH_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          MARKETSTACK_API_KEY: ${{ secrets.MARKETSTACK_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: |
+          python scripts/portfolio_automation.py \
+            --data-source alphavantage \
+            --week ${{ github.event.inputs.week || 'auto' }} \
+            ${{ github.event.inputs.eval_date && format('--eval-date {0}', github.event.inputs.eval_date) || '' }}
+      
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📊 Weekly portfolio update - Week $(date +%V) [automated]"
+            git push
+          fi
+      
+      - name: Upload execution report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-report-${{ github.run_number }}
+          path: |
+            Posts/*.html
+            Media/*.webp
+            master data/master.json
+          retention-days: 30

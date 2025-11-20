@@ -1,6 +1,5 @@
-openai==1.12.0
-anthropic==0.18.1
-requests==2.31.0
-beautifulsoup4==4.12.3
-python-dateutil==2.8.2
-Pillow==10.3.0  # Hero image generation
+# Core Dependencies
+azure-ai-inference>=1.0.0b6  # GitHub Models API client
+azure-core>=1.30.0           # Azure SDK core (required by azure-ai-inference)
+requests>=2.31.0             # HTTP client for API calls (includes urllib3, certifi)
+Pillow>=10.3.0               # Image processing for hero image generation
