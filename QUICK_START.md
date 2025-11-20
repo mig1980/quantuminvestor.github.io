@@ -55,6 +55,7 @@ python scripts/portfolio_automation.py --eval-date 2025-11-15
 
 Add to `.github/workflows/portfolio-update.yml`:
 
+{% raw %}
 ```yaml
 name: Weekly Portfolio Update
 
@@ -91,6 +92,7 @@ jobs:
           git commit -m "Week ${{ github.run_number }} update" || echo "No changes"
           git push
 ```
+{% endraw %}
 
 ## Key Files Generated
 

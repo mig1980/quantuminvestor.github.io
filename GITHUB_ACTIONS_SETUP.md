@@ -121,6 +121,7 @@ This allows the workflow to commit and push changes.
 2. Verify file exists: `weekly-portfolio.yml`
 3. If missing, the file should contain:
 
+{% raw %}
 ```yaml
 name: Weekly Portfolio Update
 
@@ -195,6 +196,7 @@ jobs:
             master data/master.json
           retention-days: 30
 ```
+{% endraw %}
 
 ---
 

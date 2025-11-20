@@ -33,6 +33,7 @@
    - `MARKETSTACK_API_KEY` - (Optional) Marketstack fallback
 
 2. **Create workflow** (`.github/workflows/weekly-portfolio.yml`):
+   {% raw %}
    ```yaml
    name: Weekly Portfolio Update
 
@@ -69,6 +70,7 @@
              git add .
              git diff --quiet || (git commit -m "Weekly update" && git push)
    ```
+   {% endraw %}
 
 ---
 
