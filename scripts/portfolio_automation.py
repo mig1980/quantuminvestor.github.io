@@ -270,8 +270,8 @@ class PortfolioAutomation:
                          f"Failed to load master.json: {str(e)}")
             raise
     
-    def call_ai(self, system_prompt, user_message, temperature=1.0):
-        """Call GitHub Models AI API with automatic fallback to gpt-4o on token limit
+    def call_ai(self, system_prompt, user_message, temperature=1.0, max_retries=3):
+        """Call GitHub Models AI API with retry logic and automatic fallback
         
         Note: GitHub Models only supports temperature=1.0 (default). Custom values are ignored.
         """
@@ -279,41 +279,66 @@ class PortfolioAutomation:
             raise ValueError("AI client not initialized. Set GH_TOKEN environment variable.")
         
         current_model = self.model
+        last_error = None
         
-        # GitHub Models only supports default temperature (1.0)
-        # Don't pass temperature parameter to avoid API errors
-        try:
-            response = self.client.complete(
-                messages=[
-                    SystemMessage(system_prompt),
-                    UserMessage(user_message)
-                ],
-                model=current_model
-            )
-            logging.info(f"✓ AI response received ({current_model})")
-            return response.choices[0].message.content
-        except Exception as e:
-            error_msg = str(e)
-            
-            # Check if it's a token limit error and we haven't already tried fallback
-            if 'tokens_limit_reached' in error_msg and current_model != 'openai/gpt-4o':
-                logging.warning(f"✗ {current_model} token limit exceeded, falling back to gpt-4o...")
-                try:
-                    response = self.client.complete(
-                        messages=[
-                            SystemMessage(system_prompt),
-                            UserMessage(user_message)
-                        ],
-                        model='openai/gpt-4o'
-                    )
-                    logging.info(f"✓ AI response received (openai/gpt-4o fallback)")
-                    return response.choices[0].message.content
-                except Exception as fallback_error:
-                    logging.error(f"✗ Fallback to gpt-4o also failed: {fallback_error}")
-                    raise fallback_error
-            else:
-                logging.error(f"✗ AI call failed: {e}")
-                raise
+        # Retry loop for transient network errors
+        for attempt in range(max_retries):
+            try:
+                # GitHub Models only supports default temperature (1.0)
+                # Don't pass temperature parameter to avoid API errors
+                response = self.client.complete(
+                    messages=[
+                        SystemMessage(system_prompt),
+                        UserMessage(user_message)
+                    ],
+                    model=current_model
+                )
+                logging.info(f"✓ AI response received ({current_model})")
+                return response.choices[0].message.content
+                
+            except Exception as e:
+                last_error = e
+                error_msg = str(e)
+                
+                # Check for token limit error - try fallback immediately
+                if 'tokens_limit_reached' in error_msg and current_model != 'openai/gpt-4o':
+                    logging.warning(f"✗ {current_model} token limit exceeded, falling back to gpt-4o...")
+                    try:
+                        response = self.client.complete(
+                            messages=[
+                                SystemMessage(system_prompt),
+                                UserMessage(user_message)
+                            ],
+                            model='openai/gpt-4o'
+                        )
+                        logging.info(f"✓ AI response received (openai/gpt-4o fallback)")
+                        return response.choices[0].message.content
+                    except Exception as fallback_error:
+                        logging.error(f"✗ Fallback to gpt-4o also failed: {fallback_error}")
+                        raise fallback_error
+                
+                # Check for transient network errors - retry
+                is_transient = any(keyword in error_msg.lower() for keyword in [
+                    'connection', 'timeout', 'remote end closed', 'broken pipe',
+                    'connection reset', 'remotedisconnected'
+                ])
+                
+                if is_transient and attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                    logging.warning(f"✗ Network error (attempt {attempt + 1}/{max_retries}): {error_msg}")
+                    logging.info(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    # Not transient or out of retries
+                    if attempt == max_retries - 1:
+                        logging.error(f"✗ AI call failed after {max_retries} attempts: {e}")
+                    else:
+                        logging.error(f"✗ AI call failed: {e}")
+                    raise
+        
+        # If we somehow exit the loop without returning or raising
+        raise last_error if last_error else RuntimeError("AI call failed for unknown reason")
     
     def _purge_and_minify_css(self):
         """CSS optimization (placeholder - not critical for MVP)"""
