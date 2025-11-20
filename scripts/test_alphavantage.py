@@ -32,7 +32,7 @@ def test_alphavantage_stock_price(symbol, api_key):
         print(f"   Symbol: {symbol}")
         print(f"   API Key: {api_key[:8]}..." if len(api_key) > 8 else "   API Key: (too short)")
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, timeout=60)
         print(f"   HTTP Status: {response.status_code}")
         
         response.raise_for_status()
@@ -98,7 +98,7 @@ def test_alphavantage_stock_price(symbol, api_key):
         
     except requests.exceptions.Timeout:
         print(f"\n❌ FAILED: Request timeout")
-        print(f"   Reason: Server did not respond within 10 seconds")
+        print(f"   Reason: Server did not respond within 60 seconds")
         return False
         
     except requests.exceptions.ConnectionError as e:

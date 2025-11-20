@@ -479,7 +479,7 @@ Return a validation report (PASS or FAIL with details).
             'apikey': self.alphavantage_key
         }
         try:
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             data = response.json()
             
@@ -521,7 +521,7 @@ Return a validation report (PASS or FAIL with details).
             'apikey': self.alphavantage_key
         }
         try:
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             data = response.json()
             if 'Realtime Currency Exchange Rate' in data:
@@ -560,7 +560,7 @@ Return a validation report (PASS or FAIL with details).
             'symbols': symbol
         }
         try:
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             data = response.json()
             
@@ -611,7 +611,7 @@ Return a validation report (PASS or FAIL with details).
         }
         try:
             self.last_finnhub_call = time.time()  # Update timestamp before request
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             data = response.json()
             # Finnhub returns fields: c (current), pc (prev close), t (timestamp)
@@ -654,7 +654,7 @@ Return a validation report (PASS or FAIL with details).
         }
         try:
             self.last_finnhub_call = time.time()  # Update timestamp before request
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             data = response.json()
             if 'c' in data and data.get('c') not in (None, 0):
