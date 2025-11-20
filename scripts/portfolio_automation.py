@@ -128,6 +128,14 @@ class PortfolioAutomation:
         self.last_finnhub_call = 0  # timestamp of last Finnhub API call
         self.finnhub_min_interval = 12  # seconds between Finnhub calls
 
+        # Execution report tracking (initialize before load_prompts)
+        self.report = {
+            'steps': [],
+            'start_time': datetime.now(),
+            'week_number': self.week_number,
+            'success': False
+        }
+
         # Load prompts
         self.prompts = self.load_prompts()
 
@@ -138,14 +146,6 @@ class PortfolioAutomation:
         self.seo_json = None
         self.performance_table = None
         self.performance_chart = None
-        
-        # Execution report tracking
-        self.report = {
-            'steps': [],
-            'start_time': datetime.now(),
-            'week_number': self.week_number,
-            'success': False
-        }
     
     def detect_next_week(self):
         """Auto-detect next week number from master data file"""
