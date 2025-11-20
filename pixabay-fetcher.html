@@ -360,7 +360,25 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        // Store API key - user must enter their own key
+        let PIXABAY_API_KEY = localStorage.getItem('pixabay_api_key') || '';
+        let currentImages = [];
+
+        // Check for API key on load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!PIXABAY_API_KEY) {
+                showApiKeyPrompt();
+            }
+        });
+
+        function showApiKeyPrompt() {
+            const key = prompt('Please enter your Pixabay API key:\n\nGet your free key at: https://pixabay.com/api/docs/');
+            if (key && key.trim()) {
+                PIXABAY_API_KEY = key.trim();
+                localStorage.setItem('pixabay_api_key', PIXABAY_API_KEY);
+                showStatus('API key saved successfully!', 'success');
+            }
+        }
 
         function showStatus(message, type) {
             const status = document.getElementById('status');
@@ -380,50 +398,62 @@
                 return;
             }
 
+            if (!PIXABAY_API_KEY) {
+                showApiKeyPrompt();
+                if (!PIXABAY_API_KEY) {
+                    showStatus('API key is required', 'error');
+                    return;
+                }
+            }
+
             const searchBtn = document.querySelector('.btn-primary');
             const searchBtnText = document.getElementById('searchBtnText');
             const searchSpinner = document.getElementById('searchSpinner');
 
-            // Disable button and show loading
             searchBtn.disabled = true;
             searchBtnText.style.display = 'none';
             searchSpinner.style.display = 'inline-block';
             showStatus('Searching Pixabay...', 'loading');
 
-            const params = {
-                query: query,
-                category: document.getElementById('category').value,
-                colors: document.getElementById('colors').value,
-                per_page: document.getElementById('perPage').value,
-                width: document.getElementById('width').value,
-                height: document.getElementById('height').value,
-                format: document.getElementById('format').value
-            };
-
             try {
-                const response = await fetch(`${API_BASE}/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(params)
+                // Build Pixabay API URL
+                const params = new URLSearchParams({
+                    key: PIXABAY_API_KEY,
+                    q: query,
+                    image_type: 'photo',
+                    orientation: 'horizontal',
+                    per_page: document.getElementById('perPage').value,
+                    safesearch: 'true',
+                    order: 'popular'
                 });
 
-                const data = await response.json();
+                const category = document.getElementById('category').value;
+                if (category) params.append('category', category);
 
+                const colors = document.getElementById('colors').value;
+                if (colors) params.append('colors', colors);
+
+                const response = await fetch(`https://pixabay.com/api/?${params.toString()}`);
+                
                 if (!response.ok) {
-                    throw new Error(data.error || 'Search failed');
+                    throw new Error('Failed to fetch from Pixabay API');
                 }
 
-                displayResults(data.images);
-                showStatus(`Found ${data.images.length} images`, 'success');
-                document.getElementById('results').style.display = 'block';
+                const data = await response.json();
+                
+                if (data.hits && data.hits.length > 0) {
+                    currentImages = data.hits;
+                    displayResults(data.hits);
+                    showStatus(`Found ${data.totalHits} images, showing ${data.hits.length}`, 'success');
+                    document.getElementById('results').style.display = 'block';
+                } else {
+                    showStatus('No images found. Try different keywords.', 'error');
+                }
 
             } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
+                showStatus(`Error: ${error.message}. Check your API key or try again.`, 'error');
                 console.error('Search error:', error);
             } finally {
-                // Re-enable button
                 searchBtn.disabled = false;
                 searchBtnText.style.display = 'inline';
                 searchSpinner.style.display = 'none';
@@ -438,7 +468,7 @@
                 const card = document.createElement('div');
                 card.className = 'image-card';
                 card.innerHTML = `
-                    <img src="${img.previewURL}" alt="${img.tags}" class="image-preview">
+                    <img src="${img.previewURL}" alt="${img.tags}" class="image-preview" loading="lazy">
                     <div class="image-info">
                         <div class="image-meta">
                             <strong>${img.imageWidth} × ${img.imageHeight}</strong><br>
@@ -449,9 +479,6 @@
                             <button class="btn-small btn-download" onclick="downloadImage(${index})">
                                 Download
                             </button>
-                            <button class="btn-small btn-save" onclick="saveToMedia(${index})">
-                                Save to Media
-                            </button>
                         </div>
                     </div>
                 `;
@@ -459,129 +486,87 @@
             });
         }
 
-        let currentImages = [];
-
-        async function searchImages() {
-            const query = document.getElementById('query').value.trim();
-            if (!query) {
-                showStatus('Please enter a search query', 'error');
-                return;
-            }
-
-            const searchBtn = document.querySelector('.btn-primary');
-            const searchBtnText = document.getElementById('searchBtnText');
-            const searchSpinner = document.getElementById('searchSpinner');
-
-            searchBtn.disabled = true;
-            searchBtnText.style.display = 'none';
-            searchSpinner.style.display = 'inline-block';
-            showStatus('Searching Pixabay...', 'loading');
-
-            const params = {
-                query: query,
-                category: document.getElementById('category').value,
-                colors: document.getElementById('colors').value,
-                per_page: parseInt(document.getElementById('perPage').value),
-                width: parseInt(document.getElementById('width').value),
-                height: parseInt(document.getElementById('height').value),
-                format: document.getElementById('format').value
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/search`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(params)
-                });
-
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Search failed');
-
-                currentImages = data.images;
-                displayResults(data.images);
-                showStatus(`Found ${data.images.length} images`, 'success');
-                document.getElementById('results').style.display = 'block';
-
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-                console.error('Search error:', error);
-            } finally {
-                searchBtn.disabled = false;
-                searchBtnText.style.display = 'inline';
-                searchSpinner.style.display = 'none';
-            }
-        }
-
         async function downloadImage(index) {
             const img = currentImages[index];
             const format = document.getElementById('format').value;
-            const width = parseInt(document.getElementById('width').value);
-            const height = parseInt(document.getElementById('height').value);
+            const targetWidth = parseInt(document.getElementById('width').value);
+            const targetHeight = parseInt(document.getElementById('height').value);
 
-            showStatus('Downloading image...', 'loading');
+            showStatus('Processing and downloading image...', 'loading');
 
             try {
-                const response = await fetch(`${API_BASE}/download`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: img,
-                        format: format,
-                        width: width,
-                        height: height
-                    })
+                // Get the large image URL
+                const imageUrl = img.largeImageURL || img.webformatURL;
+                
+                // Fetch the image
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                
+                // Create an image element to resize
+                const imgElement = new Image();
+                imgElement.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve, reject) => {
+                    imgElement.onload = resolve;
+                    imgElement.onerror = reject;
+                    imgElement.src = URL.createObjectURL(blob);
                 });
 
-                if (!response.ok) throw new Error('Download failed');
+                // Create canvas and resize
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d');
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `pixabay_${img.id}.${format}`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                // Calculate scaling to fill canvas
+                const scale = Math.max(targetWidth / imgElement.width, targetHeight / imgElement.height);
+                const scaledWidth = imgElement.width * scale;
+                const scaledHeight = imgElement.height * scale;
+                const x = (targetWidth - scaledWidth) / 2;
+                const y = (targetHeight - scaledHeight) / 2;
 
-                showStatus('Image downloaded successfully!', 'success');
+                ctx.drawImage(imgElement, x, y, scaledWidth, scaledHeight);
+
+                // Convert to blob and download
+                canvas.toBlob((resultBlob) => {
+                    const url = URL.createObjectURL(resultBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `pixabay_${img.id}_${targetWidth}x${targetHeight}.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showStatus('Image downloaded successfully!', 'success');
+                }, format === 'png' ? 'image/png' : 'image/jpeg', 0.95);
+
+                URL.revokeObjectURL(imgElement.src);
+
             } catch (error) {
                 showStatus(`Download error: ${error.message}`, 'error');
-            }
-        }
-
-        async function saveToMedia(index) {
-            const img = currentImages[index];
-            const format = document.getElementById('format').value;
-            const width = parseInt(document.getElementById('width').value);
-            const height = parseInt(document.getElementById('height').value);
-
-            showStatus('Saving to Media folder...', 'loading');
-
-            try {
-                const response = await fetch(`${API_BASE}/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: img,
-                        format: format,
-                        width: width,
-                        height: height
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Save failed');
-
-                showStatus(`Saved to: ${data.path}`, 'success');
-            } catch (error) {
-                showStatus(`Save error: ${error.message}`, 'error');
+                console.error('Download error:', error);
             }
         }
 
         // Allow Enter key to trigger search
         document.getElementById('query').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchImages();
+        });
+
+        // Add button to reset API key
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.container');
+            const resetBtn = document.createElement('button');
+            resetBtn.textContent = '🔑 Change API Key';
+            resetBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: #718096; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em;';
+            resetBtn.onclick = () => {
+                localStorage.removeItem('pixabay_api_key');
+                PIXABAY_API_KEY = '';
+                showApiKeyPrompt();
+            };
+            container.style.position = 'relative';
+            container.insertBefore(resetBtn, container.firstChild);
         });
     </script>
 </body>
