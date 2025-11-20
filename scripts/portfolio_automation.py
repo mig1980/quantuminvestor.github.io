@@ -324,14 +324,14 @@ class PortfolioAutomation:
                 ])
                 
                 if is_transient and attempt < max_retries - 1:
+                    # Retry with backoff
                     wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
                     logging.warning(f"✗ Network error (attempt {attempt + 1}/{max_retries}): {error_msg}")
                     logging.info(f"Retrying in {wait_time} seconds...")
                     time.sleep(wait_time)
                     continue
-                
-                # If repeatedly failing with connection errors on gpt-5, try gpt-4o
-                if is_transient and attempt == max_retries - 1 and current_model == 'openai/gpt-5':
+                elif is_transient and attempt == max_retries - 1 and current_model == 'openai/gpt-5':
+                    # Last attempt with connection errors on gpt-5, try gpt-4o as final fallback
                     logging.warning(f"✗ Persistent connection errors with {current_model}, trying openai/gpt-4o...")
                     try:
                         response = self.client.complete(
@@ -345,20 +345,18 @@ class PortfolioAutomation:
                         return response.choices[0].message.content
                     except Exception as gpt4o_error:
                         logging.error(f"✗ gpt-4o also failed: {gpt4o_error}")
-                        # Fall through to raise original error
-                        pass
+                        # Fall through to raise with diagnostics
+                
+                # Final failure - provide diagnostics and raise
+                if attempt == max_retries - 1:
+                    msg_len = len(system_prompt) + len(user_message)
+                    logging.error(f"✗ AI call failed after {max_retries} attempts")
+                    logging.error(f"  Model: {current_model}")
+                    logging.error(f"  Message length: {msg_len:,} chars (~{msg_len//4:,} tokens)")
+                    logging.error(f"  Error: {e}")
                 else:
-                    # Not transient or out of retries
-                    if attempt == max_retries - 1:
-                        # Provide diagnostics on final failure
-                        msg_len = len(system_prompt) + len(user_message)
-                        logging.error(f"✗ AI call failed after {max_retries} attempts")
-                        logging.error(f"  Model: {current_model}")
-                        logging.error(f"  Message length: {msg_len:,} chars (~{msg_len//4:,} tokens)")
-                        logging.error(f"  Error: {e}")
-                    else:
-                        logging.error(f"✗ AI call failed: {e}")
-                    raise
+                    logging.error(f"✗ AI call failed: {e}")
+                raise
         
         # If we somehow exit the loop without returning or raising
         raise last_error if last_error else RuntimeError("AI call failed for unknown reason")
