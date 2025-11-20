@@ -1,0 +1,52 @@
+<div class="myblock-chart-container">
+  <div class="myblock-chart-title">Performance Since Inception (Normalized to 100)</div>
+  <div class="myblock-chart-wrapper">
+    <svg class="myblock-chart-svg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chartTitle chartDesc">
+      <title id="chartTitle">Normalized Performance Since Inception</title>
+      <desc id="chartDesc">Line chart comparing normalized performance of the GenAi Chosen portfolio, the S&amp;P 500, and Bitcoin from October 9, 2025, with all assets normalized to 100 on the inception date and 100 shown as the central reference line.</desc>
+      
+      <!-- Grid -->
+      <g class="myblock-chart-grid-group">
+        <line x1="60" y1="40.0" x2="860" y2="40.0" class="myblock-chart-grid-line" /><line x1="60" y1="115.0" x2="860" y2="115.0" class="myblock-chart-grid-line" /><line x1="60" y1="190.0" x2="860" y2="190.0" class="myblock-chart-grid-line" /><line x1="60" y1="265.0" x2="860" y2="265.0" class="myblock-chart-grid-line" /><line x1="60" y1="340.0" x2="860" y2="340.0" class="myblock-chart-grid-line" />
+      </g>
+      
+      <!-- Axes -->
+      <line x1="60" y1="40" x2="60" y2="340" class="myblock-chart-axis" />
+      <line x1="60" y1="340" x2="860" y2="340" class="myblock-chart-axis" />
+      
+      <!-- Y-axis labels -->
+      <g class="myblock-chart-labels">
+        <text x="50" y="44.0" text-anchor="end" class="myblock-chart-label">107</text><text x="50" y="119.0" text-anchor="end" class="myblock-chart-label">97</text><text x="50" y="194.0" text-anchor="end" class="myblock-chart-label">88</text><text x="50" y="269.0" text-anchor="end" class="myblock-chart-label">78</text><text x="50" y="344.0" text-anchor="end" class="myblock-chart-label">69</text>
+      </g>
+      
+      <!-- X-axis labels -->
+      <g class="myblock-chart-labels">
+        <text x="60.0" y="360" text-anchor="middle" class="myblock-chart-label">Oct 9</text><text x="193.33333333333331" y="360" text-anchor="middle" class="myblock-chart-label">Oct 16</text><text x="326.66666666666663" y="360" text-anchor="middle" class="myblock-chart-label">Oct 23</text><text x="460.0" y="360" text-anchor="middle" class="myblock-chart-label">Oct 30</text><text x="593.3333333333333" y="360" text-anchor="middle" class="myblock-chart-label">Nov 6</text><text x="860.0" y="360" text-anchor="middle" class="myblock-chart-label">Nov 20</text>
+      </g>
+      
+      <!-- Lines -->
+      <polyline points="60.0,92.20494923857865 193.33333333333331,91.80837563451773 326.66666666666663,91.33248730964462 460.0,74.91434010152285 593.3333333333333,65.00000000000001 726.6666666666667,68.64847715736036 860.0,76.73857868020309" class="myblock-chart-line-genai" />
+      <polyline points="60.0,86.73223350253804 193.33333333333331,97.28109137055834 326.66666666666663,86.33565989847716 460.0,76.42131979695431 593.3333333333333,88.47715736040604 726.6666666666667,86.41497461928938 860.0,97.75697969543145" class="myblock-chart-line-sp500" />
+      <polyline points="60.0,102.91243654822338 193.33333333333331,196.1865482233502 326.66666666666663,184.13071065989848 460.0,189.0482233502538 593.3333333333333,234.09898477157356 726.6666666666667,244.4098984771574 860.0,315.0" class="myblock-chart-line-bitcoin" />
+      
+      <!-- Dots -->
+      <g class="myblock-chart-dots">
+        <circle cx="60.0" cy="92.20494923857865" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="60.0" cy="86.73223350253804" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="60.0" cy="102.91243654822338" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="193.33333333333331" cy="91.80837563451773" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="193.33333333333331" cy="97.28109137055834" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="193.33333333333331" cy="196.1865482233502" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="326.66666666666663" cy="91.33248730964462" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="326.66666666666663" cy="86.33565989847716" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="326.66666666666663" cy="184.13071065989848" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="460.0" cy="74.91434010152285" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="460.0" cy="76.42131979695431" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="460.0" cy="189.0482233502538" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="593.3333333333333" cy="65.00000000000001" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="593.3333333333333" cy="88.47715736040604" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="593.3333333333333" cy="234.09898477157356" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="726.6666666666667" cy="68.64847715736036" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="726.6666666666667" cy="86.41497461928938" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="726.6666666666667" cy="244.4098984771574" class="myblock-chart-dot myblock-chart-dot-bitcoin" /><circle cx="860.0" cy="76.73857868020309" class="myblock-chart-dot myblock-chart-dot-genai" /><circle cx="860.0" cy="97.75697969543145" class="myblock-chart-dot myblock-chart-dot-sp500" /><circle cx="860.0" cy="315.0" class="myblock-chart-dot myblock-chart-dot-bitcoin" />
+      </g>
+    </svg>
+  </div>
+  <div class="myblock-chart-legend">
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-genai"></div>
+      <span><strong>GenAi Chosen</strong> (+1.96%)</span>
+    </div>
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-sp500"></div>
+      <span><strong>S&amp;P 500</strong> (-0.69%)</span>
+    </div>
+    <div class="myblock-chart-legend-item">
+      <div class="myblock-chart-legend-line myblock-legend-bitcoin"></div>
+      <span><strong>Bitcoin</strong> (-28.08%)</span>
+    </div>
+  </div>
+</div>
