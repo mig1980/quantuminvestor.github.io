@@ -683,6 +683,14 @@ img {
 
 /* Media Queries - Mobile (phones) */
 @media (max-width: 640px) {
+  /* Prevent input fields from scaling disproportionately */
+  input[type="email"],
+  input[type="text"] {
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    max-height: 44px;
+  }
+
   .px-4 {
     padding-left: 1rem;
     padding-right: 1rem;
