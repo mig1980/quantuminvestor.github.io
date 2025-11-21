@@ -523,6 +523,13 @@
             <h2 class="text-xl font-semibold mb-4">Search Results</h2>
             <div id="resultsGrid"></div>
         </div>
+
+        <section id="licenseInfo" class="pixabay-panel mt-8" style="display: none;">
+            <h2 class="text-lg font-semibold mb-3">📄 Pixabay License</h2>
+            <p class="text-sm" style="color: var(--text-gray-400); line-height: 1.7;">
+                Pixabay images, videos, and audio are free to use for both personal and commercial projects, with no attribution required. You may adapt or modify the content, but you may not sell or redistribute it in its original form, nor claim it as your own trademark, brand, or logo. Content must not be used in illegal, misleading, offensive, or defamatory contexts. Some files may feature trademarks, logos, or identifiable people, which could require additional permissions for certain uses.
+            </p>
+        </section>
     </main>
 
     <div id="footer-placeholder" data-template="footer" data-root-path=""></div>
@@ -686,6 +693,10 @@
                     displayResults(data.hits);
                     showStatus(`Found ${data.totalHits} images, showing ${data.hits.length}`, 'success');
                     elements.results.style.display = 'block';
+                    
+                    // Show license info after results
+                    const licenseInfo = document.getElementById('licenseInfo');
+                    if (licenseInfo) licenseInfo.style.display = 'block';
                 } else {
                     showStatus('No images found', 'error');
                 }
@@ -770,8 +781,7 @@
 
             try {
                 const imageUrl = img.largeImageURL || img.webformatURL;
-                const blob = await fetchImage(imageUrl);
-                const resizedBlob = await resizeImage(blob, targetWidth, targetHeight, format);
+                const resizedBlob = await resizeImageFromUrl(imageUrl, targetWidth, targetHeight, format);
                 
                 downloadBlob(resizedBlob, `pixabay_${img.id}_${targetWidth}x${targetHeight}.${format}`);
                 showStatus('Downloaded!', 'success');
@@ -781,13 +791,7 @@
             }
         }
 
-        async function fetchImage(url) {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch image');
-            return await response.blob();
-        }
-
-        async function resizeImage(blob, width, height, format) {
+        async function resizeImageFromUrl(imageUrl, width, height, format) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
@@ -807,20 +811,34 @@
                         
                         ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
                         
+                        // Determine MIME type based on format
+                        let mimeType;
+                        if (format === 'png') {
+                            mimeType = 'image/png';
+                        } else if (format === 'webp') {
+                            mimeType = 'image/webp';
+                        } else {
+                            mimeType = 'image/jpeg';
+                        }
+                        
                         canvas.toBlob(
-                            (blob) => resolve(blob),
-                            format === 'png' ? 'image/png' : 'image/jpeg',
+                            (blob) => {
+                                if (blob) {
+                                    resolve(blob);
+                                } else {
+                                    reject(new Error('Failed to create blob'));
+                                }
+                            },
+                            mimeType,
                             0.95
                         );
-                        
-                        URL.revokeObjectURL(img.src);
                     } catch (error) {
                         reject(error);
                     }
                 };
                 
-                img.onerror = () => reject(new Error('Failed to load image'));
-                img.src = URL.createObjectURL(blob);
+                img.onerror = () => reject(new Error('Failed to load image. CORS policy may be blocking the request.'));
+                img.src = imageUrl;
             });
         }
 

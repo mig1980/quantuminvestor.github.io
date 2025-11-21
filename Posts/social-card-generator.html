@@ -9,12 +9,13 @@
   <meta name="theme-color" content="#000000">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123'; style-src 'self' 'nonce-qi123'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-qi123' https://cdn.jsdelivr.net; style-src 'self' 'nonce-qi123'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net; frame-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex, nofollow">
   <link rel="canonical" href="https://quantuminvestor.net/Posts/social-card-generator.html" />
   <link rel="icon" href="../Media/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="../styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" nonce="qi123"></script>
   <script src="../js/template-loader.js" defer nonce="qi123"></script>
   <script src="../js/mobile-menu.js" defer nonce="qi123"></script>
   <style nonce="qi123">
@@ -270,7 +271,7 @@
         <li>Select a week from the dropdown</li>
         <li>Click "Generate Cards" to create preview cards</li>
         <li>Switch between Twitter and LinkedIn tabs</li>
-        <li>Download individual cards as PNG (right-click → Save Image)</li>
+        <li>Download individual cards as PNG</li>
         <li>Copy card HTML to integrate elsewhere</li>
       </ol>
       <br>
@@ -524,11 +525,60 @@
 // Global functions for buttons (must be outside IIFE for event listener access)
 window.downloadCard = async function(cardId, filename) {
   const card = document.getElementById(cardId);
-  if (!card) return;
+  if (!card) {
+    console.error('Card element not found:', cardId);
+    return;
+  }
   
-  // Use html2canvas library (you'll need to include it)
-  // For now, show instructions
-  alert('To download cards:\n\n1. Right-click on the card\n2. Select "Save Image As..."\n3. Save as PNG\n\nAlternatively, take a screenshot of the card area.\n\nFor automated export, integrate html2canvas or similar library.');
+  // Check if html2canvas is loaded
+  if (typeof html2canvas === 'undefined') {
+    alert('html2canvas library is still loading. Please wait a moment and try again.');
+    return;
+  }
+  
+  try {
+    // Show status
+    const statusEl = document.getElementById('generationStatus');
+    if (statusEl) statusEl.textContent = 'Generating PNG...';
+    
+    // Get the actual dimensions from the card
+    const isTwitter = card.classList.contains('twitter-card');
+    const scale = isTwitter ? 2 : 2; // 2x for high quality
+    
+    // Capture the card element as canvas
+    const canvas = await html2canvas(card, {
+      scale: scale,
+      backgroundColor: null,
+      logging: false,
+      useCORS: true,
+      allowTaint: true
+    });
+    
+    // Convert canvas to blob
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        alert('Failed to generate image');
+        return;
+      }
+      
+      // Download the blob
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Update status
+      if (statusEl) statusEl.textContent = 'Download complete!';
+    }, 'image/png');
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    alert(`Failed to download card: ${error.message}`);
+  }
 };
 
 window.copyCardHTML = function(cardId) {
@@ -537,7 +587,11 @@ window.copyCardHTML = function(cardId) {
   
   const html = card.outerHTML;
   navigator.clipboard.writeText(html).then(() => {
-    alert('Card HTML copied to clipboard!');
+    const statusEl = document.getElementById('generationStatus');
+    if (statusEl) statusEl.textContent = 'Card HTML copied to clipboard!';
+    setTimeout(() => {
+      if (statusEl) statusEl.textContent = '';
+    }, 2000);
   }).catch(err => {
     console.error('Failed to copy:', err);
     alert('Failed to copy HTML. Check console for details.');
