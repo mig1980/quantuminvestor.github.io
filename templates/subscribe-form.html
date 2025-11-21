@@ -175,15 +175,12 @@
   .subscribe-input {
     width: 100%;
     min-width: 0;
-    max-height: 44px;
-    height: 44px;
     padding: 0.5rem 0.75rem;
     box-sizing: border-box;
   }
 
   .subscribe-button {
     width: 100%;
-    height: 44px;
     padding: 0.5rem 1rem;
     box-sizing: border-box;
   }
@@ -221,18 +218,19 @@
     <!-- <h2 class="subscribe-title">Weekly Update</h2> -->
   </div>
 
-  <form id="subscribeForm" class="subscribe-form" novalidate>
+  <form id="subscribeForm" class="subscribe-form" novalidate aria-label="Email subscription form">
     <div class="subscribe-input-group">
       <input 
         type="email" 
         id="emailInput" 
         name="email" 
         class="subscribe-input" 
-        placeholder="email@example.com"
+        placeholder="your@email.com"
         required
         autocomplete="email"
         aria-label="Email address"
         aria-describedby="emailError"
+        aria-invalid="false"
       >
       <button type="submit" id="subscribeButton" class="subscribe-button">
         Subscribe
@@ -276,6 +274,7 @@
    */
   function showInputError(message) {
     emailInput.classList.add('error');
+    emailInput.setAttribute('aria-invalid', 'true');
     emailError.textContent = message;
     emailError.classList.add('show');
   }
@@ -285,6 +284,7 @@
    */
   function clearInputError() {
     emailInput.classList.remove('error');
+    emailInput.setAttribute('aria-invalid', 'false');
     emailError.textContent = '';
     emailError.classList.remove('show');
   }
@@ -313,9 +313,11 @@
   function setButtonLoading(loading) {
     if (loading) {
       subscribeButton.disabled = true;
-      subscribeButton.innerHTML = 'Subscribing<span class="subscribe-spinner"></span>';
+      subscribeButton.setAttribute('aria-busy', 'true');
+      subscribeButton.innerHTML = 'Subscribing<span class="subscribe-spinner" aria-hidden="true"></span>';
     } else {
       subscribeButton.disabled = false;
+      subscribeButton.setAttribute('aria-busy', 'false');
       subscribeButton.textContent = 'Subscribe';
     }
   }
@@ -326,21 +328,29 @@
    * @returns {Promise<object>} - Response from Azure Function
    */
   async function submitEmail(email) {
-    const response = await fetch(AZURE_FUNCTION_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ email: email })
-    });
+    try {
+      const response = await fetch(AZURE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email: email })
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Subscription failed' }));
-      throw new Error(errorData.message || 'Subscription failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Subscription failed' }));
+        throw new Error(errorData.message || 'Subscription failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      // Network errors or fetch failures
+      if (error.name === 'TypeError') {
+        throw new Error('Network error. Please check your connection.');
+      }
+      throw error;
     }
-
-    return await response.json();
   }
 
   /**
