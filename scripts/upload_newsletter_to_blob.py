@@ -10,31 +10,28 @@ Usage:
     python scripts/upload_newsletter_to_blob.py --latest
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def get_latest_week_number() -> int:
     """Auto-detect latest week from newsletters directory"""
     base_dir = Path(__file__).parent.parent
-    newsletters_dir = base_dir / 'newsletters'
+    newsletters_dir = base_dir / "newsletters"
 
     if not newsletters_dir.exists():
         raise FileNotFoundError(f"Newsletters directory not found: {newsletters_dir}")
 
     week_numbers = []
-    for file in newsletters_dir.glob('week*_newsletter.html'):
+    for file in newsletters_dir.glob("week*_newsletter.html"):
         # Extract week number from filename: week6_newsletter.html -> 6
         try:
-            week_str = file.stem.split('_')[0].replace('week', '')
+            week_str = file.stem.split("_")[0].replace("week", "")
             week_numbers.append(int(week_str))
         except (ValueError, IndexError):
             continue
@@ -64,19 +61,19 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
     logging.info(f"Uploading newsletter for Week {week_num}")
 
     # Get connection string
-    connection_string = os.environ.get('STORAGE_CONNECTION_STRING')
+    connection_string = os.environ.get("STORAGE_CONNECTION_STRING")
     if not connection_string:
         raise ValueError("STORAGE_CONNECTION_STRING environment variable not set")
 
     # Validate local file exists
     base_dir = Path(__file__).parent.parent
-    local_path = base_dir / 'newsletters' / f'week{week_num}_newsletter.html'
+    local_path = base_dir / "newsletters" / f"week{week_num}_newsletter.html"
 
     if not local_path.exists():
         raise FileNotFoundError(f"Newsletter HTML not found: {local_path}")
 
     # Read HTML content
-    with open(local_path, 'r', encoding='utf-8') as f:
+    with open(local_path, "r", encoding="utf-8") as f:
         html_content = f.read()
 
     file_size = len(html_content)
@@ -87,7 +84,7 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
         raise ValueError("Newsletter HTML is empty")
 
     html_lower = html_content.lower()
-    if '<html' not in html_lower or '<body' not in html_lower:
+    if "<html" not in html_lower or "<body" not in html_lower:
         raise ValueError("Newsletter HTML missing required structure (<html> and/or <body>)")
 
     # Azure Blob Storage configuration
@@ -109,15 +106,12 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
 
         if blob_exists and not overwrite:
             raise ValueError(
-                f"Blob already exists: {container_name}/{blob_name}\n"
-                f"Use --overwrite flag to replace existing blob"
+                f"Blob already exists: {container_name}/{blob_name}\n" f"Use --overwrite flag to replace existing blob"
             )
 
         # Upload blob
         blob_client.upload_blob(
-            html_content,
-            overwrite=overwrite,
-            content_settings=ContentSettings(content_type='text/html; charset=utf-8')
+            html_content, overwrite=overwrite, content_settings=ContentSettings(content_type="text/html; charset=utf-8")
         )
 
         # Get blob URL
@@ -126,20 +120,17 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
         logging.info(f"Upload complete: {file_size:,} bytes → {blob_name}")
 
         return {
-            'status': 'success',
-            'week': week_num,
-            'blob_url': blob_url,
-            'blob_name': blob_name,
-            'container': container_name,
-            'size_bytes': file_size,
-            'overwritten': blob_exists
+            "status": "success",
+            "week": week_num,
+            "blob_url": blob_url,
+            "blob_name": blob_name,
+            "container": container_name,
+            "size_bytes": file_size,
+            "overwritten": blob_exists,
         }
 
     except ImportError:
-        raise ImportError(
-            "Azure Storage SDK not installed. Install with:\n"
-            "pip install azure-storage-blob"
-        )
+        raise ImportError("Azure Storage SDK not installed. Install with:\n" "pip install azure-storage-blob")
     except Exception as e:
         logging.error(f"Upload failed: {type(e).__name__}: {e}")
         raise
@@ -159,7 +150,7 @@ def resolve_week_number(args) -> int:
     Raises:
         ValueError: If week number is invalid
     """
-    if args.latest or (args.week and args.week.lower() == '--latest'):
+    if args.latest or (args.week and args.week.lower() == "--latest"):
         week_num = get_latest_week_number()
         logging.info(f"Auto-detected latest week: {week_num}")
         return week_num
@@ -180,7 +171,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Upload newsletter HTML to Azure Blob Storage',
+        description="Upload newsletter HTML to Azure Blob Storage",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -195,25 +186,12 @@ Examples:
 
 Environment Variables:
   STORAGE_CONNECTION_STRING  Azure Storage connection string (required)
-        """
+        """,
     )
 
-    parser.add_argument(
-        'week',
-        type=str,
-        nargs='?',
-        help='Week number to upload (e.g., 6) or --latest for auto-detect'
-    )
-    parser.add_argument(
-        '--latest',
-        action='store_true',
-        help='Auto-detect and upload the latest week'
-    )
-    parser.add_argument(
-        '--overwrite',
-        action='store_true',
-        help='Overwrite existing blob if it exists'
-    )
+    parser.add_argument("week", type=str, nargs="?", help="Week number to upload (e.g., 6) or --latest for auto-detect")
+    parser.add_argument("--latest", action="store_true", help="Auto-detect and upload the latest week")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing blob if it exists")
 
     args = parser.parse_args()
 
@@ -225,21 +203,21 @@ Environment Variables:
         result = upload_newsletter_to_blob(week_num, overwrite=args.overwrite)
 
         # Print success message
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("☁️  UPLOAD COMPLETE")
-        print("="*70)
+        print("=" * 70)
         print(f"✅ Newsletter uploaded successfully")
         print(f"📅 Week: {result['week']}")
         print(f"📦 Blob: {result['container']}/{result['blob_name']}")
         print(f"📏 Size: {result['size_bytes']:,} bytes ({result['size_bytes']/1024:.1f} KB)")
         print(f"🔗 URL: {result['blob_url']}")
-        if result['overwritten']:
+        if result["overwritten"]:
             print(f"⚠️  Previous version overwritten")
         print("\n🔍 NEXT STEPS:")
         print(f"1. Verify blob in Azure Portal: Storage Account → Containers → newsletters")
         print(f"2. Test Azure Function: Manually trigger weekly_newsletter function")
         print(f"3. Check Function logs for successful newsletter download")
-        print("="*70)
+        print("=" * 70)
 
     except ValueError as e:
         # Covers both week number validation and upload errors

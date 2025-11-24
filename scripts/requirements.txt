@@ -14,3 +14,5 @@ flask-cors>=4.0.0            # CORS support for frontend-backend communication
 # Security & Code Quality
 bandit[toml]>=1.7.5          # Security linting for Python code
 pre-commit>=3.5.0            # Git hook management for automated checks
+black>=24.1.0                # Python code formatter
+isort>=5.13.0                # Python import sorter

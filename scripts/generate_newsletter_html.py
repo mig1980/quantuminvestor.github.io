@@ -7,24 +7,24 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def format_percentage(value: float, include_sign: bool = True) -> str:
     """Format percentage with appropriate sign and color class"""
     if include_sign:
-        sign = '+' if value > 0 else ''
+        sign = "+" if value > 0 else ""
         return f"{sign}{value:.2f}%"
     return f"{value:.2f}%"
 
+
 def get_performance_color_class(value: float) -> str:
     """Return CSS class based on performance value"""
-    return 'positive' if value >= 0 else ''
+    return "positive" if value >= 0 else ""
+
 
 def generate_html(narrative_data: Dict[str, Any]) -> str:
     """
@@ -37,40 +37,41 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
     Returns:
         Complete HTML string optimized for email clients
     """
-    week_num = narrative_data['week_number']
-    date_range = narrative_data.get('date_range', '')
-    subject = narrative_data['subject_line']
-    preheader = narrative_data['preheader']
-    opening = narrative_data['opening_paragraph']
-    insights = narrative_data['key_insights']
-    perf_data = narrative_data['performance_data']
-    market_context = narrative_data['market_context']
-    benchmark = narrative_data['benchmark_comparison']
-    cta_url = narrative_data['call_to_action_url']
+    week_num = narrative_data["week_number"]
+    date_range = narrative_data.get("date_range", "")
+    subject = narrative_data["subject_line"]
+    preheader = narrative_data["preheader"]
+    opening = narrative_data["opening_paragraph"]
+    insights = narrative_data["key_insights"]
+    perf_data = narrative_data["performance_data"]
+    market_context = narrative_data["market_context"]
+    benchmark = narrative_data["benchmark_comparison"]
+    cta_url = narrative_data["call_to_action_url"]
 
     # Format performance values
-    weekly_change = perf_data['weekly_change']
-    total_return = perf_data['total_return']
-    weekly_sign = '+' if weekly_change >= 0 else ''
-    total_sign = '+' if total_return >= 0 else ''
+    weekly_change = perf_data["weekly_change"]
+    total_return = perf_data["total_return"]
+    weekly_sign = "+" if weekly_change >= 0 else ""
+    total_sign = "+" if total_return >= 0 else ""
 
     # Banner color based on performance
-    banner_color = '#28a745' if weekly_change >= 0 else '#dc3545'
+    banner_color = "#28a745" if weekly_change >= 0 else "#dc3545"
 
     # Format benchmark percentages
-    portfolio_weekly = benchmark['portfolio_weekly']
-    sp500_weekly = benchmark['sp500_weekly']
-    bitcoin_weekly = benchmark['bitcoin_weekly']
-    benchmark_summary = benchmark['summary']
+    portfolio_weekly = benchmark["portfolio_weekly"]
+    sp500_weekly = benchmark["sp500_weekly"]
+    bitcoin_weekly = benchmark["bitcoin_weekly"]
+    benchmark_summary = benchmark["summary"]
 
     # Format top/worst performer
-    top_performer = perf_data['top_performer']
-    worst_performer = perf_data['worst_performer']
+    top_performer = perf_data["top_performer"]
+    worst_performer = perf_data["worst_performer"]
 
     # Generate insights HTML (table-based for email compatibility)
     insights_html = []
     for insight in insights:
-        insights_html.append(f'''                                <!-- Insight Card -->
+        insights_html.append(
+            f"""                                <!-- Insight Card -->
                                 <tr>
                                     <td style="background-color: rgba(168, 85, 247, 0.08); border-left: 3px solid #a855f7; padding: 20px; margin-bottom: 16px;">
                                         <div style="font-size: 17px; font-weight: 600; color: #ffffff; padding-bottom: 8px;">
@@ -81,19 +82,24 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                                         </div>
                                     </td>
                                 </tr>
-                                <tr><td height="16"></td></tr>''')
+                                <tr><td height="16"></td></tr>"""
+        )
 
-    insights_section = '\n'.join(insights_html)
+    insights_section = "\n".join(insights_html)
 
     # Determine banner gradient based on performance
-    banner_gradient = 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)' if weekly_change >= 0 else 'linear-gradient(90deg, #991b1b 0%, #dc2626 100%)'
-    banner_border = 'rgba(34, 197, 94, 0.3)' if weekly_change >= 0 else 'rgba(220, 38, 38, 0.3)'
+    banner_gradient = (
+        "linear-gradient(90deg, #16a34a 0%, #22c55e 100%)"
+        if weekly_change >= 0
+        else "linear-gradient(90deg, #991b1b 0%, #dc2626 100%)"
+    )
+    banner_border = "rgba(34, 197, 94, 0.3)" if weekly_change >= 0 else "rgba(220, 38, 38, 0.3)"
 
     # Format date range for display
-    formatted_date = date_range.replace('to', '–')
+    formatted_date = date_range.replace("to", "–")
 
     # Email-compatible HTML using tables and inline styles
-    html = f'''<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -449,9 +455,10 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
         </tr>
     </table>
 </body>
-</html>'''
+</html>"""
 
     return html
+
 
 def main():
     """Main execution function"""
@@ -467,8 +474,8 @@ def main():
 
     # Paths
     base_dir = Path(__file__).parent.parent
-    json_path = base_dir / 'newsletters' / f'week{week_num}_narrative.json'
-    output_path = base_dir / 'newsletters' / f'week{week_num}_newsletter.html'
+    json_path = base_dir / "newsletters" / f"week{week_num}_narrative.json"
+    output_path = base_dir / "newsletters" / f"week{week_num}_newsletter.html"
 
     # Validate JSON exists
     if not json_path.exists():
@@ -480,7 +487,7 @@ def main():
     # Load narrative data
     logging.info(f"Loading narrative data from {json_path}")
     try:
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(json_path, "r", encoding="utf-8") as f:
             narrative_data = json.load(f)
     except json.JSONDecodeError as e:
         logging.error(f"Invalid JSON in {json_path}: {e}")
@@ -493,13 +500,13 @@ def main():
 
     # Save HTML
     logging.info(f"Saving HTML to {output_path}")
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Success message
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📧 STAGE 2 COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print(f"✅ Newsletter HTML created")
     print(f"📂 Output file: newsletters/week{week_num}_newsletter.html")
     print(f"📝 Subject: {narrative_data['subject_line']}")
@@ -508,9 +515,10 @@ def main():
     print(f"1. Open newsletters/week{week_num}_newsletter.html in browser to preview")
     print(f"2. Test both light and dark modes by switching OS theme")
     print(f"3. Send test email via your email service provider")
-    print("="*60)
+    print("=" * 60)
 
     logging.info("Newsletter generation complete")
+
 
 if __name__ == "__main__":
     main()

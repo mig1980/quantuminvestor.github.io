@@ -6,18 +6,17 @@ Extracts key insights from blog post and portfolio data, creates narrative JSON.
 import json
 import logging
 import os
+import re
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
+
 from bs4 import BeautifulSoup
-import re
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def retry_with_backoff(func, max_retries=3, initial_delay=1.0, backoff_factor=2.0):
     """
@@ -46,11 +45,13 @@ def retry_with_backoff(func, max_retries=3, initial_delay=1.0, backoff_factor=2.
             error_type = type(e).__name__
 
             # Don't retry on validation errors or missing config
-            if error_type in ['ValueError', 'FileNotFoundError', 'KeyError']:
+            if error_type in ["ValueError", "FileNotFoundError", "KeyError"]:
                 raise
 
             if attempt < max_retries - 1:
-                logging.warning(f"Attempt {attempt + 1}/{max_retries} failed: {error_type}: {e}. Retrying in {delay}s...")
+                logging.warning(
+                    f"Attempt {attempt + 1}/{max_retries} failed: {error_type}: {e}. Retrying in {delay}s..."
+                )
                 time.sleep(delay)
                 delay *= backoff_factor
             else:
@@ -58,17 +59,18 @@ def retry_with_backoff(func, max_retries=3, initial_delay=1.0, backoff_factor=2.
 
     raise last_exception
 
+
 def get_latest_week_number() -> int:
     """Auto-detect latest week from Posts directory"""
-    posts_dir = Path(__file__).parent.parent / 'Posts'
+    posts_dir = Path(__file__).parent.parent / "Posts"
 
     if not posts_dir.exists():
         raise FileNotFoundError(f"Posts directory not found: {posts_dir}")
 
     week_numbers = []
-    pattern = re.compile(r'GenAi-Managed-Stocks-Portfolio-Week-(\d+)\.html')
+    pattern = re.compile(r"GenAi-Managed-Stocks-Portfolio-Week-(\d+)\.html")
 
-    for file in posts_dir.glob('GenAi-Managed-Stocks-Portfolio-Week-*.html'):
+    for file in posts_dir.glob("GenAi-Managed-Stocks-Portfolio-Week-*.html"):
         match = pattern.match(file.name)
         if match:
             week_numbers.append(int(match.group(1)))
@@ -77,6 +79,7 @@ def get_latest_week_number() -> int:
         raise ValueError("No weekly blog posts found in Posts directory")
 
     return max(week_numbers)
+
 
 def extract_blog_sections(html_content: str) -> Dict[str, str]:
     """
@@ -88,40 +91,36 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
     Returns:
         Dictionary with 'opening', 'top_movers', 'portfolio_progress' sections
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
-    sections = {
-        'opening': '',
-        'top_movers': '',
-        'portfolio_progress': ''
-    }
+    sections = {"opening": "", "top_movers": "", "portfolio_progress": ""}
 
     # Extract opening paragraph (usually has class text-xl or first p after h1)
-    opening = soup.find('p', class_='text-xl')
+    opening = soup.find("p", class_="text-xl")
     if opening:
-        sections['opening'] = opening.get_text(strip=True)
+        sections["opening"] = opening.get_text(strip=True)
     else:
         # Fallback: first paragraph
-        first_p = soup.find('p')
+        first_p = soup.find("p")
         if first_p:
-            sections['opening'] = first_p.get_text(strip=True)
+            sections["opening"] = first_p.get_text(strip=True)
         else:
             logging.warning("No opening paragraph found in blog post")
 
     # Extract "Top Movers" section
     found_top_movers = False
-    for heading in soup.find_all(['h2', 'h3']):
+    for heading in soup.find_all(["h2", "h3"]):
         heading_text = heading.get_text(strip=True)
-        if 'top movers' in heading_text.lower():
+        if "top movers" in heading_text.lower():
             paragraphs = []
             current = heading.find_next_sibling()
             while current and len(paragraphs) < 3:
-                if current.name == 'p':
+                if current.name == "p":
                     paragraphs.append(current.get_text(strip=True))
-                elif current.name in ['h2', 'h3']:
+                elif current.name in ["h2", "h3"]:
                     break
                 current = current.find_next_sibling()
-            sections['top_movers'] = ' '.join(paragraphs)
+            sections["top_movers"] = " ".join(paragraphs)
             found_top_movers = True
             break
 
@@ -130,18 +129,18 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
 
     # Extract "Portfolio Progress" section
     found_portfolio_progress = False
-    for heading in soup.find_all(['h2', 'h3']):
+    for heading in soup.find_all(["h2", "h3"]):
         heading_text = heading.get_text(strip=True)
-        if 'portfolio progress' in heading_text.lower():
+        if "portfolio progress" in heading_text.lower():
             paragraphs = []
             current = heading.find_next_sibling()
             while current and len(paragraphs) < 2:
-                if current.name == 'p':
+                if current.name == "p":
                     paragraphs.append(current.get_text(strip=True))
-                elif current.name in ['h2', 'h3']:
+                elif current.name in ["h2", "h3"]:
                     break
                 current = current.find_next_sibling()
-            sections['portfolio_progress'] = ' '.join(paragraphs)
+            sections["portfolio_progress"] = " ".join(paragraphs)
             found_portfolio_progress = True
             break
 
@@ -149,6 +148,7 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
         logging.warning("'Portfolio Progress' section not found in blog post")
 
     return sections
+
 
 def generate_narrative(week_num: int) -> Dict[str, Any]:
     """
@@ -159,8 +159,8 @@ def generate_narrative(week_num: int) -> Dict[str, Any]:
 
     # Paths
     base_dir = Path(__file__).parent.parent
-    data_path = base_dir / f'Data/W{week_num}/master.json'
-    blog_path = base_dir / f'Posts/GenAi-Managed-Stocks-Portfolio-Week-{week_num}.html'
+    data_path = base_dir / f"Data/W{week_num}/master.json"
+    blog_path = base_dir / f"Posts/GenAi-Managed-Stocks-Portfolio-Week-{week_num}.html"
 
     # Validate files exist
     if not data_path.exists():
@@ -169,11 +169,11 @@ def generate_narrative(week_num: int) -> Dict[str, Any]:
         raise FileNotFoundError(f"Blog post not found: {blog_path}")
 
     # Load portfolio data
-    with open(data_path, 'r', encoding='utf-8') as f:
+    with open(data_path, "r", encoding="utf-8") as f:
         portfolio_data = json.load(f)
 
     # Load blog post HTML
-    with open(blog_path, 'r', encoding='utf-8') as f:
+    with open(blog_path, "r", encoding="utf-8") as f:
         blog_html = f.read()
 
     # Extract sections
@@ -272,28 +272,31 @@ OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSO
     logging.info("Calling Azure OpenAI API")
 
     # Configure Azure OpenAI client
-    azure_api_key = os.environ.get('AZURE_OPENAI_API_KEY')
+    azure_api_key = os.environ.get("AZURE_OPENAI_API_KEY")
     if not azure_api_key:
         raise ValueError("AZURE_OPENAI_API_KEY environment variable not set")
 
     from openai import AzureOpenAI
+
     client = AzureOpenAI(
         api_key=azure_api_key,
         api_version="2024-10-21",
         azure_endpoint=os.environ.get(
-            'AZURE_OPENAI_ENDPOINT',
-            'https://myportfolious2-resource.cognitiveservices.azure.com/'
-        )
+            "AZURE_OPENAI_ENDPOINT", "https://myportfolious2-resource.cognitiveservices.azure.com/"
+        ),
     )
 
     # Call Azure OpenAI API
     def call_openai_api():
         response = client.chat.completions.create(
-            model=os.environ.get('AZURE_OPENAI_DEPLOYMENT', 'gpt-5.1-chat'),
+            model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.1-chat"),
             messages=[
-                {"role": "system", "content": "You extract newsletter narratives from blog posts. Output valid JSON only, no markdown."},
-                {"role": "user", "content": prompt}
-            ]
+                {
+                    "role": "system",
+                    "content": "You extract newsletter narratives from blog posts. Output valid JSON only, no markdown.",
+                },
+                {"role": "user", "content": prompt},
+            ],
         )
         return response.choices[0].message.content.strip()
 
@@ -302,9 +305,9 @@ OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSO
         narrative_json = retry_with_backoff(call_openai_api, max_retries=3)
 
         # Remove markdown code fences if present
-        if narrative_json.startswith('```'):
-            narrative_json = re.sub(r'^```(?:json)?\n', '', narrative_json)
-            narrative_json = re.sub(r'\n```$', '', narrative_json)
+        if narrative_json.startswith("```"):
+            narrative_json = re.sub(r"^```(?:json)?\n", "", narrative_json)
+            narrative_json = re.sub(r"\n```$", "", narrative_json)
             narrative_json = narrative_json.strip()
 
     except Exception as e:
@@ -321,8 +324,13 @@ OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSO
 
     # Validate required fields
     required_fields = [
-        'week_number', 'subject_line', 'preheader', 'opening_paragraph',
-        'key_insights', 'performance_data', 'call_to_action_url'
+        "week_number",
+        "subject_line",
+        "preheader",
+        "opening_paragraph",
+        "key_insights",
+        "performance_data",
+        "call_to_action_url",
     ]
     missing_fields = [field for field in required_fields if field not in narrative_data]
 
@@ -330,23 +338,24 @@ OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSO
         raise ValueError(f"AI response missing required fields: {', '.join(missing_fields)}")
 
     # Validate key_insights structure
-    if not isinstance(narrative_data.get('key_insights'), list):
+    if not isinstance(narrative_data.get("key_insights"), list):
         raise ValueError("key_insights must be a list")
 
-    if len(narrative_data['key_insights']) < 2:
+    if len(narrative_data["key_insights"]) < 2:
         logging.warning(f"Only {len(narrative_data['key_insights'])} key insights generated (expected 2-3)")
 
     # Save locally for review
-    output_dir = base_dir / 'newsletters'
+    output_dir = base_dir / "newsletters"
     output_dir.mkdir(exist_ok=True)
 
-    local_path = output_dir / f'week{week_num}_narrative.json'
-    with open(local_path, 'w', encoding='utf-8') as f:
+    local_path = output_dir / f"week{week_num}_narrative.json"
+    with open(local_path, "w", encoding="utf-8") as f:
         json.dump(narrative_data, f, indent=2)
 
     logging.info(f"Narrative generated: {narrative_data.get('subject_line', 'N/A')}")
 
     return narrative_data
+
 
 if __name__ == "__main__":
     try:
@@ -359,9 +368,9 @@ if __name__ == "__main__":
 
         narrative = generate_narrative(week)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📋 STAGE 1 COMPLETE")
-        print("="*60)
+        print("=" * 60)
         print(f"✅ Narrative JSON created")
         print(f"📂 Local file: newsletters/week{week}_narrative.json")
         print("\n🔍 NEXT STEPS:")
