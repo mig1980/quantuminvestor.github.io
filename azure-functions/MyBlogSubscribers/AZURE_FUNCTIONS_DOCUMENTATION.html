@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Functions - Blog Subscriber System Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: #34495e;
+            padding: 15px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 25px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #3498db;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        h3 {
+            color: #764ba2;
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+        }
+        
+        h4 {
+            color: #34495e;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        .module-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .module-card h4 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .workflow-diagram {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .workflow-step {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .workflow-arrow {
+            display: inline-block;
+            font-size: 2em;
+            color: #667eea;
+            margin: 0 10px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .feature-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #667eea30;
+        }
+        
+        .feature-box h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .error-type {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .error-type.fatal {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        
+        .error-type.non-fatal {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+        
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .toc {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+        
+        .toc li {
+            margin: 10px 0;
+        }
+        
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            background: #34495e;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 50px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .workflow-step {
+                display: block;
+                margin: 10px 0;
+            }
+            
+            .workflow-arrow {
+                display: block;
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Azure Functions Documentation</h1>
+            <p>Blog Subscriber Management & Weekly Newsletter System</p>
+            <p style="opacity: 0.8; font-size: 0.9em; margin-top: 10px;">Quantum Investor Digest</p>
+        </header>
+        
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#modules">Modules</a>
+            <a href="#workflows">Workflows</a>
+            <a href="#error-handling">Error Handling</a>
+            <a href="#deployment">Deployment</a>
+        </nav>
+        
+        <div class="content">
+            <!-- TABLE OF CONTENTS -->
+            <section id="toc">
+                <h2>📑 Table of Contents</h2>
+                <div class="toc">
+                    <ul>
+                        <li><a href="#overview">1. System Overview</a></li>
+                        <li><a href="#architecture">2. Architecture & Components</a></li>
+                        <li><a href="#modules">3. Python Modules</a>
+                            <ul>
+                                <li><a href="#function-app">3.1 function_app.py</a></li>
+                                <li><a href="#email-subscriber">3.2 email_subscriber.py</a></li>
+                                <li><a href="#weekly-job">3.3 weekly_job.py</a></li>
+                                <li><a href="#mailer">3.4 mailer.py</a></li>
+                                <li><a href="#validation">3.5 validation.py</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#workflows">4. Workflows & Logic</a></li>
+                        <li><a href="#error-handling">5. Error Handling Strategy</a></li>
+                        <li><a href="#deployment">6. Deployment & Configuration</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- OVERVIEW -->
+            <section id="overview">
+                <h2>1. System Overview</h2>
+                
+                <p>The Azure Functions application provides a serverless email subscription and newsletter distribution system for the Quantum Investor Digest blog. It consists of two primary functions:</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-box">
+                        <h4>🔔 Email Subscription (HTTP Trigger)</h4>
+                        <p>Handles email subscription requests from the blog's web form. Validates emails, stores subscribers in Azure Table Storage, and returns appropriate responses.</p>
+                        <span class="badge info">Always Available</span>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📨 Weekly Newsletter (Timer Trigger)</h4>
+                        <p>Automatically sends weekly portfolio updates to all active subscribers every Friday at 12:00 PM UTC. Fetches newsletter content from Azure Blob Storage and sends via Brevo API.</p>
+                        <span class="badge warning">Scheduled</span>
+                    </div>
+                </div>
+                
+                <h3>Technology Stack</h3>
+                <table>
+                    <tr>
+                        <th>Component</th>
+                        <th>Technology</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td>Runtime</td>
+                        <td>Azure Functions (Python 3.11)</td>
+                        <td>Serverless execution environment</td>
+                    </tr>
+                    <tr>
+                        <td>Storage</td>
+                        <td>Azure Table Storage</td>
+                        <td>Subscriber database</td>
+                    </tr>
+                    <tr>
+                        <td>File Storage</td>
+                        <td>Azure Blob Storage</td>
+                        <td>Newsletter HTML templates</td>
+                    </tr>
+                    <tr>
+                        <td>Email Service</td>
+                        <td>Brevo (Sendinblue) API</td>
+                        <td>Transactional email delivery</td>
+                    </tr>
+                    <tr>
+                        <td>Content Source</td>
+                        <td>GitHub API</td>
+                        <td>Auto-detect latest week number</td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- ARCHITECTURE -->
+            <section id="architecture">
+                <h2>2. Architecture & Components</h2>
+                
+                <h3>System Diagram</h3>
+                <div class="workflow-diagram">
+                    <div style="margin-bottom: 30px;">
+                        <strong style="font-size: 1.2em; color: #667eea;">User Flow: Email Subscription</strong>
+                    </div>
+                    <div class="workflow-step">Web Form</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">HTTP Trigger</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Validation</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Table Storage</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Confirmation</div>
+                </div>
+                
+                <div class="workflow-diagram">
+                    <div style="margin-bottom: 30px;">
+                        <strong style="font-size: 1.2em; color: #667eea;">Automated Flow: Weekly Newsletter</strong>
+                    </div>
+                    <div class="workflow-step">Timer Trigger</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Detect Week</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Fetch HTML</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Get Subscribers</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Bulk Send</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">Report</div>
+                </div>
+                
+                <h3>Module Dependencies</h3>
+                <div class="code-block">
+function_app.py (Entry Point)
+    ├── email_subscriber.py (Subscription Logic)
+    │   ├── validation.py (Email Validation)
+    │   └── azure.data.tables (Table Storage)
+    │
+    ├── weekly_job.py (Newsletter Distribution)
+    │   ├── email_subscriber.py (Get Subscribers)
+    │   ├── mailer.py (Email Sending)
+    │   ├── azure.storage.blob (Blob Storage)
+    │   └── requests (GitHub API)
+    │
+    └── mailer.py (Brevo Integration)
+        └── sib_api_v3_sdk (Brevo SDK)
+                </div>
+                
+                <h3>Data Flow</h3>
+                <table>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Source</th>
+                        <th>Storage</th>
+                        <th>Destination</th>
+                    </tr>
+                    <tr>
+                        <td>Email Addresses</td>
+                        <td>Web Form</td>
+                        <td>Azure Table Storage</td>
+                        <td>Newsletter Recipients</td>
+                    </tr>
+                    <tr>
+                        <td>Newsletter HTML</td>
+                        <td>Local Generation Script</td>
+                        <td>Azure Blob Storage</td>
+                        <td>Email Body</td>
+                    </tr>
+                    <tr>
+                        <td>Week Number</td>
+                        <td>GitHub API (Posts/)</td>
+                        <td>Runtime Memory</td>
+                        <td>Blob Filename</td>
+                    </tr>
+                    <tr>
+                        <td>Execution Logs</td>
+                        <td>Python Logging</td>
+                        <td>Azure Monitor</td>
+                        <td>Diagnostics</td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- MODULES DETAILED -->
+            <section id="modules">
+                <h2>3. Python Modules - Detailed Analysis</h2>
+                
+                <!-- function_app.py -->
+                <div id="function-app" class="module-card">
+                    <h3>3.1 function_app.py - Main Entry Point</h3>
+                    <p><strong>Role:</strong> Azure Functions app definition, configuration validation, HTTP/Timer triggers</p>
+                    
+                    <h4>📋 Configuration Validation (Startup)</h4>
+                    <p>Before accepting any requests, the app validates critical environment variables:</p>
+                    
+                    <div class="code-block">
+# Validates Azure Storage Connection
+validate_storage_config()
+  ├─ Checks: STORAGE_CONNECTION_STRING exists
+  ├─ Validates: AccountName, AccountKey, EndpointSuffix
+  └─ Action: sys.exit(1) if invalid (FATAL)
+
+# Validates Brevo API Configuration  
+validate_brevo_config()
+  ├─ Checks: BREVO_API_KEY exists
+  ├─ Validates: Key starts with 'xkeysib-'
+  └─ Action: sys.exit(1) if invalid (FATAL)
+                    </div>
+                    
+                    <h4>🔌 Function 1: SubscribeEmail (HTTP Trigger)</h4>
+                    <p><strong>Endpoint:</strong> <code>POST /api/SubscribeEmail</code></p>
+                    <p><strong>Auth Level:</strong> Anonymous (publicly accessible)</p>
+                    
+                    <div class="code-block">
+Request Flow:
+1. OPTIONS (CORS Preflight)
+   └─ Return 204 with CORS headers
+
+2. POST (Email Subscription)
+   ├─ Parse JSON body → extract 'email'
+   ├─ Validate email format & length
+   ├─ Normalize email (lowercase, trim)
+   ├─ Call subscribe_email_logic(email)
+   │   ├─ Create entity in Table Storage
+   │   └─ Return {status: created|exists}
+   ├─ Log result with structured metadata
+   └─ Return HTTP 200/400/500 with JSON
+                    </div>
+                    
+                    <h4>⏰ Function 2: weekly_newsletter (Timer Trigger)</h4>
+                    <p><strong>Schedule:</strong> <code>0 0 12 * * FRI</code> (Every Friday 12:00 PM UTC)</p>
+                    <p><strong>Run on Startup:</strong> False</p>
+                    
+                    <div class="code-block">
+Execution Flow:
+1. Timer fires (or manual trigger)
+   ├─ Log: Timer info, past_due status
+   └─ Call send_weekly_newsletter()
+       
+2. Newsletter Workflow (see weekly_job.py)
+   ├─ Returns: {status, total, sent, failed}
+   └─ Log detailed results
+   
+3. Error Handling
+   ├─ Catch all exceptions
+   ├─ Log with exc_info=True (stack trace)
+   └─ No user-facing errors (background job)
+                    </div>
+                    
+                    <h4>🔒 Security Features</h4>
+                    <ul style="margin-left: 20px; color: #555;">
+                        <li><strong>CORS Headers:</strong> Configurable origin (default: *)</li>
+                        <li><strong>X-Content-Type-Options:</strong> nosniff</li>
+                        <li><strong>X-Frame-Options:</strong> DENY</li>
+                        <li><strong>Request ID:</strong> Tracked via x-request-id header</li>
+                        <li><strong>Input Validation:</strong> Email format, length, characters</li>
+                    </ul>
+                </div>
+                
+                <!-- email_subscriber.py -->
+                <div id="email-subscriber" class="module-card">
+                    <h3>3.2 email_subscriber.py - Subscription Management</h3>
+                    <p><strong>Role:</strong> Azure Table Storage operations for subscriber CRUD</p>
+                    
+                    <h4>📊 Table Schema</h4>
+                    <div class="code-block">
+Table: "subscribers"
+├─ PartitionKey: "subscriber" (fixed for all records)
+├─ RowKey: normalized_email (lowercase, trimmed)
+├─ email: normalized_email (searchable field)
+├─ subscribedAt: ISO 8601 timestamp
+└─ isActive: Boolean (true = active, false = unsubscribed)
+                    </div>
+                    
+                    <h4>🔧 Key Functions</h4>
+                    
+                    <h4>get_table_client()</h4>
+                    <div class="code-block">
+Purpose: Create Azure Table Storage client
+Input: None (reads STORAGE_CONNECTION_STRING from env)
+Output: TableClient instance
+Raises: SubscriptionError if connection string missing
+                    </div>
+                    
+                    <h4>subscribe_email(email: str) → dict</h4>
+                    <div class="code-block">
+Purpose: Add new subscriber to table
+Steps:
+  1. Normalize email (lowercase, trim)
+  2. Get table client
+  3. Create entity:
+     - PartitionKey: "subscriber"
+     - RowKey: normalized_email
+     - email: normalized_email
+     - subscribedAt: datetime.utcnow()
+     - isActive: True
+  4. Attempt create with retry logic
+  5. Handle ResourceExistsError (duplicate)
+  
+Returns:
+  - Success: {status: "created", message: "..."}
+  - Duplicate: {status: "exists", message: "..."}
+  
+Raises:
+  - SubscriptionError on Azure failures
+                    </div>
+                    
+                    <h4>get_active_subscribers() → list[str]</h4>
+                    <div class="code-block">
+Purpose: Retrieve all active subscriber emails
+Steps:
+  1. Get table client
+  2. Query: PartitionKey='subscriber' AND isActive=true
+  3. Extract email field from each entity
+  4. Return list of email strings
+  
+Returns: ["email1@example.com", "email2@example.com", ...]
+Raises: SubscriptionError on query failure
+                    </div>
+                    
+                    <h4>unsubscribe_email(email: str) → dict</h4>
+                    <div class="code-block">
+Purpose: Soft delete - set isActive=False
+Steps:
+  1. Normalize email
+  2. Get entity by RowKey
+  3. Set isActive = False
+  4. Update entity (replace mode)
+  
+Returns: {status: "unsubscribed", message: "..."}
+Raises: 
+  - SubscriptionError if email not found
+  - SubscriptionError on update failure
+                    </div>
+                    
+                    <h4>🔄 Retry Logic Decorator</h4>
+                    <p>All Azure Table operations use <code>@retry_table_operation</code>:</p>
+                    <div class="code-block">
+@retry_table_operation(max_retries=3, initial_delay=0.5, backoff_factor=2.0)
+
+Retryable Errors:
+  - HttpResponseError (status >= 500 or status == 429)
+  - ServiceRequestError (network issues)
+  - ConnectionError
+
+Non-Retryable:
+  - ResourceExistsError (duplicate - not an error)
+  - All other exceptions
+  
+Backoff Schedule:
+  - Attempt 1: Immediate
+  - Attempt 2: Wait 0.5s
+  - Attempt 3: Wait 1.0s
+  - Attempt 4: Wait 2.0s
+                    </div>
+                </div>
+                
+                <!-- weekly_job.py -->
+                <div id="weekly-job" class="module-card">
+                    <h3>3.3 weekly_job.py - Newsletter Distribution Engine</h3>
+                    <p><strong>Role:</strong> Automated newsletter workflow orchestration</p>
+                    
+                    <h4>🎯 Main Function: send_weekly_newsletter() → dict</h4>
+                    <div class="code-block">
+Workflow:
+1. Get Active Subscribers
+   ├─ Call: get_active_subscribers()
+   ├─ If empty: Return early with {total: 0, sent: 0}
+   └─ Log: Subscriber count
+
+2. Get Email Content
+   ├─ Call: get_weekly_email_content()
+   │   ├─ Auto-detect week from GitHub
+   │   ├─ Download HTML from Blob Storage
+   │   └─ Validate HTML structure
+   ├─ Generate: Subject line
+   └─ Log: Content size
+
+3. Bulk Send
+   ├─ Call: send_bulk_email(recipients, subject, html)
+   ├─ Send to each subscriber (one-by-one)
+   └─ Track: sent/failed counts
+
+4. Return Summary
+   └─ {status: "completed", total, sent, failed, message}
+
+Error Returns:
+  - FileNotFoundError: Newsletter HTML not uploaded
+  - ValueError: Invalid HTML structure
+  - IOError: Blob Storage access failure
+  - SubscriptionError: Can't retrieve subscribers
+  - MailerError: Email sending failed
+                    </div>
+                    
+                    <h4>🔍 Helper: get_latest_week_number() → int</h4>
+                    <div class="code-block">
+Purpose: Auto-detect latest week from GitHub Posts directory
+
+Steps:
+  1. GitHub API Request
+     └─ GET /repos/{owner}/{repo}/contents/Posts
+  
+  2. Extract Filenames
+     └─ Filter: type='file'
+  
+  3. Regex Match
+     └─ Pattern: GenAi-Managed-Stocks-Portfolio-Week-(\d+).html
+  
+  4. Return Maximum
+     └─ max([1, 2, 3, 4, 5, 6]) → 6
+
+Configuration (Environment Variables):
+  - GITHUB_OWNER (default: "mig1980")
+  - GITHUB_REPO (default: "quantuminvestor")
+  - GITHUB_POSTS_PATH (default: "Posts")
+
+Retry Logic:
+  - @retry_with_backoff decorator
+  - Max retries: 3
+  - Backoff: 1s → 2s → 4s
+  - Retries on: Network errors, 5xx, 429
+
+Raises:
+  - FileNotFoundError if no posts found
+  - FileNotFoundError on API failure after retries
+                    </div>
+                    
+                    <h4>📥 Helper: get_weekly_email_content() → dict</h4>
+                    <div class="code-block">
+Purpose: Download newsletter HTML from Azure Blob Storage
+
+Steps:
+  1. Detect Week Number
+     └─ Call: get_latest_week_number()
+  
+  2. Build Blob Path
+     └─ Container: "newsletters"
+     └─ Blob: "week{N}.html"
+  
+  3. Download from Blob Storage
+     ├─ BlobServiceClient.from_connection_string()
+     ├─ get_blob_client(container, blob)
+     ├─ Check: blob exists?
+     └─ download_blob().readall().decode('utf-8')
+  
+  4. Validate HTML
+     ├─ Not empty?
+     ├─ Contains <html>?
+     └─ Contains <body>?
+  
+  5. Generate Subject
+     └─ "📊 Week {N} Portfolio Update"
+  
+Returns:
+  {
+    "subject": "📊 Week 6 Portfolio Update",
+    "html_body": "&lt;html&gt;...&lt;/html&gt;"
+  }
+
+Retry Logic:
+  - Blob download retries on network failures
+  - @retry_with_backoff on _download_blob_with_retry()
+
+Raises:
+  - FileNotFoundError: Blob doesn't exist
+  - ValueError: HTML empty or invalid structure
+  - IOError: Blob Storage connection failure
+                    </div>
+                    
+                    <h4>📊 Error Handling Strategy</h4>
+                    <table>
+                        <tr>
+                            <th>Error Type</th>
+                            <th>Exception</th>
+                            <th>Action</th>
+                        </tr>
+                        <tr>
+                            <td>Missing Newsletter</td>
+                            <td>FileNotFoundError</td>
+                            <td>Return error status, don't send</td>
+                        </tr>
+                        <tr>
+                            <td>Invalid HTML</td>
+                            <td>ValueError</td>
+                            <td>Return error status, log details</td>
+                        </tr>
+                        <tr>
+                            <td>Blob Access</td>
+                            <td>IOError</td>
+                            <td>Retry 3x, then return error</td>
+                        </tr>
+                        <tr>
+                            <td>No Subscribers</td>
+                            <td>None</td>
+                            <td>Normal completion, {sent: 0}</td>
+                        </tr>
+                        <tr>
+                            <td>Partial Failure</td>
+                            <td>None</td>
+                            <td>Log failures, return summary</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- mailer.py -->
+                <div id="mailer" class="module-card">
+                    <h3>3.4 mailer.py - Brevo Email Integration</h3>
+                    <p><strong>Role:</strong> Transactional email sending via Brevo (Sendinblue) API</p>
+                    
+                    <h4>🔑 Configuration</h4>
+                    <div class="code-block">
+Required Environment Variables:
+  - BREVO_API_KEY (format: xkeysib-xxxxxxxx...)
+  - BREVO_FROM_EMAIL (sender email address)
+  - BREVO_FROM_NAME (default: "Quantum Investor Digest")
+                    </div>
+                    
+                    <h4>📧 Function: send_email(...) → dict</h4>
+                    <div class="code-block">
+Parameters:
+  - to_email: str (recipient)
+  - subject: str (email subject line)
+  - html_body: str (HTML content)
+  - from_email: Optional[str] (override sender)
+  - from_name: Optional[str] (override sender name)
+
+Steps:
+  1. Validate Configuration
+     ├─ Check BREVO_API_KEY exists
+     └─ Check BREVO_FROM_EMAIL exists
+
+  2. Create API Client
+     ├─ Configuration.api_key = BREVO_API_KEY
+     └─ TransactionalEmailsApi(ApiClient(config))
+
+  3. Build Email Object
+     └─ SendSmtpEmail(
+         to=[{email: recipient}],
+         sender={name, email},
+         subject,
+         html_content
+       )
+
+  4. Send with Retry
+     └─ api_instance.send_transac_email(email_obj)
+
+  5. Return Result
+     └─ {status: "sent", message_id, message}
+
+Raises:
+  - MailerError: Configuration missing
+  - MailerError: Brevo API failure (4xx/5xx)
+  - MailerError: Network errors after retries
+                    </div>
+                    
+                    <h4>📨 Function: send_bulk_email(recipients, ...) → dict</h4>
+                    <div class="code-block">
+Purpose: Send same email to multiple recipients (one-by-one)
+
+Algorithm:
+  for each recipient in recipients:
+    try:
+      send_email(recipient, subject, html_body)
+      sent.append(recipient)
+      
+      # Progress logging every 10 emails
+      if idx % 10 == 0:
+        log progress
+        
+    except MailerError as e:
+      failed.append({email: recipient, error: str(e)})
+      log error
+      continue  # Don't abort on individual failures
+
+Returns:
+  {
+    total: len(recipients),
+    sent: len(sent),
+    failed: len(failed),
+    failed_emails: [{email, error}, ...]
+  }
+
+Design Decision: One-by-one vs Batch
+  - Brevo API doesn't support true bulk send
+  - Transactional API sends individually
+  - Allows granular error tracking
+  - Partial success possible (some sent, some failed)
+                    </div>
+                    
+                    <h4>🔄 Retry Decorator</h4>
+                    <div class="code-block">
+@retry_with_backoff(max_retries=3, initial_delay=1.0, backoff_factor=2.0)
+
+Applied to: _send_email_with_retry()
+
+Retryable Conditions:
+  - ApiException with status >= 500 (server errors)
+  - ApiException with status == 429 (rate limit)
+  - ConnectionError
+  - TimeoutError
+
+Non-Retryable:
+  - ApiException with status 4xx (client errors)
+  - Invalid email format (caught earlier)
+  - Configuration errors
+
+Backoff: 1s → 2s → 4s
+                    </div>
+                    
+                    <h4>⚠️ Rate Limiting</h4>
+                    <p><strong>Brevo Free Tier Limits:</strong></p>
+                    <ul style="margin-left: 20px; color: #555;">
+                        <li>300 emails per day</li>
+                        <li>No explicit rate limit per second (but throttled)</li>
+                        <li><span class="badge warning">Not Enforced in Code</span> - Relies on Brevo 429 responses</li>
+                    </ul>
+                    <p><span class="highlight">Improvement Opportunity:</span> Add pre-send validation to check daily limit before bulk send.</p>
+                </div>
+                
+                <!-- validation.py -->
+                <div id="validation" class="module-card">
+                    <h3>3.5 validation.py - Shared Validation Utilities</h3>
+                    <p><strong>Role:</strong> Centralized email validation logic (client + server consistency)</p>
+                    
+                    <h4>📏 Validation Constants</h4>
+                    <div class="code-block">
+EMAIL_REGEX = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+MAX_EMAIL_LENGTH = 254  # RFC 5321 standard
+MIN_EMAIL_LENGTH = 6    # Minimum: a@b.co
+                    </div>
+                    
+                    <h4>✅ Function: validate_email(email, strip_whitespace=True) → (bool, str)</h4>
+                    <div class="code-block">
+Validation Steps:
+  1. Strip whitespace (if enabled)
+  2. Check not empty → (False, "Email is required")
+  3. Check length >= MIN → (False, "Email address is too short")
+  4. Check length <= MAX → (False, "Email address is too long")
+  5. Check regex match → (False, "Invalid email format")
+  6. All pass → (True, "")
+
+Returns:
+  - (True, "") if valid
+  - (False, "error message") if invalid
+
+Example:
+  validate_email("user@example.com")
+  → (True, "")
+  
+  validate_email("invalid")
+  → (False, "Invalid email format")
+                    </div>
+                    
+                    <h4>🔧 Function: normalize_email(email: str) → str</h4>
+                    <div class="code-block">
+Purpose: Consistent email storage format
+
+Steps:
+  1. Strip leading/trailing whitespace
+  2. Convert to lowercase
+
+Example:
+  normalize_email("  User@Example.COM  ")
+  → "user@example.com"
+
+Usage:
+  - Before storing in Table Storage (RowKey)
+  - Before querying/comparison
+  - Ensures case-insensitive uniqueness
+                    </div>
+                    
+                    <h4>🌐 JavaScript Pattern Export</h4>
+                    <p>The module includes <code>JAVASCRIPT_VALIDATION_PATTERN</code> - a ready-to-use JavaScript implementation that mirrors the Python validation logic. This ensures client-side validation matches server-side exactly.</p>
+                    
+                    <div class="code-block">
+// Client-side validation (for web forms)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254;
+const MIN_EMAIL_LENGTH = 6;
+
+function validateEmail(email) {
+  // Same logic as Python version
+  // Returns: {isValid: boolean, error: string}
+}
+                    </div>
+                </div>
+            </section>
+
+            <!-- WORKFLOWS -->
+            <section id="workflows">
+                <h2>4. Workflows & Logic - Step-by-Step</h2>
+                
+                <h3>Workflow A: User Subscribes to Newsletter</h3>
+                <div class="module-card">
+                    <h4>Step 1: User Submits Email</h4>
+                    <p>User fills out subscription form on blog and clicks "Subscribe"</p>
+                    <div class="code-block">
+HTTP POST https://your-function-app.azurewebsites.net/api/SubscribeEmail
+Content-Type: application/json
+
+{
+  "email": "  User@Example.COM  "
+}
+                    </div>
+                    
+                    <h4>Step 2: Function App Receives Request</h4>
+                    <div class="code-block">
+function_app.py → @app.route("SubscribeEmail")
+  ├─ Log: Request received with request_id
+  ├─ Check: Method = OPTIONS? → Return CORS headers (204)
+  └─ Continue: Method = POST
+                    </div>
+                    
+                    <h4>Step 3: Parse & Validate Input</h4>
+                    <div class="code-block">
+1. Parse JSON body
+   └─ Extract: email = "  User@Example.COM  "
+
+2. Validate email (validation.py)
+   ├─ Strip whitespace → "User@Example.COM"
+   ├─ Check not empty → ✓
+   ├─ Check length 6-254 → ✓
+   ├─ Check regex match → ✓
+   └─ Result: (True, "")
+
+3. Normalize email
+   └─ "User@Example.COM" → "user@example.com"
+                    </div>
+                    
+                    <h4>Step 4: Store in Table Storage</h4>
+                    <div class="code-block">
+email_subscriber.py → subscribe_email("user@example.com")
+  
+  1. Get Table Client
+     └─ TableClient("subscribers")
+  
+  2. Create Entity
+     entity = {
+       PartitionKey: "subscriber",
+       RowKey: "user@example.com",
+       email: "user@example.com",
+       subscribedAt: "2025-11-23T10:30:00Z",
+       isActive: True
+     }
+  
+  3. Attempt Insert (with retry)
+     └─ table.create_entity(entity)
+     
+  4. Handle Result
+     ├─ Success → {status: "created"}
+     └─ ResourceExistsError → {status: "exists"}
+                    </div>
+                    
+                    <h4>Step 5: Return Response</h4>
+                    <div class="code-block">
+New Subscriber:
+  HTTP 200 OK
+  {
+    "message": "Thank you for subscribing! You'll receive weekly updates."
+  }
+
+Already Subscribed:
+  HTTP 200 OK
+  {
+    "message": "You're already subscribed!"
+  }
+
+Validation Error:
+  HTTP 400 Bad Request
+  {
+    "message": "Invalid email format"
+  }
+                    </div>
+                    
+                    <h4>Step 6: Logging (Structured)</h4>
+                    <div class="code-block">
+logging.info(
+  "Subscription created: user@example.com",
+  extra={
+    'request_id': 'abc-123',
+    'email': 'user@example.com',
+    'status': 'created',
+    'is_new_subscriber': True
+  }
+)
+
+# Queryable in Azure Monitor:
+# | where email == "user@example.com"
+# | where is_new_subscriber == True
+                    </div>
+                </div>
+                
+                <h3>Workflow B: Weekly Newsletter Send</h3>
+                <div class="module-card">
+                    <h4>Step 1: Timer Trigger Fires</h4>
+                    <div class="code-block">
+Every Friday at 12:00 PM UTC
+Schedule: "0 0 12 * * FRI"
+
+function_app.py → @app.timer_trigger()
+  ├─ Log: Timer started, past_due status
+  └─ Call: send_weekly_newsletter()
+                    </div>
+                    
+                    <h4>Step 2: Auto-Detect Latest Week</h4>
+                    <div class="code-block">
+weekly_job.py → get_latest_week_number()
+
+1. GitHub API Request (with retry)
+   GET /repos/mig1980/quantuminvestor/contents/Posts
+   
+2. Parse Response
+   files = [
+     "GenAi-Managed-Stocks-Portfolio-Week-1.html",
+     "GenAi-Managed-Stocks-Portfolio-Week-2.html",
+     ...
+     "GenAi-Managed-Stocks-Portfolio-Week-6.html"
+   ]
+
+3. Extract Week Numbers
+   weeks = [1, 2, 3, 4, 5, 6]
+
+4. Return Latest
+   return max(weeks) → 6
+   
+Log: "Latest week detected: Week 6"
+                    </div>
+                    
+                    <h4>Step 3: Fetch Newsletter HTML</h4>
+                    <div class="code-block">
+weekly_job.py → get_weekly_email_content()
+
+1. Build Blob Path
+   container = "newsletters"
+   blob = "week6.html"
+
+2. Download from Blob Storage (with retry)
+   ├─ BlobServiceClient.from_connection_string()
+   ├─ blob_client.exists() → Check blob exists
+   ├─ download_blob().readall()
+   └─ decode('utf-8')
+
+3. Validate HTML
+   ├─ Not empty? ✓
+   ├─ Contains "<html>"? ✓
+   └─ Contains "<body>"? ✓
+
+4. Generate Subject
+   subject = "📊 Week 6 Portfolio Update"
+
+Returns:
+  {
+    "subject": "📊 Week 6 Portfolio Update",
+    "html_body": "<html>...</html>"  # 100KB HTML
+  }
+  
+Log: "Newsletter content ready (100KB)"
+                    </div>
+                    
+                    <h4>Step 4: Get Active Subscribers</h4>
+                    <div class="code-block">
+email_subscriber.py → get_active_subscribers()
+
+1. Query Table Storage
+   filter = "PartitionKey eq 'subscriber' and isActive eq true"
+   
+2. Execute Query (with retry)
+   entities = table.query_entities(filter)
+
+3. Extract Emails
+   emails = [
+     "alice@example.com",
+     "bob@example.com",
+     "charlie@example.com"
+   ]
+
+4. Return List
+   return emails  # 3 subscribers
+
+Log: "Retrieved 3 active subscribers"
+                    </div>
+                    
+                    <h4>Step 5: Send Bulk Email</h4>
+                    <div class="code-block">
+mailer.py → send_bulk_email(
+  recipients=["alice@...", "bob@...", "charlie@..."],
+  subject="📊 Week 6 Portfolio Update",
+  html_body="<html>...</html>"
+)
+
+For each recipient:
+  1. Send Individual Email (with retry)
+     ├─ Brevo API: send_transac_email()
+     ├─ Retry on 429 (rate limit) or 5xx
+     └─ Track: sent[] or failed[]
+  
+  2. Log Progress (every 10 emails)
+     "Bulk send progress: 10/150 processed"
+
+Final Result:
+  {
+    total: 3,
+    sent: 3,
+    failed: 0,
+    failed_emails: []
+  }
+
+Log: "Bulk email send completed: 3/3 sent successfully"
+                    </div>
+                    
+                    <h4>Step 6: Report Results</h4>
+                    <div class="code-block">
+weekly_job.py → send_weekly_newsletter() returns
+
+Success:
+  {
+    status: "completed",
+    message: "Newsletter sent to 3 subscribers",
+    total: 3,
+    sent: 3,
+    failed: 0
+  }
+
+Partial Failure:
+  {
+    status: "completed",
+    message: "Newsletter sent to 2 subscribers",
+    total: 3,
+    sent: 2,
+    failed: 1,
+    failed_emails: [{
+      email: "bob@example.com",
+      error: "Brevo API error (status 400): Invalid email"
+    }]
+  }
+
+Total Failure:
+  {
+    status: "error",
+    error_type: "missing_newsletter",
+    message: "Newsletter file not found: newsletters/week6.html",
+    total: 0,
+    sent: 0,
+    failed: 0
+  }
+                    </div>
+                </div>
+            </section>
+
+            <!-- ERROR HANDLING -->
+            <section id="error-handling">
+                <h2>5. Error Handling Strategy</h2>
+                
+                <h3>Error Classification</h3>
+                
+                <div class="error-type fatal">
+                    <h4>🚨 FATAL ERRORS (Application Exit)</h4>
+                    <p>These errors prevent the application from functioning and cause immediate shutdown:</p>
+                    <ul style="margin-left: 20px; color: #721c24;">
+                        <li><strong>Missing STORAGE_CONNECTION_STRING</strong> - Can't access subscriber database</li>
+                        <li><strong>Invalid STORAGE_CONNECTION_STRING</strong> - Missing required components</li>
+                        <li><strong>Missing BREVO_API_KEY</strong> - Can't send emails</li>
+                        <li><strong>Invalid BREVO_API_KEY</strong> - Doesn't start with 'xkeysib-'</li>
+                    </ul>
+                    <p><strong>Action:</strong> sys.exit(1) during startup validation</p>
+                </div>
+                
+                <div class="error-type non-fatal">
+                    <h4>⚠️ NON-FATAL ERRORS (Logged & Returned)</h4>
+                    <p>These errors are caught, logged, and returned as error responses without crashing:</p>
+                    <ul style="margin-left: 20px; color: #0c5460;">
+                        <li><strong>Invalid Email Format</strong> - Return HTTP 400 with error message</li>
+                        <li><strong>Duplicate Subscription</strong> - Return HTTP 200 "Already subscribed"</li>
+                        <li><strong>Newsletter Not Found</strong> - Return error status, don't send emails</li>
+                        <li><strong>Invalid Newsletter HTML</strong> - Return error status with details</li>
+                        <li><strong>Partial Send Failure</strong> - Log failures, return summary</li>
+                    </ul>
+                    <p><strong>Action:</strong> Graceful degradation, structured error response</p>
+                </div>
+                
+                <div class="error-type">
+                    <h4>🔄 TRANSIENT ERRORS (Retry with Backoff)</h4>
+                    <p>These errors may succeed on retry and use exponential backoff:</p>
+                    <ul style="margin-left: 20px; color: #856404;">
+                        <li><strong>Network Timeouts</strong> - GitHub API, Azure Storage, Brevo API</li>
+                        <li><strong>HTTP 429 (Rate Limit)</strong> - Wait and retry</li>
+                        <li><strong>HTTP 5xx (Server Errors)</strong> - Azure or Brevo service issues</li>
+                        <li><strong>ConnectionError</strong> - Network connectivity problems</li>
+                    </ul>
+                    <p><strong>Action:</strong> Retry up to 3 times with exponential backoff (1s → 2s → 4s)</p>
+                </div>
+                
+                <h3>Retry Decorators</h3>
+                <table>
+                    <tr>
+                        <th>Decorator</th>
+                        <th>Used In</th>
+                        <th>Max Retries</th>
+                        <th>Backoff</th>
+                    </tr>
+                    <tr>
+                        <td>@retry_table_operation</td>
+                        <td>email_subscriber.py</td>
+                        <td>3</td>
+                        <td>0.5s → 1s → 2s</td>
+                    </tr>
+                    <tr>
+                        <td>@retry_with_backoff</td>
+                        <td>weekly_job.py</td>
+                        <td>3</td>
+                        <td>1s → 2s → 4s</td>
+                    </tr>
+                    <tr>
+                        <td>@retry_with_backoff</td>
+                        <td>mailer.py</td>
+                        <td>3</td>
+                        <td>1s → 2s → 4s</td>
+                    </tr>
+                </table>
+                
+                <h3>Logging Strategy</h3>
+                <div class="module-card">
+                    <h4>Structured Logging with Metadata</h4>
+                    <p>All log entries include contextual metadata for Azure Monitor queries:</p>
+                    
+                    <div class="code-block">
+# Subscription Success
+logging.info(
+  "Subscription created: user@example.com",
+  extra={
+    'request_id': 'abc-123',
+    'email': 'user@example.com',
+    'status': 'created',
+    'is_new_subscriber': True
+  }
+)
+
+# Newsletter Progress
+logging.info(
+  "Bulk send progress: 10/150 processed",
+  extra={
+    'total_subscribers': 150,
+    'processed': 10,
+    'sent': 9,
+    'failed': 1
+  }
+)
+
+# Error with Stack Trace
+logging.error(
+  "Failed to download newsletter: Blob not found",
+  extra={
+    'week': 6,
+    'container': 'newsletters',
+    'blob': 'week6.html',
+    'error_type': 'FileNotFoundError'
+  },
+  exc_info=True  # Include stack trace
+)
+                    </div>
+                    
+                    <h4>Log Levels</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>INFO:</strong> Normal operations (subscriptions, sends, progress)</li>
+                        <li><strong>WARNING:</strong> Validation failures, duplicate subscriptions, retries</li>
+                        <li><strong>ERROR:</strong> Failed operations, exceptions, service errors</li>
+                        <li><strong>CRITICAL:</strong> Fatal configuration errors (startup validation)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- DEPLOYMENT -->
+            <section id="deployment">
+                <h2>6. Deployment & Configuration</h2>
+                
+                <h3>Required Environment Variables</h3>
+                <table>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Purpose</th>
+                        <th>Example</th>
+                        <th>Validated</th>
+                    </tr>
+                    <tr>
+                        <td>STORAGE_CONNECTION_STRING</td>
+                        <td>Azure Table Storage connection</td>
+                        <td>DefaultEndpointsProtocol=https;AccountName=...</td>
+                        <td><span class="badge success">Yes (Startup)</span></td>
+                    </tr>
+                    <tr>
+                        <td>BREVO_API_KEY</td>
+                        <td>Brevo API authentication</td>
+                        <td>xkeysib-abc123...</td>
+                        <td><span class="badge success">Yes (Startup)</span></td>
+                    </tr>
+                    <tr>
+                        <td>BREVO_FROM_EMAIL</td>
+                        <td>Newsletter sender email</td>
+                        <td>newsletter@quantuminvestor.net</td>
+                        <td><span class="badge warning">Runtime</span></td>
+                    </tr>
+                    <tr>
+                        <td>BREVO_FROM_NAME</td>
+                        <td>Newsletter sender name</td>
+                        <td>Quantum Investor Digest</td>
+                        <td><span class="badge info">Optional</span></td>
+                    </tr>
+                    <tr>
+                        <td>CORS_ALLOWED_ORIGIN</td>
+                        <td>CORS configuration</td>
+                        <td>https://quantuminvestor.net</td>
+                        <td><span class="badge info">Optional</span></td>
+                    </tr>
+                    <tr>
+                        <td>GITHUB_OWNER</td>
+                        <td>GitHub repository owner</td>
+                        <td>mig1980</td>
+                        <td><span class="badge info">Optional</span></td>
+                    </tr>
+                    <tr>
+                        <td>GITHUB_REPO</td>
+                        <td>GitHub repository name</td>
+                        <td>quantuminvestor</td>
+                        <td><span class="badge info">Optional</span></td>
+                    </tr>
+                </table>
+                
+                <h3>Dependencies (requirements.txt)</h3>
+                <div class="code-block">
+# Azure Functions Runtime
+azure-functions
+
+# Azure Services
+azure-data-tables           # Table Storage client
+azure-storage-blob         # Blob Storage client
+
+# Email Service
+sib-api-v3-sdk             # Brevo (Sendinblue) API
+
+# HTTP Client
+requests                   # GitHub API calls
+                </div>
+                
+                <h3>Deployment Steps</h3>
+                <div class="module-card">
+                    <h4>1. Install Dependencies</h4>
+                    <div class="code-block">
+cd azure-functions/MyBlogSubscribers
+pip install -r requirements.txt
+                    </div>
+                    
+                    <h4>2. Test Locally</h4>
+                    <div class="code-block">
+# Start Azure Functions Core Tools
+func start
+
+# Test subscription endpoint
+curl -X POST http://localhost:7071/api/SubscribeEmail \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com"}'
+                    </div>
+                    
+                    <h4>3. Configure Environment Variables</h4>
+                    <p>Set in Azure Portal → Function App → Configuration → Application Settings</p>
+                    
+                    <h4>4. Deploy to Azure</h4>
+                    <div class="code-block">
+# Using Azure CLI
+az functionapp deployment source config-zip \
+  --resource-group YourResourceGroup \
+  --name YourFunctionApp \
+  --src azure-functions.zip
+
+# Or use VS Code Azure Functions extension
+                    </div>
+                    
+                    <h4>5. Verify Deployment</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Check Azure Monitor logs for startup validation messages</li>
+                        <li>Test subscription endpoint from production URL</li>
+                        <li>Manually trigger weekly_newsletter function</li>
+                        <li>Verify timer trigger schedule is active</li>
+                    </ul>
+                </div>
+                
+                <h3>Azure Resources Required</h3>
+                <div class="feature-grid">
+                    <div class="feature-box">
+                        <h4>Function App</h4>
+                        <p>Python 3.11 runtime</p>
+                        <p>Consumption or Premium plan</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>Storage Account</h4>
+                        <p>Table Storage: subscribers table</p>
+                        <p>Blob Storage: newsletters container</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>Application Insights</h4>
+                        <p>Monitoring & diagnostics</p>
+                        <p>Log aggregation & queries</p>
+                    </div>
+                </div>
+                
+                <h3>Monitoring & Maintenance</h3>
+                <div class="module-card">
+                    <h4>Key Metrics to Monitor</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Function Executions:</strong> SubscribeEmail call frequency</li>
+                        <li><strong>Error Rate:</strong> Failed subscriptions or newsletter sends</li>
+                        <li><strong>Newsletter Success Rate:</strong> sent/total ratio</li>
+                        <li><strong>Blob Storage Access:</strong> Newsletter download failures</li>
+                        <li><strong>Brevo API Quota:</strong> Daily email limit (300 on free tier)</li>
+                    </ul>
+                    
+                    <h4>Recommended Azure Monitor Queries</h4>
+                    <div class="code-block">
+// Failed subscriptions in last 24 hours
+traces
+| where timestamp > ago(24h)
+| where severityLevel == 3  // Error
+| where message contains "subscription"
+| project timestamp, message, customDimensions
+
+// Newsletter send summary
+traces
+| where timestamp > ago(7d)
+| where message contains "newsletter completed"
+| project timestamp, customDimensions.total, 
+          customDimensions.sent, customDimensions.failed
+
+// Top error types
+exceptions
+| where timestamp > ago(7d)
+| summarize count() by type
+| order by count_ desc
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p><strong>Azure Functions Documentation - Blog Subscriber System</strong></p>
+            <p>Generated: November 23, 2025</p>
+            <p>Quantum Investor Digest - Automated Newsletter Distribution</p>
+        </footer>
+    </div>
+</body>
+</html>

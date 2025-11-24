@@ -1,0 +1,87 @@
+name: Generate & Upload Newsletter (Stage 2 & 3)
+
+on:
+  workflow_dispatch:
+    inputs:
+      week_number:
+        description: 'Week number (leave empty to auto-detect)'
+        required: false
+        type: string
+      overwrite:
+        description: 'Overwrite existing blob if exists'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          cd scripts
+          pip install -r requirements.txt
+      
+      - name: Generate newsletter HTML (Stage 2)
+        run: |
+          cd scripts
+          if [ -n "${{ github.event.inputs.week_number }}" ]; then
+            python generate_newsletter_html.py ${{ github.event.inputs.week_number }}
+          else
+            # Auto-detect latest week from narrative JSON files
+            LATEST_WEEK=$(ls ../newsletters/week*_narrative.json 2>/dev/null | grep -oP 'week\K\d+' | sort -n | tail -1)
+            if [ -z "$LATEST_WEEK" ]; then
+              echo "❌ No narrative JSON found. Run Stage 1 first."
+              exit 1
+            fi
+            python generate_newsletter_html.py $LATEST_WEEK
+          fi
+      
+      - name: Upload to Azure Blob Storage (Stage 3)
+        env:
+          STORAGE_CONNECTION_STRING: ${{ secrets.STORAGE_CONNECTION_STRING }}
+        run: |
+          cd scripts
+          if [ -n "${{ github.event.inputs.week_number }}" ]; then
+            WEEK_ARG="${{ github.event.inputs.week_number }}"
+          else
+            WEEK_ARG="--latest"
+          fi
+          
+          OVERWRITE_FLAG=""
+          if [ "${{ github.event.inputs.overwrite }}" == "true" ]; then
+            OVERWRITE_FLAG="--overwrite"
+          fi
+          
+          python upload_newsletter_to_blob.py $WEEK_ARG $OVERWRITE_FLAG
+      
+      - name: Upload newsletter artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: newsletter-html
+          path: newsletters/week*_newsletter.html
+          retention-days: 30
+      
+      - name: Summary
+        run: |
+          WEEK=$(ls newsletters/week*_newsletter.html 2>/dev/null | grep -oP 'week\K\d+' | sort -n | tail -1)
+          echo "✅ Newsletter HTML generated and uploaded to Azure Blob Storage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📅 **Week**: $WEEK" >> $GITHUB_STEP_SUMMARY
+          echo "☁️ **Blob**: newsletters/week${WEEK}.html" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify blob in Azure Portal: Storage Account → Containers → newsletters" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test Azure Function: Manually trigger weekly_newsletter function" >> $GITHUB_STEP_SUMMARY
+          echo "3. Azure Function will automatically detect Week $WEEK and send to subscribers" >> $GITHUB_STEP_SUMMARY

@@ -14,10 +14,18 @@ from mailer import send_bulk_email, MailerError
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ServiceRequestError, HttpResponseError
 
-# GitHub repository configuration (with environment variable fallbacks)
-GITHUB_OWNER = os.environ.get('GITHUB_OWNER', 'mig1980')
-GITHUB_REPO = os.environ.get('GITHUB_REPO', 'quantuminvestor')
-GITHUB_POSTS_PATH = os.environ.get('GITHUB_POSTS_PATH', 'Posts')
+# GitHub repository configuration - MUST be set in production
+GITHUB_OWNER = os.environ.get('GITHUB_OWNER')
+GITHUB_REPO = os.environ.get('GITHUB_REPO')
+GITHUB_POSTS_PATH = os.environ.get('GITHUB_POSTS_PATH', 'Posts')  # Path can have sensible default
+
+if not GITHUB_OWNER or not GITHUB_REPO:
+    error_msg = (
+        "GITHUB_OWNER and GITHUB_REPO environment variables must be set. "
+        "Configure in Azure Function App Settings."
+    )
+    logging.critical(error_msg, extra={'config_check': 'github', 'status': 'missing'})
+    raise ValueError(error_msg)
 
 
 def retry_with_backoff(max_retries=3, initial_delay=1.0, backoff_factor=2.0):

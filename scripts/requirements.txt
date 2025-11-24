@@ -4,6 +4,9 @@ requests>=2.31.0             # HTTP client for API calls (includes urllib3, cert
 Pillow>=10.3.0               # Image processing for hero image generation
 beautifulsoup4>=4.12.0       # HTML parsing for newsletter extraction
 
+# Azure Services
+azure-storage-blob>=12.19.0  # Azure Blob Storage client for newsletter uploads
+
 # Web API Dependencies
 Flask>=3.0.0                 # Web framework for API server
 flask-cors>=4.0.0            # CORS support for frontend-backend communication

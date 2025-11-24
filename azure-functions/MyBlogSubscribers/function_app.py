@@ -125,8 +125,14 @@ def validate_brevo_config() -> None:
 validate_storage_config()
 validate_brevo_config()
 
-# CORS Configuration
-ALLOWED_ORIGIN = os.environ.get('CORS_ALLOWED_ORIGIN', '*')  # Configure in production
+# CORS Configuration - MUST be explicitly set in production (no insecure wildcard default)
+ALLOWED_ORIGIN = os.environ.get('CORS_ALLOWED_ORIGIN')
+if not ALLOWED_ORIGIN:
+    logging.warning(
+        "CORS_ALLOWED_ORIGIN not configured - using restrictive default. "
+        "Set to your domain in production (e.g., 'https://quantuminvestor.net')"
+    )
+    ALLOWED_ORIGIN = 'https://quantuminvestor.net'  # Safe default
 
 app = func.FunctionApp()
 
