@@ -568,6 +568,13 @@ img {
   border-color: rgba(168, 85, 247, 0.5);
 }
 
+/* Media Queries - Large screens and up */
+@media (min-width: 1024px) {
+  .lg\:block {
+    display: block !important;
+  }
+}
+
 /* Media Queries - Tablet Landscape and Below (iPad Pro and smaller) */
 @media (max-width: 1024px) {
   .lg\:grid-cols-3 {
