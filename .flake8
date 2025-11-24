@@ -1,0 +1,26 @@
+[flake8]
+# Flake8 configuration - ARM-compatible
+max-line-length = 120
+# Ignore codes: E203/W503 (Black compat), E501 (line length), F541 (f-string), E231 (whitespace)
+extend-ignore = E203,W503,E501,F541,E231
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    .tox
+
+# Per-file ignores
+per-file-ignores =
+    __init__.py:F401
+    generate_newsletter_html.py:F841
+    portfolio_automation.py:E741,F841,C901
+
+# Complexity settings (increased for complex portfolio logic)
+max-complexity = 35
