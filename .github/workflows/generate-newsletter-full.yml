@@ -16,6 +16,9 @@ on:
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -48,9 +51,16 @@ jobs:
             python generate_newsletter_html.py $LATEST_WEEK
           fi
 
+      - name: Azure Login (Managed Identity)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Upload to Azure Blob Storage (Stage 3)
         env:
-          STORAGE_CONNECTION_STRING: ${{ secrets.STORAGE_CONNECTION_STRING }}
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
         run: |
           cd scripts
           if [ -n "${{ github.event.inputs.week_number }}" ]; then

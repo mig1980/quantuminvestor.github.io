@@ -6,6 +6,7 @@ beautifulsoup4>=4.12.0       # HTML parsing for newsletter extraction
 
 # Azure Services
 azure-storage-blob>=12.19.0  # Azure Blob Storage client for newsletter uploads
+azure-identity>=1.15.0       # Azure authentication with DefaultAzureCredential
 
 # Security & Code Quality
 bandit[toml]>=1.7.5          # Security linting for Python code
