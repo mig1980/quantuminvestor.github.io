@@ -278,18 +278,24 @@ OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSO
 
     from openai import AzureOpenAI
 
+    azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+    if not azure_endpoint:
+        raise ValueError("AZURE_OPENAI_ENDPOINT environment variable not set")
+
     client = AzureOpenAI(
         api_key=azure_api_key,
         api_version="2024-10-21",
-        azure_endpoint=os.environ.get(
-            "AZURE_OPENAI_ENDPOINT", "https://myportfolious2-resource.cognitiveservices.azure.com/"
-        ),
+        azure_endpoint=azure_endpoint,
     )
 
     # Call Azure OpenAI API
+    deployment_name = os.environ.get("AZURE_OPENAI_DEPLOYMENT")
+    if not deployment_name:
+        raise ValueError("AZURE_OPENAI_DEPLOYMENT environment variable not set")
+
     def call_openai_api():
         response = client.chat.completions.create(
-            model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.1-chat"),
+            model=deployment_name,
             messages=[
                 {
                     "role": "system",

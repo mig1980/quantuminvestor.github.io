@@ -111,7 +111,9 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
 
         # Upload blob
         blob_client.upload_blob(
-            html_content, overwrite=overwrite, content_settings=ContentSettings(content_type="text/html; charset=utf-8")
+            html_content,
+            overwrite=overwrite,
+            content_settings=ContentSettings(content_type="text/html; charset=utf-8"),
         )
 
         # Get blob URL
@@ -189,7 +191,12 @@ Environment Variables:
         """,
     )
 
-    parser.add_argument("week", type=str, nargs="?", help="Week number to upload (e.g., 6) or --latest for auto-detect")
+    parser.add_argument(
+        "week",
+        type=str,
+        nargs="?",
+        help="Week number to upload (e.g., 6) or --latest for auto-detect",
+    )
     parser.add_argument("--latest", action="store_true", help="Auto-detect and upload the latest week")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing blob if it exists")
 

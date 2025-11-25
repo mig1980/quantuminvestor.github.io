@@ -29,6 +29,8 @@ jobs:
       - name: Generate narrative JSON
         env:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
         run: |
           cd scripts
           if [ -n "${{ github.event.inputs.week_number }}" ]; then

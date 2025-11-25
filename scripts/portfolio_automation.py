@@ -38,7 +38,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 # Configure paths
 REPO_ROOT = Path(__file__).parent.parent
@@ -79,7 +83,10 @@ class PortfolioAutomation:
         # Configuration
         self.existing_weeks = None  # Initialize before detect_next_week() call
         self.week_number = week_number or self.detect_next_week()
-        self.model = model
+        # Use model from command line, or environment variable, or fail
+        self.model = model if model != "gpt-5.1-chat" else os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        if not self.model:
+            raise ValueError("AZURE_OPENAI_DEPLOYMENT environment variable not set")
         self.data_source = data_source.lower()
         self.palette = palette
         self.nonce = "qi123"
@@ -123,11 +130,13 @@ class PortfolioAutomation:
         if self.azure_api_key:
             try:
                 # Azure OpenAI endpoint
-                azure_endpoint = os.getenv(
-                    "AZURE_OPENAI_ENDPOINT", "https://myportfolious2-resource.cognitiveservices.azure.com/"
-                )
+                azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+                if not azure_endpoint:
+                    raise ValueError("AZURE_OPENAI_ENDPOINT environment variable not set")
                 self.client = AzureOpenAI(
-                    api_key=self.azure_api_key, api_version="2024-10-21", azure_endpoint=azure_endpoint
+                    api_key=self.azure_api_key,
+                    api_version="2024-10-21",
+                    azure_endpoint=azure_endpoint,
                 )
                 self.ai_enabled = True
                 logging.info(f"✓ Azure OpenAI initialized (deployment: {self.model})")
@@ -155,7 +164,12 @@ class PortfolioAutomation:
         self.finnhub_min_interval = 12  # seconds between Finnhub calls
 
         # Execution report tracking (initialize before load_prompts)
-        self.report = {"steps": [], "start_time": datetime.now(), "week_number": self.week_number, "success": False}
+        self.report = {
+            "steps": [],
+            "start_time": datetime.now(),
+            "week_number": self.week_number,
+            "success": False,
+        }
 
         # Load prompts
         self.prompts = self.load_prompts()
@@ -215,7 +229,12 @@ class PortfolioAutomation:
         logging.info("-" * 80)
 
         for i, step in enumerate(self.report["steps"], 1):
-            status_icon = {"success": "✅", "warning": "⚠️", "error": "❌", "skipped": "⊘"}.get(step["status"], "•")
+            status_icon = {
+                "success": "✅",
+                "warning": "⚠️",
+                "error": "❌",
+                "skipped": "⊘",
+            }.get(step["status"], "•")
 
             logging.info(f"{i}. {status_icon} {step['name']}")
             logging.info(f"   Status: {step['status'].upper()}")
@@ -257,7 +276,11 @@ class PortfolioAutomation:
                 {"missing_prompts": ", ".join([f"Prompt-{l}" for l in missing])},
             )
         else:
-            self.add_step("Load Prompts", "success", "All 3 prompt files loaded successfully (A, B, D)")
+            self.add_step(
+                "Load Prompts",
+                "success",
+                "All 3 prompt files loaded successfully (A, B, D)",
+            )
 
         return prompts
 
@@ -265,7 +288,11 @@ class PortfolioAutomation:
         """Load consolidated master.json (single source of truth)"""
         master_path = MASTER_DATA_DIR / "master.json"
         if not master_path.exists():
-            self.add_step("Load Master Data", "error", f"Master data file not found at {master_path}")
+            self.add_step(
+                "Load Master Data",
+                "error",
+                f"Master data file not found at {master_path}",
+            )
             raise ValueError(f"Master data file not found: {master_path}")
 
         try:
@@ -284,7 +311,11 @@ class PortfolioAutomation:
 
             return self.master_json
         except json.JSONDecodeError as e:
-            self.add_step("Load Master Data", "error", f"Invalid JSON format in master.json: {str(e)}")
+            self.add_step(
+                "Load Master Data",
+                "error",
+                f"Invalid JSON format in master.json: {str(e)}",
+            )
             raise
         except Exception as e:
             self.add_step("Load Master Data", "error", f"Failed to load master.json: {str(e)}")
@@ -306,7 +337,10 @@ class PortfolioAutomation:
             try:
                 response = self.client.chat.completions.create(
                     model=current_model,
-                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
                     # Note: GPT-5.1 only supports default temperature (1), custom values not allowed
                 )
                 logging.info(f"✓ AI response received ({current_model})")
@@ -356,7 +390,7 @@ class PortfolioAutomation:
                 raise
 
         # If we somehow exit the loop without returning or raising
-        raise last_error if last_error else RuntimeError("AI call failed for unknown reason")
+        raise (last_error if last_error else RuntimeError("AI call failed for unknown reason"))
 
     def _purge_and_minify_css(self):
         """CSS optimization (placeholder - not critical for MVP)"""
@@ -461,7 +495,10 @@ Return a validation report (PASS or FAIL with details).
                     "Prompt A - Data Validator",
                     "success",
                     f"All Week {self.week_number} calculations validated",
-                    {"validation_report": response[:500], "report_file": str(validation_path)},
+                    {
+                        "validation_report": response[:500],
+                        "report_file": str(validation_path),
+                    },
                 )
                 return {"status": "pass", "report": response}
 
@@ -472,7 +509,10 @@ Return a validation report (PASS or FAIL with details).
                     "Prompt A - Data Validator",
                     "warning",
                     f"Validation found errors in Week {self.week_number} calculations",
-                    {"validation_report": response[:500], "report_file": str(validation_path)},
+                    {
+                        "validation_report": response[:500],
+                        "report_file": str(validation_path),
+                    },
                 )
                 return {"status": "fail", "report": response}
 
@@ -483,12 +523,19 @@ Return a validation report (PASS or FAIL with details).
                     "Prompt A - Data Validator",
                     "warning",
                     "Validation response format unclear - check report for details",
-                    {"validation_report": response[:500], "report_file": str(validation_path)},
+                    {
+                        "validation_report": response[:500],
+                        "report_file": str(validation_path),
+                    },
                 )
                 return {"status": "unclear", "report": response}
 
         except Exception as e:
-            self.add_step("Prompt A - Data Validator", "error", f"Prompt A validation failed: {str(e)}")
+            self.add_step(
+                "Prompt A - Data Validator",
+                "error",
+                f"Prompt A validation failed: {str(e)}",
+            )
             # Validation failure is non-fatal - calculations already done
             logging.warning(f"Prompt A validator failed: {e}. Continuing with generated data.")
             return {"status": "error", "report": str(e)}
@@ -530,7 +577,11 @@ Return a validation report (PASS or FAIL with details).
         Returns dict with date, close price, and source, or None on failure.
         """
         url = "https://www.alphavantage.co/query"
-        params = {"function": "GLOBAL_QUOTE", "symbol": symbol, "apikey": self.alphavantage_key}
+        params = {
+            "function": "GLOBAL_QUOTE",
+            "symbol": symbol,
+            "apikey": self.alphavantage_key,
+        }
         try:
             response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
@@ -549,7 +600,11 @@ Return a validation report (PASS or FAIL with details).
                         f"Invalid date format from Alpha Vantage for {symbol}, using fallback: {date_clean}"
                     )
 
-                return {"date": date_clean, "close": float(quote.get("05. price", 0)), "source": "Alpha Vantage"}
+                return {
+                    "date": date_clean,
+                    "close": float(quote.get("05. price", 0)),
+                    "source": "Alpha Vantage",
+                }
             elif "Note" in data:
                 logging.warning(f"Rate limit hit for {symbol}: {data['Note']}")
                 return None
@@ -627,7 +682,11 @@ Return a validation report (PASS or FAIL with details).
                     date_clean = self._latest_market_date()
                     logging.warning(f"Invalid date format from Marketstack for {symbol}, using fallback: {date_clean}")
 
-                return {"date": date_clean, "close": float(quote.get("close", 0)), "source": "Marketstack"}
+                return {
+                    "date": date_clean,
+                    "close": float(quote.get("close", 0)),
+                    "source": "Marketstack",
+                }
             else:
                 logging.warning(f"No data returned from Marketstack for {symbol}")
                 return None
@@ -666,7 +725,11 @@ Return a validation report (PASS or FAIL with details).
                     )
                 except Exception:
                     date_clean = self._latest_market_date()
-                return {"date": date_clean, "close": float(data.get("c", 0)), "source": "Finnhub"}
+                return {
+                    "date": date_clean,
+                    "close": float(data.get("c", 0)),
+                    "source": "Finnhub",
+                }
             else:
                 logging.warning(f"Finnhub returned no usable quote for {symbol}")
                 return None
@@ -703,7 +766,11 @@ Return a validation report (PASS or FAIL with details).
                     )
                 except Exception:
                     date_clean = self._latest_market_date()
-                return {"date": date_clean, "close": float(data.get("c", 0)), "source": "Finnhub (Crypto)"}
+                return {
+                    "date": date_clean,
+                    "close": float(data.get("c", 0)),
+                    "source": "Finnhub (Crypto)",
+                }
             else:
                 logging.warning(f"Finnhub returned no usable crypto quote for {symbol}")
                 return None
@@ -1141,12 +1208,18 @@ This is for Week {self.week_number}.
                 self.narrative_html = html_match.group(1)
             else:
                 # Try without code blocks
-                html_match = re.search(r'(<div class="prose prose-invert max-w-none">.*?</div>)', response, re.DOTALL)
+                html_match = re.search(
+                    r'(<div class="prose prose-invert max-w-none">.*?</div>)',
+                    response,
+                    re.DOTALL,
+                )
                 if html_match:
                     self.narrative_html = html_match.group(1)
                 else:
                     self.add_step(
-                        "Prompt B - Narrative Writer", "error", "Could not extract narrative HTML from AI response"
+                        "Prompt B - Narrative Writer",
+                        "error",
+                        "Could not extract narrative HTML from AI response",
                     )
                     raise ValueError("Could not extract narrative HTML from Prompt B response")
 
@@ -1173,14 +1246,18 @@ This is for Week {self.week_number}.
                 "Generated narrative HTML and SEO metadata",
                 {
                     "narrative_length": f"{len(self.narrative_html)} chars",
-                    "seo_metadata": "extracted" if seo_status == "success" else "fallback used",
+                    "seo_metadata": ("extracted" if seo_status == "success" else "fallback used"),
                 },
             )
 
             return self.narrative_html, self.seo_json
 
         except Exception as e:
-            self.add_step("Prompt B - Narrative Writer", "error", f"Prompt B execution failed: {str(e)}")
+            self.add_step(
+                "Prompt B - Narrative Writer",
+                "error",
+                f"Prompt B execution failed: {str(e)}",
+            )
             raise
 
     def generate_fallback_seo(self):
@@ -1234,7 +1311,13 @@ This is for Week {self.week_number}.
             tickers = [s.get("ticker") for s in self.master_json.get("stocks", []) if s.get("ticker")]
         except (KeyError, TypeError, AttributeError) as e:
             logging.debug(f"Could not extract tickers for keywords: {e}")
-        base_keywords = ["AI investing", "momentum stocks", "portfolio performance", "S&P 500", "Bitcoin"]
+        base_keywords = [
+            "AI investing",
+            "momentum stocks",
+            "portfolio performance",
+            "S&P 500",
+            "Bitcoin",
+        ]
         if tickers:
             base_keywords.extend(tickers[:10])
         keywords_str = ", ".join(sorted(set(base_keywords)))
@@ -1254,7 +1337,10 @@ This is for Week {self.week_number}.
             "publisher": {
                 "@type": "Organization",
                 "name": "Quantum Investor Digest",
-                "logo": {"@type": "ImageObject", "url": "https://quantuminvestor.net/Media/LogoB.webp"},
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://quantuminvestor.net/Media/LogoB.webp",
+                },
             },
             "articleSection": "AI Portfolio Weekly Review",
             "keywords": keywords_str,
@@ -1263,14 +1349,24 @@ This is for Week {self.week_number}.
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-                {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://quantuminvestor.net/"},
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://quantuminvestor.net/",
+                },
                 {
                     "@type": "ListItem",
                     "position": 2,
                     "name": "Blog",
                     "item": "https://quantuminvestor.net/Posts/posts.html",
                 },
-                {"@type": "ListItem", "position": 3, "name": f"Week {self.week_number}", "item": og_url},
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": f"Week {self.week_number}",
+                    "item": og_url,
+                },
             ],
         }
 
@@ -1571,7 +1667,11 @@ This is for Week {self.week_number}.
 
     def harden_static_pages(self):
         """Apply dynamic nonce + strict CSP to root static pages (index, about, Disclosures)."""
-        root_files = [REPO_ROOT / "index.html", REPO_ROOT / "about.html", REPO_ROOT / "Disclosures.html"]
+        root_files = [
+            REPO_ROOT / "index.html",
+            REPO_ROOT / "about.html",
+            REPO_ROOT / "Disclosures.html",
+        ]
         for fp in root_files:
             if not fp.exists():
                 logging.warning(f"Static file not found: {fp}")
@@ -1966,16 +2066,28 @@ Generate the complete HTML file for Week {self.week_number}.
                 warnings.extend(missing)
 
             status = "warning" if warnings else "success"
-            details = {"output_file": str(output_path), "file_size": f"{len(final_html)} bytes"}
+            details = {
+                "output_file": str(output_path),
+                "file_size": f"{len(final_html)} bytes",
+            }
             if warnings:
                 details["validation_warnings"] = ", ".join(warnings)
 
-            self.add_step("Prompt D - Final Assembler", status, "Generated complete HTML page for Week post", details)
+            self.add_step(
+                "Prompt D - Final Assembler",
+                status,
+                "Generated complete HTML page for Week post",
+                details,
+            )
 
             return final_html
 
         except Exception as e:
-            self.add_step("Prompt D - Final Assembler", "error", f"Failed to save final HTML: {str(e)}")
+            self.add_step(
+                "Prompt D - Final Assembler",
+                "error",
+                f"Failed to save final HTML: {str(e)}",
+            )
             raise
 
     def _optimize_performance(self, html: str) -> str:
@@ -2133,7 +2245,11 @@ Generate the complete HTML file for Week {self.week_number}.
             return table_html
 
         except Exception as e:
-            self.add_step("Generate Performance Table", "error", f"Failed to generate performance table: {str(e)}")
+            self.add_step(
+                "Generate Performance Table",
+                "error",
+                f"Failed to generate performance table: {str(e)}",
+            )
             raise
 
     def generate_performance_chart(self):
@@ -2212,7 +2328,13 @@ Generate the complete HTML file for Week {self.week_number}.
                 )
 
             # Generate Y-axis labels and gridlines - Week 5 fixed positions
-            y_grid_positions = [50, 125, 200, 275, 350]  # y=50 (120), y=125 (110), y=200 (100), y=275 (90), y=350 (80)
+            y_grid_positions = [
+                50,
+                125,
+                200,
+                275,
+                350,
+            ]  # y=50 (120), y=125 (110), y=200 (100), y=275 (90), y=350 (80)
             y_labels_html = []
             gridlines_html = []
             for i, (val, y_pos) in enumerate(zip(y_labels, y_grid_positions)):
@@ -2311,7 +2433,11 @@ Generate the complete HTML file for Week {self.week_number}.
             return chart_html
 
         except Exception as e:
-            self.add_step("Generate Performance Chart", "error", f"Failed to generate performance chart: {str(e)}")
+            self.add_step(
+                "Generate Performance Chart",
+                "error",
+                f"Failed to generate performance chart: {str(e)}",
+            )
             raise
 
     def generate_visuals_json(self):
@@ -2422,7 +2548,12 @@ Generate the complete HTML file for Week {self.week_number}.
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-                {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://quantuminvestor.net/"},
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://quantuminvestor.net/",
+                },
                 {
                     "@type": "ListItem",
                     "position": 2,
@@ -2733,9 +2864,17 @@ Generate the complete HTML file for Week {self.week_number}.
 
             try:
                 self.update_index_pages()
-                self.add_step("Update Index Pages", "success", "Regenerated posts.html with updated listing")
+                self.add_step(
+                    "Update Index Pages",
+                    "success",
+                    "Regenerated posts.html with updated listing",
+                )
             except Exception as e:
-                self.add_step("Update Index Pages", "warning", f"Failed to update index pages: {str(e)}")
+                self.add_step(
+                    "Update Index Pages",
+                    "warning",
+                    f"Failed to update index pages: {str(e)}",
+                )
 
             # Mark overall success
             self.report["success"] = True
@@ -2774,10 +2913,18 @@ Generate the complete HTML file for Week {self.week_number}.
 
 def main():
     parser = argparse.ArgumentParser(description="Automate weekly portfolio update")
-    parser.add_argument("--week", type=str, default="auto", help="Week number (default: auto-detect next week)")
+    parser.add_argument(
+        "--week",
+        type=str,
+        default="auto",
+        help="Week number (default: auto-detect next week)",
+    )
     parser.add_argument("--github-token", type=str, help="[DEPRECATED] Not used with Azure OpenAI")
     parser.add_argument(
-        "--model", type=str, default="gpt-5.1-chat", help="Azure OpenAI deployment name (default: gpt-5.1-chat)"
+        "--model",
+        type=str,
+        default="gpt-5.1-chat",
+        help="Azure OpenAI deployment name (default: gpt-5.1-chat)",
     )
     parser.add_argument(
         "--data-source",
@@ -2787,12 +2934,20 @@ def main():
         help="Data source: data-only (fetch+calculate, then abort - for testing) or ai (full pipeline with narrative)",
     )
     parser.add_argument(
-        "--alphavantage-key", type=str, help="Alpha Vantage API key (default: read from ALPHAVANTAGE_API_KEY env var)"
+        "--alphavantage-key",
+        type=str,
+        help="Alpha Vantage API key (default: read from ALPHAVANTAGE_API_KEY env var)",
     )
     parser.add_argument(
-        "--marketstack-key", type=str, help="Marketstack API key (default: read from MARKETSTACK_API_KEY env var)"
+        "--marketstack-key",
+        type=str,
+        help="Marketstack API key (default: read from MARKETSTACK_API_KEY env var)",
     )
-    parser.add_argument("--finnhub-key", type=str, help="Finnhub API key (default: read from FINNHUB_API_KEY env var)")
+    parser.add_argument(
+        "--finnhub-key",
+        type=str,
+        help="Finnhub API key (default: read from FINNHUB_API_KEY env var)",
+    )
     parser.add_argument(
         "--eval-date",
         type=str,

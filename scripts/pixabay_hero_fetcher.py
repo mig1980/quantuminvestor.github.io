@@ -105,16 +105,31 @@ Examples:
 
     # Required arguments
     ap.add_argument(
-        "--query", type=str, required=True, help="Search query keywords (e.g., 'finance technology', 'stock market')"
+        "--query",
+        type=str,
+        required=True,
+        help="Search query keywords (e.g., 'finance technology', 'stock market')",
     )
-    ap.add_argument("--out", type=str, required=True, help="Output file path (supports .jpg, .png, .webp)")
+    ap.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output file path (supports .jpg, .png, .webp)",
+    )
 
     # Optional filters
     ap.add_argument("--week", type=int, help="Week number (for naming/metadata only)")
     ap.add_argument(
-        "--category", type=str, choices=CATEGORIES, help=f"Image category filter. Options: {', '.join(CATEGORIES)}"
+        "--category",
+        type=str,
+        choices=CATEGORIES,
+        help=f"Image category filter. Options: {', '.join(CATEGORIES)}",
     )
-    ap.add_argument("--colors", type=str, help=f"Comma-separated color filters. Options: {', '.join(COLORS)}")
+    ap.add_argument(
+        "--colors",
+        type=str,
+        help=f"Comma-separated color filters. Options: {', '.join(COLORS)}",
+    )
     ap.add_argument(
         "--image-type",
         type=str,
@@ -129,12 +144,42 @@ Examples:
         choices=["all", "horizontal", "vertical"],
         help="Image orientation (default: horizontal)",
     )
-    ap.add_argument("--min-width", type=int, default=1200, help="Minimum image width in pixels (default: 1200)")
-    ap.add_argument("--min-height", type=int, default=800, help="Minimum image height in pixels (default: 800)")
-    ap.add_argument("--per-page", type=int, default=10, help="Number of results to fetch (default: 10, max: 200)")
-    ap.add_argument("--safesearch", action="store_true", default=True, help="Enable safe search (default: True)")
-    ap.add_argument("--width", type=int, default=DEFAULT_WIDTH, help="Output image width in pixels (default: 1200)")
-    ap.add_argument("--height", type=int, default=DEFAULT_HEIGHT, help="Output image height in pixels (default: 800)")
+    ap.add_argument(
+        "--min-width",
+        type=int,
+        default=1200,
+        help="Minimum image width in pixels (default: 1200)",
+    )
+    ap.add_argument(
+        "--min-height",
+        type=int,
+        default=800,
+        help="Minimum image height in pixels (default: 800)",
+    )
+    ap.add_argument(
+        "--per-page",
+        type=int,
+        default=10,
+        help="Number of results to fetch (default: 10, max: 200)",
+    )
+    ap.add_argument(
+        "--safesearch",
+        action="store_true",
+        default=True,
+        help="Enable safe search (default: True)",
+    )
+    ap.add_argument(
+        "--width",
+        type=int,
+        default=DEFAULT_WIDTH,
+        help="Output image width in pixels (default: 1200)",
+    )
+    ap.add_argument(
+        "--height",
+        type=int,
+        default=DEFAULT_HEIGHT,
+        help="Output image height in pixels (default: 800)",
+    )
     ap.add_argument(
         "--order",
         type=str,
@@ -142,7 +187,11 @@ Examples:
         choices=["popular", "latest"],
         help="Sort order for results (default: popular)",
     )
-    ap.add_argument("--editors-choice", action="store_true", help="Only return editor's choice images")
+    ap.add_argument(
+        "--editors-choice",
+        action="store_true",
+        help="Only return editor's choice images",
+    )
 
     return ap.parse_args()
 
@@ -303,6 +352,8 @@ def resize_image(img: Image.Image, width: Optional[int], height: Optional[int]) 
 
     else:
         # Only height specified
+        if height is None:
+            raise ValueError("Either width or height must be specified")
         new_height = height
         new_width = int(orig_ratio * new_height)
         img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
