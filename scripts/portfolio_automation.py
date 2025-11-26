@@ -2,10 +2,6 @@
 """
 GenAi Chosen Portfolio - Weekly Automation Script
 
-Version: 5.5.0
-Date: 2025-11-25
-Compatible with: Prompt A v5.5A, Prompt B v5.5B, Prompt D v5.5D
-
 Workflow:
 1. Fetch prices from APIs (Alpha Vantage, Marketstack, Finnhub)
 2. Calculate all metrics (stocks, portfolio, benchmarks, normalized chart)
@@ -25,8 +21,6 @@ Error Handling Strategy:
 - TRANSIENT ERRORS (retry with backoff): Network timeouts, rate limits
   → Handled in call_ai() and API fetch methods with exponential backoff
 """
-
-__version__ = "5.5.0"
 
 import argparse
 import json
@@ -265,7 +259,7 @@ class PortfolioAutomation:
         missing = []
         # Prompt C eliminated - visual generation now handled by automation script
         for letter in ["A", "B", "D"]:
-            prompt_file = PROMPT_DIR / f"Prompt-{letter}-v5.5{letter}.md"
+            prompt_file = PROMPT_DIR / f"Prompt-{letter}-v5.4{letter}.md"
             if prompt_file.exists():
                 with open(prompt_file, "r", encoding="utf-8") as f:
                     prompts[letter] = f.read()
@@ -1195,11 +1189,11 @@ Here is the summary data for Week {self.week_number}:
 {data_json}
 ```
 
-Generate complete JSON output with:
-- narrative_html: Complete blog post narrative (3 sections with [CHART_PLACEHOLDER])
-- seo: Complete SEO metadata object
+Generate:
+1. narrative.html (the prose content block)
+2. seo.json (all metadata)
 
-Output format: Single JSON object as specified in OUTPUT FORMAT section above.
+This is for Week {self.week_number}.
 """
 
             # Log request size for debugging
@@ -1208,59 +1202,43 @@ Output format: Single JSON object as specified in OUTPUT FORMAT section above.
 
             response = self.call_ai(system_prompt, user_message)
 
-            # Prompt B v5.5B outputs JSON with narrative_html and seo fields
-            json_match = re.search(r"```json\s*({.*?})\s*```", response, re.DOTALL)
-            if not json_match:
-                # Try to parse entire response as JSON (no code blocks)
-                json_match = re.search(r"({\s*[\"']narrative_html[\"'].*?})\s*$", response, re.DOTALL)
-
-            if json_match:
-                try:
-                    narrative_output = json.loads(json_match.group(1))
-                    self.narrative_html = narrative_output.get("narrative_html")
-                    self.seo_json = narrative_output.get("seo")
-
-                    if not self.narrative_html:
-                        raise ValueError("Missing narrative_html field in JSON output")
-                    if not self.seo_json:
-                        logging.warning("Missing seo field in JSON output, generating fallback")
-                        self.seo_json = self.generate_fallback_seo()
-                        seo_status = "warning"
-                    else:
-                        seo_status = "success"
-
-                except json.JSONDecodeError as e:
+            # Extract narrative HTML
+            html_match = re.search(r'```html\s*(<div class="prose.*?</div>)\s*```', response, re.DOTALL)
+            if html_match:
+                self.narrative_html = html_match.group(1)
+            else:
+                # Try without code blocks
+                html_match = re.search(
+                    r'(<div class="prose prose-invert max-w-none">.*?</div>)',
+                    response,
+                    re.DOTALL,
+                )
+                if html_match:
+                    self.narrative_html = html_match.group(1)
+                else:
                     self.add_step(
                         "Prompt B - Narrative Writer",
                         "error",
-                        f"Could not parse JSON output from AI response: {e}",
+                        "Could not extract narrative HTML from AI response",
                     )
-                    raise ValueError(f"Could not parse Prompt B JSON response: {e}")
+                    raise ValueError("Could not extract narrative HTML from Prompt B response")
+
+            # Extract SEO JSON
+            seo_status = "success"
+            json_match = re.search(r"```json\s*({.*?})\s*```", response, re.DOTALL)
+            if json_match:
+                try:
+                    self.seo_json = json.loads(json_match.group(1))
+                except json.JSONDecodeError as e:
+                    logging.warning(f"Failed to parse SEO JSON: {e}")
+                    self.seo_json = self.generate_fallback_seo()
+                    seo_status = "warning"
             else:
-                self.add_step(
-                    "Prompt B - Narrative Writer",
-                    "error",
-                    "Could not find JSON output in AI response",
-                )
-                raise ValueError("Could not extract JSON from Prompt B response")
+                logging.warning("No SEO JSON found, generating fallback")
+                self.seo_json = self.generate_fallback_seo()
+                seo_status = "warning"
 
-            # Validate narrative contains required elements
-            if "[CHART_PLACEHOLDER]" not in self.narrative_html:
-                logging.warning("Narrative missing [CHART_PLACEHOLDER] - chart injection may fail")
-
-            seo_status = "success" if self.seo_json and "error" not in self.seo_json else "warning"
-
-            # Save narrative JSON to Data/W{N} folder (per Prompt B v5.5B spec)
-            week_dir = DATA_DIR / f"W{self.week_number}"
-            week_dir.mkdir(exist_ok=True)
-            narrative_json_path = week_dir / f"week{self.week_number}_narrative.json"
-
-            narrative_output = {"narrative_html": self.narrative_html, "seo": self.seo_json}
-
-            with open(narrative_json_path, "w", encoding="utf-8") as f:
-                json.dump(narrative_output, f, indent=2, ensure_ascii=False)
-
-            logging.info(f"Saved narrative JSON to: {narrative_json_path}")
+            logging.info("Prompt B completed - narrative and SEO generated")
 
             self.add_step(
                 "Prompt B - Narrative Writer",
@@ -1269,7 +1247,6 @@ Output format: Single JSON object as specified in OUTPUT FORMAT section above.
                 {
                     "narrative_length": f"{len(self.narrative_html)} chars",
                     "seo_metadata": ("extracted" if seo_status == "success" else "fallback used"),
-                    "saved_to": str(narrative_json_path),
                 },
             )
 
@@ -1926,60 +1903,89 @@ Output format: Single JSON object as specified in OUTPUT FORMAT section above.
 
         system_prompt = "You are the GenAi Chosen Final Page Builder. Follow Prompt D specifications exactly."
 
-        # Prompt D v5.5D expects narrative with [CHART_PLACEHOLDER] already embedded
-        # Inject chart at placeholder position
-        if self.performance_chart and "[CHART_PLACEHOLDER]" in self.narrative_html:
-            # Wrap chart in container div as per Prompt D spec
-            chart_html = f'<div class="myblock-chart-container">{self.performance_chart}</div>'
-            self.narrative_html = self.narrative_html.replace("<p>[CHART_PLACEHOLDER]</p>", chart_html)
-            logging.info("Chart injected at [CHART_PLACEHOLDER] position")
-        elif self.performance_chart:
-            logging.warning("[CHART_PLACEHOLDER] not found in narrative - chart may not be embedded correctly")
-
-        # Insert performance table BEFORE hero image (Prompt D v5.5D requirement)
+        # Embed table and chart into narrative if not already there
         if self.performance_table and self.performance_table not in self.narrative_html:
-            # Find hero image pattern: <img src="https://quantuminvestor.net/Media/W{N}.webp"
-            hero_pattern = (
-                rf'<p>\s*<img[^>]*src="https://quantuminvestor\.net/Media/W{self.week_number}\.webp"[^>]*>\s*</p>'
-            )
-            match = re.search(hero_pattern, self.narrative_html, re.DOTALL)
+            # Find insertion point after "Performance Snapshot" section
+            snapshot_pattern = r"(<h2[^>]*>Performance Snapshot</h2>\s*<p[^>]*>.*?</p>)"
+            match = re.search(snapshot_pattern, self.narrative_html, re.DOTALL)
             if match:
-                # Insert table BEFORE the hero image
-                insert_pos = match.start()
-                table_html = f'<div class="myblock-performance-snapshot">{self.performance_table}</div>\n\n'
-                self.narrative_html = self.narrative_html[:insert_pos] + table_html + self.narrative_html[insert_pos:]
-                logging.info("Performance table inserted before hero image")
-            else:
-                # Fallback: insert at beginning if hero not found
-                logging.warning(
-                    f"Hero image W{self.week_number}.webp not found - inserting table at start of narrative"
+                insert_pos = match.end()
+                self.narrative_html = (
+                    self.narrative_html[:insert_pos]
+                    + "\n\n"
+                    + self.performance_table
+                    + "\n\n"
+                    + self.narrative_html[insert_pos:]
                 )
-                table_html = f'<div class="myblock-performance-snapshot">{self.performance_table}</div>\n\n'
-                self.narrative_html = table_html + self.narrative_html
+            else:
+                logging.warning("Could not find Performance Snapshot insertion point")
 
-        # Prompt D v5.5D expects week{N}_narrative.json format
-        # Create the narrative JSON structure that Prompt D expects
-        narrative_json = {"narrative_html": self.narrative_html, "seo": self.seo_json}
+        if self.performance_chart and self.performance_chart not in self.narrative_html:
+            # Find insertion point after "Performance Since Inception" h2 and 3 paragraphs
+            # Primary pattern: exactly 3 paragraphs (Prompt B requirement)
+            inception_pattern = r"(<h2[^>]*>Performance Since Inception</h2>\s*(?:<p[^>]*>.*?</p>\s*){3})"
+            match = re.search(inception_pattern, self.narrative_html, re.DOTALL)
+            if match:
+                insert_pos = match.end()
+                self.narrative_html = (
+                    self.narrative_html[:insert_pos]
+                    + "\n\n"
+                    + self.performance_chart
+                    + "\n\n"
+                    + self.narrative_html[insert_pos:]
+                )
+                logging.info("Chart embedded after 3 paragraphs (standard pattern)")
+            else:
+                logging.warning("Could not find 3 paragraphs after 'Performance Since Inception' - trying fallback")
+                # Fallback pattern (2-4 paragraphs for flexibility)
+                inception_pattern_fallback = (
+                    r"(<h2[^>]*>Performance Since Inception</h2>\s*(?:<p[^>]*>.*?</p>\s*){2,4})"
+                )
+                match = re.search(inception_pattern_fallback, self.narrative_html, re.DOTALL)
+                if match:
+                    insert_pos = match.end()
+                    self.narrative_html = (
+                        self.narrative_html[:insert_pos]
+                        + "\n\n"
+                        + self.performance_chart
+                        + "\n\n"
+                        + self.narrative_html[insert_pos:]
+                    )
+                    logging.info("Chart embedded using fallback pattern (2-4 paragraphs)")
+                else:
+                    logging.error("CRITICAL: Could not find Performance Since Inception section for chart embedding")
+                    logging.error("This may result in chart not appearing in final HTML")
+
+        # Extract minimal metadata for Prompt D (doesn't need full data)
+        minimal_meta = {
+            "week_number": self.week_number,
+            "current_date": self.master_json.get("meta", {}).get("current_date"),
+            "inception_date": self.master_json.get("meta", {}).get("inception_date"),
+        }
 
         user_message = f"""
 {self.prompts['D']}
 
 ---
 
-**IMPORTANT**: Chart and table are already injected into the narrative_html below.
+Here are the components:
 
-Here is the input data:
-
-**week{self.week_number}_narrative.json:**
-```json
-{json.dumps(narrative_json, indent=2)}
+**narrative.html:**
+```html
+{self.narrative_html}
 ```
 
-The narrative_html field already contains:
-- Chart SVG (injected at former [CHART_PLACEHOLDER] position)
-- Performance table (positioned before hero image)
+**seo.json:**
+```json
+{json.dumps(self.seo_json, indent=2)}
+```
 
-Generate the complete HTML file for Week {self.week_number} using the pre-assembled narrative.
+**metadata:**
+```json
+{json.dumps(minimal_meta, indent=2)}
+```
+
+Generate the complete HTML file for Week {self.week_number}.
 """
 
         response = self.call_ai(system_prompt, user_message)

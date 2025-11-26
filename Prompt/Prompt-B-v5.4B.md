@@ -140,9 +140,7 @@ Your narrative must follow this structure:
         <p class="text-gray-300 mb-6"><strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.</p>
         ```
      2. Next review schedule:
-        - For Week 5 and earlier: `Next Review: Monday, [the following Monday date], after market close.`
-        - For Week 6 and later: `Next Review: Thursday, [the following Thursday date], after market close.`
-        - Calculate the next Thursday by adding 7 days to the current week's date
+        - `Next Review: Monday, [the following Monday date], after market close.`
 
 ---
 
