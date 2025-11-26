@@ -1,0 +1,30 @@
+Prompt A Validation Report - Week 7
+Generated: 2025-11-26 00:02:30
+================================================================================
+
+❌ **Prompt A Validation: FAIL**
+
+Found **1** error in Week 7 calculations:
+
+**Inception Consistency Errors:**
+1. portfolio_history[0].value: Expected 10000, got 10001 (diff: 1)  
+2. normalized_chart[0].portfolio_value: Expected 10000, got 10001 (diff: 1)
+
+**Details:**  
+- meta.inception_value = **10000**  
+- portfolio_history[0].value = **10001** (should match meta.inception_value exactly)  
+- normalized_chart[0].portfolio_value = **10001** (should also match exactly)
+
+All other validations **PASS**:
+- Stock metrics validated (10 positions)
+- Portfolio totals correct (matches sum of positions; weekly % and total % correct)
+- Benchmarks (S&P 500, Bitcoin) validated correctly
+- All arrays synchronized (8 entries each; dates aligned)
+- Normalized values correct and within tolerance
+- Weekly and total percentages correct across all components
+
+**Recommendation:** Ensure the automation script sets portfolio_history[0].value and normalized_chart[0].portfolio_value equal to meta.inception_value = 10000. This value must not drift.
+
+---
+
+Prompt A validation completed for Week 7 — FAIL — report ready.
