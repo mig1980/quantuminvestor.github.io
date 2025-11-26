@@ -55,15 +55,15 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
 
     Raises:
         FileNotFoundError: If newsletter HTML not found locally
-        ValueError: If STORAGE_CONNECTION_STRING not configured
+        ValueError: If STORAGE_ACCOUNT_NAME not configured or authentication fails
         Exception: If upload fails after retries
     """
     logging.info(f"Uploading newsletter for Week {week_num}")
 
-    # Get connection string
-    connection_string = os.environ.get("STORAGE_CONNECTION_STRING")
-    if not connection_string:
-        raise ValueError("STORAGE_CONNECTION_STRING environment variable not set")
+    # Get storage account name
+    storage_account_name = os.environ.get("STORAGE_ACCOUNT_NAME")
+    if not storage_account_name:
+        raise ValueError("STORAGE_ACCOUNT_NAME environment variable not set")
 
     # Validate local file exists
     base_dir = Path(__file__).parent.parent
@@ -93,10 +93,13 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
 
     try:
         # Import Azure SDK
+        from azure.identity import DefaultAzureCredential
         from azure.storage.blob import BlobServiceClient, ContentSettings
 
-        # Create BlobServiceClient
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        # Create BlobServiceClient with Managed Identity
+        account_url = f"https://{storage_account_name}.blob.core.windows.net"
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url=account_url, credential=credential)
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
 
         logging.info(f"Uploading to {container_name}/{blob_name}")
@@ -131,8 +134,16 @@ def upload_newsletter_to_blob(week_num: int, overwrite: bool = False) -> dict:
             "overwritten": blob_exists,
         }
 
-    except ImportError:
-        raise ImportError("Azure Storage SDK not installed. Install with:\n" "pip install azure-storage-blob")
+    except ImportError as ie:
+        missing_module = str(ie).split("'")[1] if "'" in str(ie) else "unknown"
+        if "azure.identity" in str(ie):
+            raise ImportError(
+                "Azure Identity SDK not installed. Install with:\n" "pip install azure-identity azure-storage-blob"
+            )
+        else:
+            raise ImportError(
+                "Azure Storage SDK not installed. Install with:\n" "pip install azure-storage-blob azure-identity"
+            )
     except Exception as e:
         logging.error(f"Upload failed: {type(e).__name__}: {e}")
         raise
@@ -173,7 +184,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Upload newsletter HTML to Azure Blob Storage",
+        description="Upload newsletter HTML to Azure Blob Storage (using Managed Identity)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -187,7 +198,10 @@ Examples:
     python scripts/upload_newsletter_to_blob.py 6 --overwrite
 
 Environment Variables:
-  STORAGE_CONNECTION_STRING  Azure Storage connection string (required)
+  STORAGE_ACCOUNT_NAME       Azure Storage account name (required)
+  AZURE_CLIENT_ID            Service principal client ID (required for GitHub Actions)
+  AZURE_TENANT_ID            Azure tenant ID (required for GitHub Actions)
+  AZURE_SUBSCRIPTION_ID      Azure subscription ID (required for GitHub Actions)
         """,
     )
 
@@ -233,9 +247,9 @@ Environment Variables:
         else:
             logging.error(f"Configuration/validation error: {e}")
             print(f"\n❌ Error: {e}")
-            if "STORAGE_CONNECTION_STRING" in str(e):
+            if "STORAGE_ACCOUNT_NAME" in str(e):
                 print("\n💡 Solution: Set the environment variable")
-                print("   $env:STORAGE_CONNECTION_STRING = 'your-connection-string'")
+                print("   $env:STORAGE_ACCOUNT_NAME = 'your-storage-account-name'")
             elif "overwrite" in str(e).lower():
                 print("\n💡 Solution: Use --overwrite flag to replace existing blob")
         sys.exit(1)
@@ -250,8 +264,8 @@ Environment Variables:
     except ImportError as e:
         logging.error(f"Dependency error: {e}")
         print(f"\n❌ Error: {e}")
-        print("\n💡 Solution: Install Azure Storage SDK")
-        print("   pip install azure-storage-blob")
+        print("\n💡 Solution: Install Azure SDK packages")
+        print("   pip install azure-storage-blob azure-identity")
         sys.exit(1)
 
     except Exception as e:
@@ -259,10 +273,12 @@ Environment Variables:
         print(f"\n❌ Error: Upload failed")
         print(f"   {type(e).__name__}: {str(e)}")
         print("\n💡 Troubleshooting checklist:")
-        print("   1. Verify STORAGE_CONNECTION_STRING is correct")
-        print("   2. Confirm Storage Account has 'newsletters' container")
-        print("   3. Check network connectivity to Azure")
-        print("   4. Review logs above for detailed error information")
+        print("   1. Verify STORAGE_ACCOUNT_NAME is correct")
+        print("   2. Confirm authentication (Azure CLI login or service principal credentials)")
+        print("   3. Verify 'Storage Blob Data Contributor' role assigned to your identity")
+        print("   4. Confirm Storage Account has 'newsletters' container")
+        print("   5. Check network connectivity to Azure")
+        print("   6. Review logs above for detailed error information")
         sys.exit(1)
 
 
