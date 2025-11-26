@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict
 
@@ -150,6 +151,32 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
     return sections
 
 
+def calculate_week_date_range(current_date_str: str) -> str:
+    """
+    Calculate Monday-Friday date range for the newsletter.
+    current_date_str is typically a Thursday (when portfolio runs) in YYYY-MM-DD format.
+    Returns the Monday-Friday range for that week, like "Nov 17 to Nov 21, 2025"
+    """
+    # Parse the current date (Thursday)
+    current_date = datetime.strptime(current_date_str, "%Y-%m-%d")
+
+    # Get the weekday (0=Monday, 6=Sunday)
+    weekday = current_date.weekday()
+
+    # Calculate Monday of the same week (go back to Monday)
+    days_since_monday = weekday  # 0 if already Monday, 1 if Tuesday, etc.
+    monday = current_date - timedelta(days=days_since_monday)
+
+    # Calculate Friday of the same week (Monday + 4 days)
+    friday = monday + timedelta(days=4)
+
+    # Format dates
+    monday_str = monday.strftime("%b %d")
+    friday_str = friday.strftime("%b %d, %Y")
+
+    return f"{monday_str} to {friday_str}"
+
+
 def generate_narrative(week_num: int) -> Dict[str, Any]:
     """
     Generate newsletter narrative from blog post and portfolio data.
@@ -171,6 +198,13 @@ def generate_narrative(week_num: int) -> Dict[str, Any]:
     # Load portfolio data
     with open(data_path, "r", encoding="utf-8") as f:
         portfolio_data = json.load(f)
+
+    # Calculate date range (Monday to Friday of the week)
+    current_date = portfolio_data.get("meta", {}).get("current_date", "")
+    if not current_date:
+        raise ValueError("current_date not found in master.json meta section")
+    date_range = calculate_week_date_range(current_date)
+    logging.info(f"Week {week_num} date range: {date_range}")
 
     # Load blog post HTML
     with open(blog_path, "r", encoding="utf-8") as f:
@@ -219,7 +253,7 @@ Extract and condense the blog post into newsletter-ready narrative elements. Foc
 OUTPUT FORMAT (JSON):
 {{
   "week_number": {week_num},
-  "date_range": "Extract from blog or data metadata",
+  "date_range": "{date_range}",
   "subject_line": "Generate as: [Emoji] Week X: [%] | [Key Theme] (under 50 chars)",
   "preheader": "First 50-60 characters for inbox preview",
   "opening_paragraph": "2-3 sentences summarizing weekly performance and context",

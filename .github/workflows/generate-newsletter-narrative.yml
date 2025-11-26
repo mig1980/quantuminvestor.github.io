@@ -7,10 +7,17 @@ on:
         description: 'Week number (leave empty to auto-detect)'
         required: false
         type: string
+  workflow_run:
+    workflows: ["Weekly Portfolio Update"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
   generate-narrative:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       - name: Checkout repository
@@ -46,13 +53,28 @@ jobs:
           path: newsletters/week*_narrative.json
           retention-days: 30
 
+      - name: Trigger Stage 2 & 3 (HTML Generation + Upload)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'generate-newsletter-full.yml',
+              ref: 'main',
+              inputs: {
+                week_number: '',
+                overwrite: 'true'
+              }
+            });
+            console.log('✅ Triggered Stage 2 & 3 workflow');
+
       - name: Summary
         run: |
           echo "✅ Newsletter narrative generated successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📂 **Artifact**: Narrative JSON uploaded to GitHub Actions artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Review narrative JSON in artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "2. Edit locally if needed" >> $GITHUB_STEP_SUMMARY
-          echo "3. Run Stage 2 workflow: Generate Newsletter HTML" >> $GITHUB_STEP_SUMMARY
+          echo "### Automation Status:" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Stage 1 complete - Narrative JSON generated" >> $GITHUB_STEP_SUMMARY
+          echo "🔄 Stage 2 & 3 triggered automatically - HTML generation and Azure upload" >> $GITHUB_STEP_SUMMARY

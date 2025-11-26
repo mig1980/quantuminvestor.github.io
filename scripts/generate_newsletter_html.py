@@ -130,11 +130,12 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
 
     insights_section = "\n".join(insights_html)
 
-    # Calculate progress bar widths
+    # Calculate progress bar widths (all dynamic based on actual performance)
     weekly_progress = min(85, max(17, abs(weekly_change) * 17))
     total_progress = min(85, max(17, abs(total_return) * 10))
-    sp500_progress = 20
-    bitcoin_progress = 10
+    portfolio_progress = min(85, max(17, abs(portfolio_weekly) * 17))
+    sp500_progress = min(85, max(17, abs(sp500_weekly) * 17))
+    bitcoin_progress = min(85, max(17, abs(bitcoin_weekly) * 17))
 
     # Build complete HTML (split into parts due to size - this is just the header comment)
     # The actual HTML starts on the next line
@@ -518,7 +519,7 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                                                     <table role="presentation" width="90%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 12px auto;">
                                                         <tr>
                                                             <td style="background-color: rgba(168, 85, 247, 0.2); border-radius: 4px; height: 6px; overflow: hidden;">
-                                                                <div style="background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%); height: 6px; width: 100%; border-radius: 4px;"></div>
+                                                                <div style="background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%); height: 6px; width: {portfolio_progress:.0f}%; border-radius: 4px;"></div>
                                                             </td>
                                                         </tr>
                                                     </table>
@@ -605,6 +606,8 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                                 <tr>
                                     <td align="center" style="font-size: 13px; color: #6b7280; line-height: 1.6; padding-top: 16px;">
                                         <a href="https://quantuminvestor.net/newsletters/week{week_num}_newsletter.html" style="color: #a855f7; text-decoration: none; font-weight: 500;">View in Browser</a>
+                                        <span style="color: #6b7280; margin: 0 12px;">•</span>
+                                        <a href="https://quantuminvestor.net/Disclosures.html" style="color: #6b7280; text-decoration: none;">Disclosures</a>
                                         <span style="color: #6b7280; margin: 0 12px;">•</span>
                                         <a href="https://api.quantuminvestor.net/api/Unsubscribe?email={{{{SUBSCRIBER_EMAIL}}}}" style="color: #6b7280; text-decoration: none;">Unsubscribe</a>
                                     </td>
