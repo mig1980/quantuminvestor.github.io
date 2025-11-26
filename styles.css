@@ -2001,8 +2001,9 @@ body[data-theme="alt"] .tldr-error { color:#f87171; }
 }
 
 .creative-about-btn.primary:hover {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .creative-about-btn.secondary:hover {
