@@ -182,6 +182,23 @@ def generate_narrative(week_num: int) -> Dict[str, Any]:
     # Prepare AI prompt
     prompt = f"""You are analyzing a weekly blog post about an AI-managed stock portfolio to extract newsletter content.
 
+APPROVED_ICONS (Material Design Icons - use EXACTLY these names):
+- Technology: "laptop", "chip", "code-tags", "robot", "brain", "cloud"
+- Finance: "bank", "cash", "currency-usd", "chart-line", "trending-up", "finance"
+- Healthcare: "medical-bag", "hospital-box", "pill", "heart-pulse", "dna"
+- Energy: "flash", "oil", "solar-power", "water", "gas-station", "lightning-bolt"
+- Industrial: "factory", "wrench", "cog", "package-variant", "truck"
+- Consumer: "cart", "shopping", "food", "home", "tshirt-crew"
+- Communications: "phone", "antenna", "wifi", "signal", "cellphone"
+- Materials: "gold", "diamond-stone", "hammer", "barrel"
+- Real Estate: "office-building", "home-city", "domain"
+- Utilities: "power-plug", "water-pump", "fire"
+- Performance: "trophy", "rocket", "target", "star", "fire", "speedometer"
+- Analysis: "database", "chart-areaspline", "chart-bar", "chart-pie", "magnify"
+- Market: "earth", "shield-check", "scale-balance", "swap-horizontal"
+
+For each key_insight, select an icon that best matches the sector/theme from APPROVED_ICONS list above.
+
 BLOG POST SECTIONS:
 
 Opening Paragraph:
@@ -209,15 +226,21 @@ OUTPUT FORMAT (JSON):
   "key_insights": [
     {{
       "title": "Insight title (3-5 words)",
-      "description": "1-2 sentence explanation"
+      "description": "1-2 sentence explanation",
+      "icon": "Select appropriate icon from APPROVED_ICONS list",
+      "emoji": "Fallback emoji for Outlook (single character)"
     }},
     {{
       "title": "Insight title (3-5 words)",
-      "description": "1-2 sentence explanation"
+      "description": "1-2 sentence explanation",
+      "icon": "Select appropriate icon from APPROVED_ICONS list",
+      "emoji": "Fallback emoji for Outlook (single character)"
     }},
     {{
       "title": "Insight title (3-5 words)",
-      "description": "1-2 sentence explanation"
+      "description": "1-2 sentence explanation",
+      "icon": "Select appropriate icon from APPROVED_ICONS list",
+      "emoji": "Fallback emoji for Outlook (single character)"
     }}
   ],
   "performance_data": {{
@@ -244,7 +267,7 @@ OUTPUT FORMAT (JSON):
 
 EXTRACTION RULES:
 1. **Opening paragraph**: 2-3 sentences summarizing weekly performance with exact numbers
-2. **Key insights**: Extract 2-3 main points from "Top Movers" section
+2. **Key insights**: Extract 2-3 main points from "Top Movers" section - MUST include "icon" field (from APPROVED_ICONS list) and "emoji" field (single character fallback)
 3. **Keep numbers exact**: Use precise percentages from master.json
 4. **Mirror tone**: Match blog post's sentiment (bullish/bearish/neutral)
 5. **No new analysis**: Only condense existing blog content
@@ -267,7 +290,7 @@ CRITICAL JSON FORMATTING REQUIREMENTS:
 - Escape any quotes within string values using \"
 - Do not include any text before or after the JSON object
 
-OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSON syntax before responding."""
+OUTPUT: Valid JSON only, no markdown formatting or code blocks. Triple-check JSON syntax before responding."""  # nosec B608
 
     logging.info("Calling Azure OpenAI API")
 
@@ -379,9 +402,6 @@ if __name__ == "__main__":
         print("=" * 60)
         print(f"✅ Narrative JSON created")
         print(f"📂 Local file: newsletters/week{week}_narrative.json")
-        print("\n🔍 NEXT STEPS:")
-        print(f"1. Review/edit newsletters/week{week}_narrative.json if needed")
-        print(f"2. Run Stage 2: python scripts/generate_newsletter_html.py {week}")
 
     except Exception as e:
         logging.error(f"Script failed: {e}", exc_info=True)
