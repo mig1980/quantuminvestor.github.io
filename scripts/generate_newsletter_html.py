@@ -37,11 +37,9 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
     date_range = narrative_data.get("date_range", "")
     subject = narrative_data["subject_line"]
     preheader = narrative_data["preheader"]
-    opening = narrative_data["opening_paragraph"]
-    insights = narrative_data["key_insights"]
     perf_data = narrative_data["performance_data"]
     market_context = narrative_data["market_context"]
-    market_outlook = narrative_data.get("market_outlook", "")  # Optional for backward compatibility
+    market_outlook = narrative_data.get("market_outlook", "")
     benchmark = narrative_data["benchmark_comparison"]
     cta_url = narrative_data["call_to_action_url"]
     portfolio_value = perf_data.get("portfolio_value", 10000)
@@ -51,21 +49,15 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
     total_return = perf_data["total_return"]
     weekly_sign = "+" if weekly_change >= 0 else ""
     total_sign = "+" if total_return >= 0 else ""
-    weekly_color = "#22c55e" if weekly_change >= 0 else "#ef4444"
-    total_color = "#4ade80" if total_return >= 0 else "#ef4444"
+    dollar_change = portfolio_value - 10000
+    dollar_sign = "+" if dollar_change >= 0 else "-"
+    total_color = "#059669" if total_return >= 0 else "#dc2626"
 
     # Format benchmark percentages
     portfolio_weekly = benchmark["portfolio_weekly"]
     sp500_weekly = benchmark["sp500_weekly"]
     bitcoin_weekly = benchmark["bitcoin_weekly"]
     benchmark_summary = benchmark["summary"]
-
-    # Format top/worst performer
-    top_performer = perf_data["top_performer"]
-    worst_performer = perf_data["worst_performer"]
-    top_perf_change_color = "#22c55e" if top_performer["change"] >= 0 else "#ef4444"
-    worst_perf_change_color = "#4ade80" if worst_performer["change"] >= 0 else "#ef4444"
-    worst_label = "MODEST GAIN" if worst_performer["change"] >= 0 else "UNDERPERFORMER"
 
     # Parse date range for Monday-Friday format (uppercase)
     if "to" in date_range.lower():
@@ -81,128 +73,16 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
     subject_parts = subject.split("|")
     theme = subject_parts[1].strip() if len(subject_parts) > 1 else "Performance Update"
 
-    # Map icon names to sector-based color gradients
-    icon_color_map = {
-        # Tech/AI
-        "chip": ("#a855f7", "#7c3aed"),
-        "laptop": ("#a855f7", "#7c3aed"),
-        "code-tags": ("#a855f7", "#7c3aed"),
-        "robot": ("#a855f7", "#7c3aed"),
-        "brain": ("#a855f7", "#7c3aed"),
-        # Gold/Materials
-        "gold": ("#f59e0b", "#d97706"),
-        "diamond-stone": ("#f59e0b", "#d97706"),
-        # Energy
-        "flash": ("#f97316", "#ea580c"),
-        "lightning-bolt": ("#f97316", "#ea580c"),
-        "oil": ("#f97316", "#ea580c"),
-        "solar-power": ("#f97316", "#ea580c"),
-        # Finance
-        "bank": ("#3b82f6", "#2563eb"),
-        "currency-usd": ("#3b82f6", "#2563eb"),
-        "chart-line": ("#3b82f6", "#2563eb"),
-        # Healthcare
-        "medical-bag": ("#ec4899", "#db2777"),
-        "hospital-box": ("#ec4899", "#db2777"),
-        # Consumer/Cyclical
-        "cart": ("#22c55e", "#16a34a"),
-        "shopping": ("#22c55e", "#16a34a"),
-        # Default
-        "default": ("#a855f7", "#7c3aed"),
-    }
-
-    insights_html = []
-    for i, insight in enumerate(insights[:3]):
-        # Get icon/emoji from JSON, with fallbacks
-        icon_name = insight.get("icon", "chart-line")
-        emoji = insight.get("emoji", "📊")
-        # Dynamic color based on icon/sector
-        gradient_start, gradient_end = icon_color_map.get(icon_name, icon_color_map["default"])
-
-        insights_html.append(
-            f"""                                <!-- Insight Card {i + 1} -->
-                                <tr>
-                                    <td style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.05) 100%); border-left: 4px solid #a855f7; border-radius: 0 8px 8px 0; padding: 24px; margin-bottom: 16px; border: 1px solid rgba(168, 85, 247, 0.15);">
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                            <tr>
-                                                <td width="48" style="vertical-align: top; padding-right: 16px;">
-                                                    <table role="presentation" width="48" height="48" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, {gradient_start} 0%, {gradient_end} 100%); border-radius: 10px;">
-                                                        <tr>
-                                                            <td align="center" valign="middle" style="text-align: center;">
-                                                                <!--[if mso]><div style="font-size: 24px;">{emoji}</div><![endif]-->
-                                                                <!--[if !mso]><!-->
-                                                                <img src="https://api.iconify.design/mdi/{icon_name}.svg?color=white" alt="{insight['title']}" width="28" height="28" style="display: block; margin: 0 auto;" />
-                                                                <!--<![endif]-->
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                                <td style="vertical-align: top;">
-                                                    <div style="font-size: 18px; font-weight: 600; color: #ffffff; padding-bottom: 8px;">
-                                                        {insight['title']}
-                                                    </div>
-                                                    <div style="font-size: 15px; color: #9ca3af; line-height: 1.6;">
-                                                        {insight['description']}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr><td height="16"></td></tr>"""
-        )
-
-    insights_section = "\n".join(insights_html)
-
-    # Calculate portfolio dollar delta
-    initial_value = 10000
-    current_value = portfolio_value
-    weekly_dollar_change = current_value * (weekly_change / 100)
-    dollar_delta_sign = "+" if weekly_dollar_change >= 0 else ""
-    dollar_delta_formatted = f"${current_value:,.0f} ({dollar_delta_sign}${abs(weekly_dollar_change):,.0f} this week)"
-
-    # Generate sparkline trend indicator (simple text-based)
-    def create_sparkline(values: list) -> str:
-        if not values or len(values) < 2:
-            return ""
-        trend_icons = []
-        for i in range(1, len(values)):
-            if values[i] > values[i - 1]:
-                trend_icons.append("▲")  # Up triangle
-            elif values[i] < values[i - 1]:
-                trend_icons.append("▼")  # Down triangle
-            else:
-                trend_icons.append("▶")  # Right triangle
-        # Add performance values for context
-        perf_text = " → ".join([f"{v:+.1f}%" for v in values])
-        return f"{perf_text} {' '.join(trend_icons)}"
-
-    # Get historical data from narrative_data if available, otherwise empty
-    historical_performance = narrative_data.get("historical_performance", [])
-    sparkline = create_sparkline(historical_performance) if len(historical_performance) >= 2 else ""
-    sparkline_display = (
-        f'<div style="font-size: 11px; color: #a855f7; margin-top: 8px; font-weight: 500;">Trend: {sparkline}</div>'
-        if sparkline
-        else ""
-    )
-
-    # Calculate progress bar widths (all dynamic based on actual performance)
-    weekly_progress = min(85, max(17, abs(weekly_change) * 17))
-    total_progress = min(85, max(17, abs(total_return) * 10))
-    portfolio_progress = min(85, max(17, abs(portfolio_weekly) * 17))
-    sp500_progress = min(85, max(17, abs(sp500_weekly) * 17))
-    bitcoin_progress = min(85, max(17, abs(bitcoin_weekly) * 17))
-
-    # Create comparison bar chart for benchmarks
+    # Create benchmark comparison bar chart
     def create_bar_chart(label, value, max_abs_value):
-        color = "#22c55e" if value >= 0 else "#ef4444"
+        color = "#059669" if value >= 0 else "#dc2626"
         bar_width = min(100, (abs(value) / max_abs_value * 100)) if max_abs_value > 0 else 0
         sign = "+" if value >= 0 else ""
         return f"""<tr>
             <td style="padding: 8px 0;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr>
-                        <td width="90" style="font-size: 13px; color: #9ca3af; padding-right: 12px;">{label}</td>
+                        <td width="90" style="font-size: 13px; color: {color}; font-weight: 600; padding-right: 12px;">{label}</td>
                         <td style="background-color: rgba(210, 168, 255, 0.1); border-radius: 4px; height: 24px; overflow: hidden; position: relative;">
                             <div style="background: {color}; height: 24px; width: {bar_width:.1f}%; border-radius: 4px;"></div>
                         </td>
@@ -219,8 +99,7 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
         + create_bar_chart("Bitcoin", bitcoin_weekly, max_bench_value)
     )
 
-    # Build complete HTML (split into parts due to size - this is just the header comment)
-    # The actual HTML starts on the next line
+    # Build complete HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -264,19 +143,7 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
             text-decoration: none;
         }}
 
-        /* Dark Mode Support */
-        @media (prefers-color-scheme: dark) {{
-            .light-mode-only {{
-                display: none !important;
-            }}
-        }}
-        @media (prefers-color-scheme: light) {{
-            .dark-mode-only {{
-                display: none !important;
-            }}
-        }}
-
-        /* Mobile Responsive */
+        /* Mobile Responsive - Outlook-safe */
         @media only screen and (max-width: 600px) {{
             .mobile-center {{
                 text-align: center !important;
@@ -303,6 +170,9 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
             .mobile-stack {{
                 display: block !important;
                 width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                padding-bottom: 16px !important;
             }}
             .mobile-stack-padding {{
                 padding: 12px 0 !important;
@@ -317,9 +187,33 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
             table[class="mobile-scale"] {{
                 width: 100% !important;
             }}
+
+            /* Force metric cards to stack on mobile */
+            .mobile-stack-row {{
+                display: block !important;
+            }}
+
+            .mobile-full-width {{
+                display: block !important;
+                width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-bottom: 16px !important;
+            }}
+
+            .mobile-full-width:last-child {{
+                margin-bottom: 0 !important;
+            }}
         }}
 
-        /* Email-safe utility classes only */
+        /* Outlook-specific fixes */
+        <!--[if mso]>
+        <style type="text/css">
+            table {{ mso-table-lspace: 0pt; mso-table-rspace: 0pt; }}
+            img {{ -ms-interpolation-mode: bicubic; }}
+            .mobile-stack {{ display: table-cell !important; }}
+        </style>
+        <![endif]-->
     </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
@@ -347,221 +241,111 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                         </td>
                     </tr>
                     <tr>
-                        <td align="center" style="background: linear-gradient(180deg, #0a0a0a 0%, #151515 100%); padding: 48px 32px; border-bottom: 1px solid rgba(210, 168, 255, 0.2);">
+                        <td style="background: linear-gradient(180deg, #0a0a0a 0%, #151515 100%); padding: 24px 32px;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td align="center" style="padding-bottom: 8px;">
-                                        <a href="https://quantuminvestor.net" style="display: inline-block; text-decoration: none; margin-bottom: 12px;">
-                                            <img src="https://quantuminvestor.net/Media/Full-Logo.png" alt="Quantum Investor" width="120" style="display: block; height: auto; border: 0; max-width: 120px;" />
-                                        </a>
+                                    <td style="vertical-align: middle;">
+                                        <div style="font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1.2; margin-bottom: 2px;">Quantum Investor</div>
+                                        <div style="font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1.2; margin-bottom: 8px;">Digest</div>
+                                        <div style="font-size: 13px; color: #9ca3af;">Weekly Edition • {formatted_date}</div>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="font-size: 28px; text-transform: uppercase; letter-spacing: 0.2em; padding-bottom: 20px;">
-                                        <a href="https://quantuminvestor.net" style="color: #a855f7; font-weight: 700; text-decoration: none;">
-                                            QUANTUM INVESTOR DIGEST
-                                        </a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="font-size: 28px; font-weight: 700; color: #ffffff; line-height: 1.2; padding-bottom: 16px; letter-spacing: -0.02em;">
-                                        Week {week_num}: <span style="color: {weekly_color};">{weekly_sign}{weekly_change:.2f}%</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="font-size: 16px; color: #E0E0E0; padding-bottom: 16px; font-weight: 500;">
-                                        {theme}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center">
-                                        <div style="display: inline-block; background-color: rgba(210, 168, 255, 0.15); border: 1px solid rgba(210, 168, 255, 0.3); border-radius: 20px; padding: 8px 20px;">
-                                            <span style="font-size: 12px; color: #a855f7; letter-spacing: 0.05em; font-weight: 600;">
-                                                {formatted_date}
-                                            </span>
+                                    <td align="right" style="vertical-align: middle;">
+                                        <!--[if mso]>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="display: inline-block;">
+                                            <tr>
+                                                <td style="border: 2px solid #7c3aed; background-color: #f3e8ff; padding: 8px 16px;">
+                                        <![endif]-->
+                                        <div style="border: 2px solid #7c3aed; background-color: #f3e8ff; background: rgba(124, 58, 237, 0.1); border-radius: 20px; padding: 8px 16px; display: inline-block; mso-border-radius: 20px;">
+                                            <img src="https://api.iconify.design/mdi/robot.svg?color=%23a78bfa" style="width: 13px; height: 13px; vertical-align: middle; margin-right: 6px;" alt="AI" width="13" height="13"><span style="font-size: 11px; color: #a78bfa; font-weight: 600; line-height: 13px; vertical-align: middle;">AI POWERED</span>
                                         </div>
+                                        <!--[if mso]>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <![endif]-->
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Performance Banner with Progress Bars -->
+                    <!-- AI Insight Card - Top Section -->
                     <tr>
-                        <td style="background-color: #111111; padding: 32px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%); border: 1px solid {"rgba(34, 197, 94, 0.2)" if weekly_change >= 0 else "rgba(239, 68, 68, 0.2)"}; border-radius: 12px; overflow: hidden;">
+                        <td style="padding: 32px 32px 0 32px; background-color: #111111;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(210, 168, 255, 0.3);">
                                 <tr>
-                                    <td height="3" style="background: {"linear-gradient(90deg, #22c55e 0%, #4ade80 100%)" if weekly_change >= 0 else "linear-gradient(90deg, #ef4444 0%, #dc2626 100%)"};"></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 32px 28px 8px 28px;">
-                                        <div style="text-align: center; font-size: 16px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.15em; padding-bottom: 20px; font-weight: 600;">
-                                            <img src="https://api.iconify.design/mdi/robot.svg?color=%23a855f7" alt="" width="18" height="18" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> GenAI Managed Portfolio
-                                        </div>
+                                    <td style="padding: 24px;">
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
-                                                <td width="48%" class="mobile-stack mobile-stack-padding" style="padding-right: 20px; vertical-align: top;">
-                                                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                                        <tr>
-                                                            <td style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 12px; font-weight: 600;">
-                                                                <img src="https://api.iconify.design/mdi/rocket.svg?color=%239ca3af" alt="" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 6px;" /> WEEK {week_num} PERFORMANCE
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="font-size: 44px; font-weight: 700; color: {weekly_color}; line-height: 1; padding-bottom: 8px; letter-spacing: -0.02em;" class="mobile-font-large">
-                                                                {weekly_sign}{weekly_change:.2f}%
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="padding-bottom: 16px;">
-                                                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                                                    <tr>
-                                                                        <td style="background-color: rgba(34, 197, 94, 0.15); border-radius: 4px; height: 8px; overflow: hidden;">
-                                                                            <div style="background: linear-gradient(90deg, {weekly_color} 0%, #4ade80 100%); height: 8px; width: {weekly_progress:.0f}%; border-radius: 4px;"></div>
-                                                                        </td>
-                                                                    </tr>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="font-size: 13px; color: #6b7280;">
-                                                                vs. prior week
-                                                            </td>
-                                                        </tr>
-                                                        <tr><td height="12"></td></tr>
-                                                        <tr>
-                                                            <td style="font-size: 13px; color: #9ca3af; padding-top: 8px; border-top: 1px solid rgba(210, 168, 255, 0.2);">
-                                                                <span style="font-weight: 600; color: #a855f7;">{dollar_delta_formatted}</span>
-                                                                {sparkline_display}
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                                <td width="4%" class="mobile-hide"></td>
-                                                <td width="1" class="mobile-hide" style="background: linear-gradient(180deg, rgba(210, 168, 255, 0.3) 0%, rgba(210, 168, 255, 0.05) 100%);"></td>
-                                                <td width="4%" class="mobile-hide"></td>
-                                                <td width="48%" class="mobile-stack mobile-stack-padding" style="padding-left: 20px; vertical-align: top;">
-                                                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                                        <tr>
-                                                            <td style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 12px; font-weight: 600;">
-                                                                <img src="https://api.iconify.design/mdi/diamond-stone.svg?color=%239ca3af" alt="" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 6px;" /> TOTAL RETURN
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="font-size: 44px; font-weight: 700; color: {total_color}; line-height: 1; padding-bottom: 8px; letter-spacing: -0.02em;" class="mobile-font-large">
-                                                                {total_sign}{total_return:.2f}%
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="padding-bottom: 16px;">
-                                                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                                                    <tr>
-                                                                        <td style="background-color: rgba(34, 197, 94, 0.15); border-radius: 4px; height: 8px; overflow: hidden;">
-                                                                            <div style="background: linear-gradient(90deg, #4ade80 0%, {total_color} 100%); height: 8px; width: {total_progress:.0f}%; border-radius: 4px;"></div>
-                                                                        </td>
-                                                                    </tr>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style="font-size: 13px; color: #6b7280;">
-                                                                since inception
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- Main Content -->
-                    <tr>
-                        <td style="padding: 40px 32px 20px 32px; background-color: #111111;" class="mobile-padding">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                <tr>
-                                    <td style="font-size: 16px; color: #E0E0E0; padding-bottom: 16px; line-height: 1.75;">
-                                        Welcome back to the Quantum Investor Digest update!
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); padding: 24px; border-left: 4px solid #a855f7; border-radius: 0 8px 8px 0; margin-bottom: 32px;">
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                            <tr>
-                                                <td style="font-size: 18px; color: #ffffff; line-height: 1.5; font-weight: 600;">
-                                                    {preheader}
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr><td height="32"></td></tr>
-                                <tr>
-                                    <td style="font-size: 16px; line-height: 1.75; color: #E0E0E0; padding-bottom: 40px;">
-                                        {opening}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="mobile-heading" style="font-size: 24px; font-weight: 700; color: #a855f7; padding: 20px 0 24px 0; letter-spacing: -0.02em;">
-                                        <img src="https://api.iconify.design/mdi/chart-areaspline.svg?color=%23a855f7" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> Key Insights
-                                    </td>
-                                </tr>
-{insights_section}
-                                <tr><td height="32"></td></tr>
-                                <!-- Secondary CTA -->
-                                <tr>
-                                    <td align="center" style="padding: 24px 0;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-                                            <tr>
-                                                <td style="border: 2px solid #a855f7; border-radius: 8px; padding: 14px 32px; text-align: center;">
-                                                    <a href="{cta_url}" style="font-size: 15px; font-weight: 600; color: #a855f7; text-decoration: none; display: block; letter-spacing: 0.02em;">
-                                                        View Full Analysis →
+                                                <td colspan="2" class="mobile-stack" style="vertical-align: middle;">
+                                                    <div style="font-size: 18px; font-weight: 600; color: #a78bfa; margin-bottom: 16px;">AI INSIGHT</div>
+                                                    <div style="font-size: 17px; font-weight: 600; color: #ffffff; line-height: 1.4; margin-bottom: 16px;">
+                                                        {preheader}
+                                                    </div>
+                                                    <a href="{cta_url}" class="mobile-button" style="display: block; background-color: #7c3aed; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; text-align: center; mso-border-radius: 8px;">
+                                                        View Analysis
                                                     </a>
                                                 </td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td height="32"></td></tr>
-                                <tr>
-                                    <td class="mobile-heading" style="font-size: 24px; font-weight: 700; color: #a855f7; padding: 20px 0 24px 0; letter-spacing: -0.02em;">
-                                        <img src="https://api.iconify.design/mdi/earth.svg?color=%23a855f7" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> Market Context
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Portfolio Performance Cards -->
+                    <tr>
+                        <td style="background-color: #111111; padding: 32px;">
+                            <div style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 20px;">GEN AI MANAGED PORTFOLIO THIS WEEK</div>
+
+                            <!-- Metric Cards Row -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr class="mobile-stack-row">
+                                    <!-- Total Return Card -->
+                                    <td width="48%" class="mobile-full-width" style="vertical-align: top; padding-right: 12px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%); border-radius: 12px; border: 1px solid rgba(210, 168, 255, 0.2);">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                                        <span style="font-size: 13px; color: #94a3b8; font-weight: 500;">Total Return</span>
+                                                        <img src="https://api.iconify.design/mdi/trending-up.svg?color=%2394a3b8" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: middle;" alt="Return">
+                                                    </div>
+                                                    <div style="font-size: 32px; font-weight: 700; color: {total_color}; margin-bottom: 4px; letter-spacing: -0.02em;">{dollar_sign}${abs(dollar_change):,.0f}</div>
+                                                    <div style="font-size: 13px; color: #64748b;">{total_sign}{total_return:.2f}% this week</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+
+                                    <!-- Portfolio Value Card -->
+                                    <td width="48%" class="mobile-full-width" style="vertical-align: top; padding-left: 12px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%); border-radius: 12px; border: 1px solid rgba(210, 168, 255, 0.2);">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                                        <span style="font-size: 13px; color: #94a3b8; font-weight: 500;">Portfolio Value</span>
+                                                        <img src="https://api.iconify.design/mdi/chart-bar.svg?color=%2394a3b8" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: middle;" alt="Portfolio">
+                                                    </div>
+                                                    <div style="font-size: 32px; font-weight: 700; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.02em;">${portfolio_value:,.0f}</div>
+                                                    <div style="font-size: 13px; color: #64748b;">Across 10 positions</div>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Benchmark Comparison Section -->
+                    <tr>
+                        <td style="padding: 0 32px 32px 32px; background-color: #111111;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%); border-radius: 12px; border: 1px solid rgba(210, 168, 255, 0.2);">
                                 <tr>
-                                    <td style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.15) 0%, rgba(188, 140, 255, 0.08) 100%); border: 1px solid rgba(210, 168, 255, 0.25); border-radius: 12px; padding: 28px; border-left: 4px solid #a855f7;">
-                                        <div style="font-size: 14px; font-weight: 600; color: #a855f7; margin-bottom: 12px; letter-spacing: 0.05em;">📍 WHAT HAPPENED</div>
-                                        <div style="font-size: 15px; color: #E0E0E0; line-height: 1.8;">
-                                            {market_context}
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr><td height="40"></td></tr>
-                                <tr>
-                                    <td class="mobile-heading" style="font-size: 24px; font-weight: 700; color: #a855f7; padding: 20px 0 24px 0; letter-spacing: -0.02em;">
-                                        <img src="https://api.iconify.design/mdi/telescope.svg?color=%23a855f7" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> Market Outlook
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.15) 0%, rgba(188, 140, 255, 0.08) 100%); border: 1px solid rgba(210, 168, 255, 0.25); border-radius: 12px; padding: 28px; border-left: 4px solid #a855f7;">
-                                        <div style="font-size: 14px; font-weight: 600; color: #a855f7; margin-bottom: 12px; letter-spacing: 0.05em;">🔮 WHAT'S NEXT</div>
-                                        <div style="font-size: 15px; color: #E0E0E0; line-height: 1.8;">
-                                            {market_outlook}
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr><td height="40"></td></tr>
-                                <tr>
-                                    <td class="mobile-heading" style="font-size: 24px; font-weight: 700; color: #a855f7; padding: 20px 0 24px 0; letter-spacing: -0.02em;">
-                                        <img src="https://api.iconify.design/mdi/chart-areaspline.svg?color=%23a855f7" alt="" width="24" height="24" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> Benchmark Comparison
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); border-left: 4px solid #a855f7; border-radius: 0 8px 8px 0; padding: 24px; margin: 24px 0; border: 1px solid rgba(210, 168, 255, 0.15);">
-                                        <div style="font-size: 15px; color: #E0E0E0; line-height: 1.7; margin-bottom: 20px;">
+                                    <td style="padding: 24px;">
+                                        <div style="font-size: 16px; font-weight: 600; color: #ffffff; margin-bottom: 12px;">Benchmark Comparison</div>
+                                        <div style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
                                             {benchmark_summary}
                                         </div>
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
@@ -569,63 +353,49 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                                         </table>
                                     </td>
                                 </tr>
-                                <tr><td height="24"></td></tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Market Summary -->
+                    <tr>
+                        <td style="padding: 0 32px 32px 32px; background-color: #111111;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%); border-radius: 12px; border: 1px solid rgba(210, 168, 255, 0.2);">
                                 <tr>
-                                    <td>
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                            <tr>
-                                                <td width="32%" class="mobile-stack mobile-stack-padding" style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); border: 2px solid rgba(210, 168, 255, 0.3); border-radius: 12px; padding: 24px 16px; text-align: center; vertical-align: top;">
-                                                    <div style="margin-bottom: 8px;"><img src="https://api.iconify.design/mdi/rocket.svg?color=%23a855f7" alt="Portfolio" width="28" height="28" style="display: inline-block;" /></div>
-                                                    <div style="font-weight: 700; color: #a855f7; font-size: 14px; letter-spacing: 0.08em; padding-bottom: 8px; text-transform: uppercase;">Portfolio</div>
-                                                    <div style="font-size: 32px; font-weight: 700; color: {weekly_color}; padding: 8px 0; letter-spacing: -0.02em;">{format_percentage(portfolio_weekly)}</div>
-                                                    <table role="presentation" width="90%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 12px auto;">
-                                                        <tr>
-                                                            <td style="background-color: rgba(210, 168, 255, 0.2); border-radius: 4px; height: 6px; overflow: hidden;">
-                                                                <div style="background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%); height: 6px; width: {portfolio_progress:.0f}%; border-radius: 4px;"></div>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <div style="font-size: 11px; color: #a855f7; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 8px; font-weight: 600;">WEEKLY</div>
-                                                </td>
-                                                <td width="2%" class="mobile-hide"></td>
-                                                <td width="32%" class="mobile-stack mobile-stack-padding" style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); border: 2px solid rgba(210, 168, 255, 0.2); border-radius: 12px; padding: 24px 16px; text-align: center; vertical-align: top;">
-                                                    <div style="margin-bottom: 8px;"><img src="https://api.iconify.design/mdi/chart-areaspline.svg?color=%23a855f7" alt="S&P 500" width="28" height="28" style="display: inline-block;" /></div>
-                                                    <div style="font-weight: 700; color: #a855f7; font-size: 14px; letter-spacing: 0.08em; padding-bottom: 8px; text-transform: uppercase;">S&P 500</div>
-                                                    <div style="font-size: 32px; font-weight: 700; color: {"#4ade80" if sp500_weekly >= 0 else "#ef4444"}; padding: 8px 0; letter-spacing: -0.02em;">{format_percentage(sp500_weekly)}</div>
-                                                    <table role="presentation" width="90%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 12px auto;">
-                                                        <tr>
-                                                            <td style="background-color: rgba(210, 168, 255, 0.2); border-radius: 4px; height: 6px; overflow: hidden;">
-                                                                <div style="background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%); height: 6px; width: {sp500_progress:.0f}%; border-radius: 4px;"></div>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <div style="font-size: 11px; color: #a855f7; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 8px; font-weight: 600;">WEEKLY</div>
-                                                </td>
-                                                <td width="2%" class="mobile-hide"></td>
-                                                <td width="32%" class="mobile-stack mobile-stack-padding" style="background: linear-gradient(135deg, rgba(210, 168, 255, 0.12) 0%, rgba(210, 168, 255, 0.05) 100%); border: 2px solid rgba(210, 168, 255, 0.3); border-radius: 12px; padding: 24px 16px; text-align: center; vertical-align: top;">
-                                                    <div style="margin-bottom: 8px;"><img src="https://api.iconify.design/mdi/bitcoin.svg?color=%23a855f7" alt="Bitcoin" width="28" height="28" style="display: inline-block;" /></div>
-                                                    <div style="font-weight: 700; color: #a855f7; font-size: 14px; letter-spacing: 0.08em; padding-bottom: 8px; text-transform: uppercase;">Bitcoin</div>
-                                                    <div style="font-size: 32px; font-weight: 700; color: {"#4ade80" if bitcoin_weekly >= 0 else "#ef4444"}; padding: 8px 0; letter-spacing: -0.02em;">{format_percentage(bitcoin_weekly)}</div>
-                                                    <table role="presentation" width="90%" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 12px auto;">
-                                                        <tr>
-                                                            <td style="background-color: rgba(210, 168, 255, 0.2); border-radius: 4px; height: 6px; overflow: hidden;">
-                                                                <div style="background: linear-gradient(90deg, #a855f7 0%, #7c3aed 100%); height: 6px; width: {bitcoin_progress:.0f}%; border-radius: 4px;"></div>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <div style="font-size: 11px; color: #a855f7; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 8px; font-weight: 600;">WEEKLY</div>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td style="padding: 24px;">
+                                        <!-- What Happened Section -->
+                                        <div style="margin-bottom: 24px;">
+                                            <div style="font-size: 14px; color: #94a3b8; margin-bottom: 12px; font-weight: 600; letter-spacing: 0.05em;">📍 WHAT HAPPENED</div>
+                                            <div style="font-size: 15px; color: #e2e8f0; line-height: 1.7;">
+                                                {market_context}
+                                            </div>
+                                        </div>
+
+                                        <!-- What's Next Section -->
+                                        <div style="padding-top: 20px; border-top: 1px solid rgba(210, 168, 255, 0.2);">
+                                            <div style="font-size: 14px; color: #94a3b8; margin-bottom: 12px; font-weight: 600; letter-spacing: 0.05em;">🔮 WHAT'S NEXT</div>
+                                            <div style="font-size: 15px; color: #e2e8f0; line-height: 1.7;">
+                                                {market_outlook}
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Action Buttons (Dashboard Style) -->
+                    <tr>
+                        <td style="padding: 0 32px 40px 32px; background-color: #111111;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td align="center" style="padding: 48px 0 32px 0;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                                    <!-- View Full Portfolio Dashboard Button -->
+                                    <td width="100%">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
-                                                <td align="center" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border-radius: 50px; box-shadow: 0 10px 30px rgba(188, 140, 255, 0.4);">
-                                                    <a href="{cta_url}" class="mobile-button" style="display: inline-block; color: #ffffff; padding: 18px 48px; text-decoration: none; font-weight: 600; font-size: 16px; letter-spacing: 0.02em; border-radius: 50px; border: 2px solid rgba(255, 255, 255, 0.2);">
-                                                        <img src="https://api.iconify.design/mdi/chart-line.svg?color=white" alt="" width="18" height="18" style="display: inline-block; vertical-align: middle; margin-right: 8px;" /> View Full Portfolio Analysis
+                                                <td align="center" style="background-color: #7c3aed; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-radius: 8px; padding: 16px; text-align: center; mso-border-radius: 8px;">
+                                                    <a href="{cta_url}" style="color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; display: block;">
+                                                        View Full Portfolio Dashboard
                                                     </a>
                                                 </td>
                                             </tr>
@@ -642,7 +412,7 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
                                     <td align="center" style="font-size: 17px; font-weight: 600; padding-bottom: 16px; letter-spacing: 0.05em;">
-                                        <a href="https://quantuminvestor.net" style="color: #a855f7; text-decoration: none;">Quantum Investor Digest</a>
+                                        <a href="https://quantuminvestor.net" style="color: #7c3aed; text-decoration: none;">Quantum Investor Digest</a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -662,12 +432,12 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
                                 </tr>
                                 <tr>
                                     <td align="center" style="padding: 16px 0;">
-                                        <div style="height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(210, 168, 255, 0.3) 50%, transparent 100%); max-width: 400px; margin: 0 auto;"></div>
+                                        <div style="height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(37, 99, 235, 0.3) 50%, transparent 100%); max-width: 400px; margin: 0 auto;"></div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td align="center" style="font-size: 13px; color: #6b7280; line-height: 1.6; padding-top: 16px;">
-                                        <a href="https://quantuminvestor.net/newsletters/week{week_num}_newsletter.html" style="color: #a855f7; text-decoration: none; font-weight: 500;">View in Browser</a>
+                                        <a href="https://quantuminvestor.net/newsletters/week{week_num}_newsletter.html" style="color: #6b7280; text-decoration: none;">View in Browser</a>
                                         <span style="color: #6b7280; margin: 0 12px;">•</span>
                                         <a href="https://quantuminvestor.net/Disclosures.html" style="color: #6b7280; text-decoration: none;">Disclosures</a>
                                         <span style="color: #6b7280; margin: 0 12px;">•</span>
@@ -697,23 +467,6 @@ def generate_html(narrative_data: Dict[str, Any]) -> str:
 </html>"""
 
     return html
-
-
-def load_historical_performance(week_num: int, base_dir: Path) -> list:
-    """Load last 4 weeks of performance data for sparkline"""
-    historical = []
-    for w in range(max(1, week_num - 3), week_num + 1):
-        try:
-            data_path = base_dir / f"Data/W{w}/master.json"
-            if data_path.exists():
-                with open(data_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    weekly_pct = data.get("portfolio_totals", {}).get("weekly_pct", 0)
-                    historical.append(weekly_pct)
-        except (json.JSONDecodeError, KeyError, IOError) as e:
-            logging.debug(f"Could not load week {w} data: {e}")
-            continue
-    return historical[-4:]  # Return last 4 weeks max
 
 
 def main():
@@ -749,10 +502,6 @@ def main():
         logging.error(f"Invalid JSON in {json_path}: {e}")
         print(f"❌ Error: Invalid JSON format in {json_path}")
         sys.exit(1)
-
-    # Load historical performance for sparkline
-    historical_performance = load_historical_performance(week_num, base_dir)
-    narrative_data["historical_performance"] = historical_performance
 
     # Generate HTML
     logging.info(f"Generating HTML for Week {week_num}")

@@ -113,15 +113,15 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
     for heading in soup.find_all(["h2", "h3"]):
         heading_text = heading.get_text(strip=True)
         if "top movers" in heading_text.lower():
-            paragraphs: list[str] = []
+            top_movers_paragraphs: list[str] = []
             current = heading.find_next_sibling()
-            while current and len(paragraphs) < 3:
+            while current and len(top_movers_paragraphs) < 3:
                 if current.name == "p":
-                    paragraphs.append(current.get_text(strip=True))
+                    top_movers_paragraphs.append(current.get_text(strip=True))
                 elif current.name in ["h2", "h3"]:
                     break
                 current = current.find_next_sibling()
-            sections["top_movers"] = " ".join(paragraphs)
+            sections["top_movers"] = " ".join(top_movers_paragraphs)
             found_top_movers = True
             break
 
@@ -133,15 +133,15 @@ def extract_blog_sections(html_content: str) -> Dict[str, str]:
     for heading in soup.find_all(["h2", "h3"]):
         heading_text = heading.get_text(strip=True)
         if "portfolio progress" in heading_text.lower():
-            paragraphs = []
+            progress_paragraphs: list[str] = []
             current = heading.find_next_sibling()
-            while current and len(paragraphs) < 2:
+            while current and len(progress_paragraphs) < 2:
                 if current.name == "p":
-                    paragraphs.append(current.get_text(strip=True))
+                    progress_paragraphs.append(current.get_text(strip=True))
                 elif current.name in ["h2", "h3"]:
                     break
                 current = current.find_next_sibling()
-            sections["portfolio_progress"] = " ".join(paragraphs)
+            sections["portfolio_progress"] = " ".join(progress_paragraphs)
             found_portfolio_progress = True
             break
 
@@ -254,7 +254,7 @@ OUTPUT FORMAT (JSON):
 {{
   "week_number": {week_num},
   "date_range": "{date_range}",
-  "subject_line": "Generate as: [Emoji] Week X: [%] | [Key Theme] (under 50 chars)",
+  "subject_line": "Generate as: Week X: [%] | [Key Theme] (under 50 chars, no emoji)",
   "preheader": "First 50-60 characters for inbox preview",
   "opening_paragraph": "3-4 sentences summarizing weekly performance with richer context. Include: (1) Overall portfolio performance with exact percentage, (2) Key market drivers or events that influenced the week, (3) How the portfolio responded to these conditions, (4) A brief transition to the deeper analysis that follows.",
   "key_insights": [
@@ -306,7 +306,7 @@ EXTRACTION RULES:
 3. **Keep numbers exact**: Use precise percentages from master.json
 4. **Mirror tone**: Match blog post's sentiment (bullish/bearish/neutral)
 5. **No new analysis**: Only condense existing blog content, but capture MORE of the context and reasoning from the blog
-6. **Subject line**: Format as "[Emoji] Week X: [%] | [Key Theme]" (under 50 chars)
+6. **Subject line**: Format as "Week X: [%] | [Key Theme]" (under 50 chars, no emoji)
 7. **Preheader**: Compelling 50-60 char summary for inbox preview
 8. **Format percentages**: Always include +/- sign, 2 decimal places
 9. **CRITICAL - Portfolio Composition**: The portfolio contains ONLY STOCKS. S&P 500 and Bitcoin are BENCHMARK COMPARISONS for performance tracking, NOT portfolio holdings. Do not refer to "all three assets" or imply the portfolio holds Bitcoin or S&P 500 ETFs. Correct phrasing: "The portfolio declined X% while the S&P 500 fell Y% and Bitcoin dropped Z%" or "The stock portfolio underperformed/outperformed the S&P 500 benchmark."

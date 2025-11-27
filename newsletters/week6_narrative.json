@@ -1,25 +1,25 @@
 {
   "week_number": 6,
   "date_range": "Nov 17 to Nov 21, 2025",
-  "subject_line": "\ud83d\udcc9 Week 6: -5.82% | Risk-Off Pressure",
-  "preheader": "Portfolio dips as tech, gold, and cyclicals retreat broadly",
-  "opening_paragraph": "The GenAi Chosen portfolio declined -5.82% this week, falling below its starting value for the first time since inception and bringing total returns to -3.01%. A broad risk-off shift swept through markets, pressuring high-beta tech, cyclicals, and even traditional safe-haven plays. Nearly every stock in the portfolio sold off as investor appetite faded and volatility picked up. This sets the stage for a deeper look at the sectors and names most affected by the downturn.",
+  "subject_line": "Week 6: -5.82% | Risk-Off Rotation",
+  "preheader": "Portfolio slides as tech, gold, and cyclicals face broad selloff",
+  "opening_paragraph": "The GenAi Chosen portfolio fell -5.82% this week, dropping below its starting value for the first time since inception. A broad pullback in risk assets weighed heavily on high-beta sectors, with fading risk appetite amplifying volatility across markets. Nearly all portfolio holdings faced selling pressure as investors rotated away from growth and cyclicals. This sets the stage for a deeper look at the hardest-hit sectors and how shifting sentiment affected performance.",
   "key_insights": [
     {
-      "title": "Tech Leads Selloff",
-      "description": "Western Digital, Seagate, and Palantir posted sharp losses as high-beta AI and data infrastructure names fell out of favor. The move reflects heightened macro uncertainty and a broad pullback from growth exposures. These declines weighed heavily on weekly portfolio performance.",
-      "icon": "chip",
+      "title": "Tech Momentum Breaks",
+      "description": "Western Digital, Seagate Technology, and Palantir led the declines as investors backed away from high-beta tech and AI infrastructure names. The sharp pullback reflected growing macro uncertainty and a pronounced shift out of growth-oriented positions. These moves highlight how quickly sentiment can turn against data and AI plays in risk-off environments.",
+      "icon": "laptop",
       "emoji": "\ud83d\udcbb"
     },
     {
-      "title": "Gold Miners Slip",
-      "description": "Newmont dropped despite gold's typical defensive profile, signaling that miners were not spared in the risk-off rotation. The decline erased some of the portfolio's prior resilience from precious metals exposure. This shows how correlations can tighten during broad market stress.",
+      "title": "Gold Miners Retreat",
+      "description": "Newmont Corp fell despite gold's traditional defensive reputation, showing that gold miners were not immune to the broad de-risking. The decline erased much of the stabilizing effect these holdings previously provided. Risk-off conditions extended across asset classes, limiting safe haven behavior.",
       "icon": "gold",
-      "emoji": "\ud83e\ude99"
+      "emoji": "\ud83d\udd36"
     },
     {
       "title": "Cyclicals Lose Momentum",
-      "description": "Royal Caribbean and NRG Energy both retreated as cyclical sectors struggled to hold recent gains. Travel and energy names, which had benefitted from earlier momentum, were unable to withstand the market's defensive pivot. Their pullbacks contributed to the portfolio's broad-based weekly weakness.",
+      "description": "Royal Caribbean Cruises and NRG Energy also slid as recent cyclical strength reversed. Travel and energy names that had benefited from prior momentum were unable to withstand the broader market turbulence. Their declines underscore how sensitive these sectors are to shifts in investor risk appetite.",
       "icon": "flash",
       "emoji": "\u26a1"
     }
@@ -41,13 +41,13 @@
       "change": -10.77
     }
   },
-  "market_context": "Markets faced broad selling pressure as risk appetite declined, hitting growth-oriented tech, cyclicals, and even defensive plays. Tech and AI-linked names were among the hardest hit, reflecting a shift away from high-beta assets. Gold miners also weakened, underscoring how widespread the risk-off mood had become. Overall, investor sentiment turned cautious, leading to heavy selling across nearly all portfolio components.",
-  "market_outlook": "In the near term, continued volatility is likely as markets digest shifting risk sentiment and macro uncertainty. A stabilization in growth expectations or a rebound in momentum-driven sectors could help the portfolio recover. Over the coming months, sector rotation and selective strength in resilient industries may create new opportunities for the model to reposition.",
+  "market_context": "Markets faced broad selling pressure as risk appetite faded, driving declines across high-growth tech, gold miners, and cyclical sectors. Tech names tied to AI and data infrastructure saw some of the steepest losses, reflecting heightened sensitivity to macro uncertainty. Defensive assets such as gold miners failed to provide shelter, signaling the breadth of the risk-off move. Overall sentiment shifted decisively toward caution, pulling nearly all portfolio holdings into negative territory.",
+  "market_outlook": "The week underscored how quickly sentiment can shift when macro uncertainty rises, leaving momentum-driven positions exposed. Near term, volatility may remain elevated as investors reassess growth expectations and risk tolerance. Over the coming weeks, the portfolio's performance will hinge on whether risk appetite stabilizes or the rotation away from high-beta sectors continues.",
   "benchmark_comparison": {
     "portfolio_weekly": -5.82,
     "sp500_weekly": -1.41,
     "bitcoin_weekly": -12.1,
-    "summary": "The portfolio underperformed the S&P 500 but held up better than Bitcoin, which saw the steepest decline among the benchmarks."
+    "summary": "The portfolio underperformed the S&P 500 while outperforming Bitcoin, both of which also declined during the broad risk-off week."
   },
   "call_to_action_url": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-6.html",
   "tone": "cautious"
