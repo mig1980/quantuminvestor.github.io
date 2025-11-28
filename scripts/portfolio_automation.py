@@ -1202,26 +1202,36 @@ This is for Week {self.week_number}.
 
             response = self.call_ai(system_prompt, user_message)
 
-            # Extract narrative HTML
+            # Extract narrative HTML - try multiple patterns
             html_match = re.search(r'```html\s*(<div class="prose.*?</div>)\s*```', response, re.DOTALL)
             if html_match:
                 self.narrative_html = html_match.group(1)
             else:
-                # Try without code blocks
+                # Try without code blocks but with div tags
                 html_match = re.search(
-                    r'(<div class="prose prose-invert max-w-none">.*?</div>)',
+                    r'(<div class="prose[^"]*">.*?</div>)',
                     response,
                     re.DOTALL,
                 )
                 if html_match:
                     self.narrative_html = html_match.group(1)
                 else:
-                    self.add_step(
-                        "Prompt B - Narrative Writer",
-                        "error",
-                        "Could not extract narrative HTML from AI response",
-                    )
-                    raise ValueError("Could not extract narrative HTML from Prompt B response")
+                    # Last resort: try finding any <div> ... </div> block (greedy)
+                    html_match = re.search(r'(<div\s[^>]*class="prose[^"]*"[^>]*>.*?</div>)', response, re.DOTALL)
+                    if html_match:
+                        self.narrative_html = html_match.group(1)
+                    else:
+                        # Save response to file for debugging
+                        debug_file = self.data_dir / f"prompt_b_response_debug_week{self.week_number}.txt"
+                        with open(debug_file, "w", encoding="utf-8") as f:
+                            f.write(response)
+                        logging.error(f"Saved AI response to {debug_file} for debugging")
+                        self.add_step(
+                            "Prompt B - Narrative Writer",
+                            "error",
+                            "Could not extract narrative HTML from AI response",
+                        )
+                        raise ValueError("Could not extract narrative HTML from Prompt B response")
 
             # Extract SEO JSON
             seo_status = "success"
@@ -1968,9 +1978,10 @@ This is for Week {self.week_number}.
 
 ---
 
-Here are the components:
+Here are the components for Week {self.week_number}:
 
 **narrative.html:**
+(Note: performance_table.html and performance_chart.svg are already embedded in the narrative below)
 ```html
 {self.narrative_html}
 ```
@@ -1985,7 +1996,12 @@ Here are the components:
 {json.dumps(minimal_meta, indent=2)}
 ```
 
-Generate the complete HTML file for Week {self.week_number}.
+**performance_table.html:** Already embedded in narrative.html
+**performance_chart.svg:** Already embedded in narrative.html
+
+**master.json:** Week {self.week_number} data is in the master.json file (not needed for HTML assembly)
+
+Generate the complete HTML file now. All required components are provided above.
 """
 
         response = self.call_ai(system_prompt, user_message)
@@ -2321,7 +2337,7 @@ Generate the complete HTML file for Week {self.week_number}.
                 entry = normalized_data[idx]
                 date_str = entry.get("date", "")
                 date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                label = date_obj.strftime("%b %-d, %Y").replace(" 0", " ")
+                label = date_obj.strftime("%b %d, %Y").replace(" 0", " ")
                 x = x_coord(idx)
                 x_labels_html.append(
                     f'<text class="myblock-chart-label" x="{x:.1f}" y="375" text-anchor="middle">{label}</text>'
@@ -2774,28 +2790,28 @@ Generate the complete HTML file for Week {self.week_number}.
         try:
             self.load_master_json()
 
-            # Validate date immediately after load to fail fast
+            # Validate date immediately after load
             new_date = self.eval_date if self.eval_date else self._latest_market_date()
             prev_date = self.master_json["meta"]["current_date"]
 
-            if new_date == prev_date:
-                error_msg = (
-                    f"Duplicate week detected: Evaluation date {new_date} equals previous date in master.json. "
-                    f"Cannot generate duplicate weekly update. Either wait for market to advance or use --eval-date "
-                    f"to manually specify a future date."
+            data_already_exists = new_date == prev_date
+
+            if data_already_exists:
+                logging.info(f"✓ Week {self.week_number} data already exists in master.json (date: {new_date})")
+                logging.info("Skipping data fetching - continuing with narrative generation")
+                self.add_step(
+                    "Load Master Data", "success", f"Week {self.week_number} data already present, skipping fetch"
                 )
-                logging.error(error_msg)
-                self.add_step("Validate Date", "error", error_msg)
-                raise ValueError(error_msg)
+            else:
+                # Cache validated date for use throughout pipeline
+                self.validated_new_date = new_date
 
-            # Cache validated date for use throughout pipeline
-            self.validated_new_date = new_date
-
-            # Step 1: Data acquisition and calculation (MUST succeed or abort)
-            # Always use Alpha Vantage method - it fetches prices AND calculates metrics
-            updated_master = self.generate_master_from_alphavantage()
-            if not updated_master:
-                raise ValueError("Data engine failed to generate master.json")
+                # Step 1: Data acquisition and calculation (MUST succeed or abort)
+                # Always use Alpha Vantage method - it fetches prices AND calculates metrics
+                logging.info(f"Fetching new data for Week {self.week_number} (date: {new_date})")
+                updated_master = self.generate_master_from_alphavantage()
+                if not updated_master:
+                    raise ValueError("Data engine failed to generate master.json")
 
             # Step 2: Data validation (ALWAYS run when AI is enabled, non-fatal)
             # NOTE: This returns a dict (not exception) because validation is non-fatal
@@ -2816,6 +2832,10 @@ Generate the complete HTML file for Week {self.week_number}.
             self.generate_visuals()
             if not self.performance_table or not self.performance_chart:
                 raise ValueError("Visual components generation failed")
+                with open(self.data_dir / "performance_chart.svg", "r", encoding="utf-8") as f:
+                    self.performance_chart = f.read()
+                self.add_step("Generate Performance Table", "success", "Loaded existing performance table")
+                self.add_step("Generate Performance Chart", "success", "Loaded existing performance chart")
 
             # Step 4: Narrative generation (requires AI)
             if self.ai_enabled:

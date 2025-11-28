@@ -293,9 +293,9 @@
         },
         {
           "date": "2025-11-28",
-          "close": 91220.92,
-          "weekly_pct": 4.09,
-          "total_pct": -26.05
+          "close": 91151.21,
+          "weekly_pct": 4.01,
+          "total_pct": -26.11
         }
       ]
     }
@@ -419,9 +419,9 @@
       "portfolio_value": 10386,
       "genai_norm": 103.86,
       "spx_close": 6812.61,
-      "btc_close": 91220.92,
+      "btc_close": 91151.21,
       "spx_norm": 101.86,
-      "btc_norm": 73.95
+      "btc_norm": 73.89
     }
   ]
 }
