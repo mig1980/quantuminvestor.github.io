@@ -1,11 +1,23 @@
 Prompt A Validation Report - Week 7
-Generated: 2025-11-27 23:41:54
+Generated: 2025-11-28 00:23:40
 ================================================================================
 
 ❌ **Prompt A Validation: FAIL**
 
-Found 1 error in Week 7:
+Found **2 error(s)** in **Week 7** (within sampled validation — enough to fail the full report):
 
-1. PLTR weekly_pct: expected 6.43, got 6.56
+1. **PLTR weekly_pct**: expected **6.43%**, got **6.56%**
+   • Previous price: 155.75
+   • Current price: 165.77
+   • Change: 10.02 / 155.75 = 0.0643 = **6.43%**
+   • Difference exceeds tolerance (0.13 > 0.01)
+
+2. **STX weekly_pct**: expected **13.21%**, got **13.18%**
+   • Previous price: 240.50
+   • Current price: 272.28
+   • Change: 31.78 / 240.50 = 0.1321 = **13.21%**
+   • Difference exceeds tolerance (0.03 > 0.01)
+
+These failures indicate a systemic weekly_pct deviation pattern, so the full dataset should be rechecked by the automation script.
 
 Review automation script.

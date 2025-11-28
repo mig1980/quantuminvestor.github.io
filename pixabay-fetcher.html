@@ -370,6 +370,33 @@
             }
         }
 
+        .reset-api-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 0.75rem;
+            color: #fca5a5;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .reset-api-button:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.2));
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .reset-api-button:active {
+            transform: translateY(0);
+        }
+
         /* Password gate styles (extracted from inline for consistency) */
         #password-gate-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.9); z-index:9999; }
         .password-gate-form { background:var(--gate-bg, var(--bg-gray-900)); padding:2rem; border:1px solid var(--gate-border, var(--border-gray-800)); border-radius:.75rem; max-width:320px; width:100%; font-family:system-ui; }
@@ -403,10 +430,8 @@
                     Discover, resize, and export high-impact hero imagery without leaving the Quantum Investor toolkit. Set your preferred size once, explore curated results, and download production-ready assets in seconds.
                 </p>
                 <div class="pixabay-actions">
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="apiKeyButton" type="button" class="api-key-btn">🔑 Set API Key</button>
-                        <a class="text-sm text-gray-400 hover:text-white transition-colors" href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">Pixabay API guide -></a>
-                    </div>
+                    <button id="apiKeyButton" type="button" class="api-key-btn">🔑 Set API Key</button>
+                    <button id="resetApiButton" type="button" class="reset-api-button">🗑️ Reset API Keys</button>
                 </div>
             </div>
             <div class="pixabay-meta">
@@ -635,6 +660,11 @@
 
                 button.addEventListener('click', resetApiKeys);
             }
+
+            const resetButton = document.getElementById('resetApiButton');
+            if (resetButton) {
+                resetButton.addEventListener('click', clearAllAPIKeys);
+            }
         }
 
         function promptForApiKeys() {
@@ -673,6 +703,41 @@
             pixabayKey = '';
             pexelsKey = '';
             promptForApiKeys();
+        }
+
+        function clearAllAPIKeys() {
+            if (confirm('Are you sure you want to clear ALL stored API keys (GitHub, Pixabay, Pexels)? You will need to re-enter them on the next use.')) {
+                // Remove all API keys
+                const apiKeys = [
+                    'github_token',
+                    'pixabay_api_key',
+                    'pexels_api_key'
+                ];
+
+                let clearedCount = 0;
+                apiKeys.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+
+                // Reset local state
+                pixabayKey = '';
+                pexelsKey = '';
+
+                if (clearedCount > 0) {
+                    alert(`✅ Successfully cleared ${clearedCount} API key(s) from browser storage.`);
+                    // Update button text
+                    const button = document.getElementById('apiKeyButton');
+                    if (button) {
+                        button.textContent = '🔑 Set API Keys';
+                        button.style.opacity = '1';
+                    }
+                } else {
+                    alert('ℹ️ No API keys found in browser storage.');
+                }
+            }
         }
 
         function showStatus(message, type) {

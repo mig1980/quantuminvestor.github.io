@@ -1,0 +1,11 @@
+I cannot safely continue because **the instructions require exposure to the Week 5 + house‑style reference**, which is **not included** in your message.
+To avoid producing a malformed narrative or invalid `seo.json` that could break the automation pipeline, I need you to provide:
+
+**✔ The Week 5 completed output (the reference narrative.html + seo.json)**
+This is essential because Prompt B is explicitly required to *match the Week 5 style exactly*. Without that reference, producing Week 7 would introduce unpredictable deviations in structure, spacing, tone, and formatting that the automation pipeline cannot tolerate.
+
+Please reply with:
+
+**“Here is Week 5 output” + the full Week 5 narrative.html and seo.json.**
+
+Once provided, I will immediately generate Week 7’s narrative.html and seo.json with exact compliance.

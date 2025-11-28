@@ -67,6 +67,19 @@ CSP_POLICY_TEMPLATE = (
     "form-action 'self';"
 )
 
+# Chart rendering constants (normalized performance chart)
+CHART_WIDTH = 900
+CHART_HEIGHT = 400
+CHART_PAD_LEFT = 80
+CHART_PAD_RIGHT = 50
+CHART_PAD_TOP = 50
+CHART_PAD_BOTTOM = 50
+# Y-axis scale: normalized baseline 100 ± 20
+CHART_Y_MIN = 80
+CHART_Y_MAX = 120
+CHART_Y_LABELS = [120, 110, 100, 90, 80]
+CHART_Y_POSITIONS = [50, 125, 200, 275, 350]  # SVG y-coordinates for labels
+
 
 class PortfolioAutomation:
     def __init__(
@@ -1356,19 +1369,21 @@ Return a validation report (PASS or FAIL with details).
 
 Here is the summary data for Week {self.week_number}:
 
-```json
 {data_json}
-```
 
-**performance_table.html:**
-```html
+---
+
+PERFORMANCE TABLE (HTML - use as-is):
+
 {table_html}
-```
 
-**performance_chart.svg:**
-```svg
+---
+
+PERFORMANCE CHART (SVG - use as-is):
+
 {chart_svg}
-```
+
+---
 
 Generate:
 1. narrative.html (the prose content block with embedded table and chart using placeholder comments)
@@ -2161,6 +2176,31 @@ This is for Week {self.week_number}.
                     logging.error("CRITICAL: Could not find Performance Since Inception section for chart embedding")
                     logging.error("This may result in chart not appearing in final HTML")
 
+        # Inject heatmap button after holdings list (if not already present)
+        heatmap_button_html = """<div style="margin: 32px 0;">
+        <a href="portfolio-heatmap.html" class="heatmap-cta-button" style="display: block; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: #ffffff; padding: 0.75rem 2rem; border-radius: 0.75rem; text-decoration: none; font-size: 0.95rem; font-weight: 700; text-align: center; line-height: 1.2; transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4); letter-spacing: 0.02em;">
+            View Interactive Stock Analysis
+        </a>
+    </div>"""
+
+        if "heatmap-cta-button" not in self.narrative_html:
+            # Find holdings list closing tag and inject button after it
+            holdings_pattern = r"(</ul>)(\s*)(<p[^>]*>)"
+            match = re.search(holdings_pattern, self.narrative_html, re.DOTALL)
+            if match:
+                # Insert button between </ul> and next <p>
+                self.narrative_html = (
+                    self.narrative_html[: match.end(1)]  # up to </ul>
+                    + "\n"
+                    + heatmap_button_html
+                    + "\n"
+                    + match.group(3)  # the <p> tag that follows
+                    + self.narrative_html[match.end() :]  # rest of content
+                )
+                logging.info("Heatmap button injected after holdings list")
+            else:
+                logging.warning("Could not find holdings list </ul> for button injection")
+
         # Extract minimal metadata for Prompt D (doesn't need full data)
         minimal_meta = {
             "week_number": self.week_number,
@@ -2231,7 +2271,7 @@ Generate ONLY the body content now (header template, main section, footer templa
             logging.warning("Generated HTML doesn't have closing </html> tag")
 
         # Check for required elements
-        required_elements = ["<head>", "<body>", "<article>", 'class="prose']
+        required_elements = ["<head>", "<body", "<article", 'class="prose']
         missing = [elem for elem in required_elements if elem not in final_html]
         if missing:
             logging.warning(f"Missing expected elements: {', '.join(missing)}")
@@ -2256,7 +2296,7 @@ Generate ONLY the body content now (header template, main section, footer templa
                 warnings.append("missing DOCTYPE")
             if "</html>" not in final_html.lower():
                 warnings.append("missing </html>")
-            required_elements = ["<head>", "<body>", "<article>", 'class="prose']
+            required_elements = ["<head>", "<body", "<article", 'class="prose']
             missing = [elem for elem in required_elements if elem not in final_html]
             if missing:
                 warnings.extend(missing)
@@ -2364,8 +2404,9 @@ Generate ONLY the body content now (header template, main section, footer templa
             prev_date_obj = datetime.strptime(prev_date, "%Y-%m-%d")
             curr_date_obj = datetime.strptime(curr_date, "%Y-%m-%d")
 
-            prev_display = prev_date_obj.strftime("%b %-d" if prev_date_obj.day < 10 else "%b %d").replace(" 0", " ")
-            curr_display = curr_date_obj.strftime("%b %-d" if curr_date_obj.day < 10 else "%b %d").replace(" 0", " ")
+            # Cross-platform date formatting (%-d not supported on Windows)
+            prev_display = prev_date_obj.strftime("%b %d").replace(" 0", " ")
+            curr_display = curr_date_obj.strftime("%b %d").replace(" 0", " ")
             year = curr_date_obj.year
 
             # Format values
@@ -2465,23 +2506,22 @@ Generate ONLY the body content now (header template, main section, footer templa
             if len(normalized_data) < 2:
                 raise ValueError("Need at least 2 data points to generate chart")
 
-            # SVG dimensions and padding - Match Week 5 exactly
-            width = 900
-            height = 400
-            pad_left = 80
-            pad_right = 50
-            pad_top = 50
-            pad_bottom = 50
+            # SVG dimensions and padding - Use module constants
+            width = CHART_WIDTH
+            height = CHART_HEIGHT
+            pad_left = CHART_PAD_LEFT
+            pad_right = CHART_PAD_RIGHT
+            pad_top = CHART_PAD_TOP
+            pad_bottom = CHART_PAD_BOTTOM
             chart_width = width - pad_left - pad_right
             chart_height = height - pad_top - pad_bottom
 
-            # FIXED Y-AXIS SCALE: 80 to 120 (normalized baseline 100)
-            # This matches Week 5 standard where all assets start at 100
-            y_min = 80
-            y_max = 120
+            # Y-axis scale: normalized baseline 100 ± 20
+            y_min = CHART_Y_MIN
+            y_max = CHART_Y_MAX
 
-            # Fixed Y-axis labels matching Week 5
-            y_labels = [120, 110, 100, 90, 80]
+            # Y-axis labels (from module constants)
+            y_labels = CHART_Y_LABELS
 
             # Coordinate conversion functions - Week 5 standard
             # Y-axis mapping: 80 -> y=350, 100 -> y=200, 120 -> y=50
@@ -2523,14 +2563,10 @@ Generate ONLY the body content now (header template, main section, footer templa
                     f'<text class="myblock-chart-label" x="{x:.1f}" y="375" text-anchor="middle">{label}</text>'
                 )
 
-            # Generate Y-axis labels and gridlines - Week 5 fixed positions
-            y_grid_positions = [
-                50,
-                125,
-                200,
-                275,
-                350,
-            ]  # y=50 (120), y=125 (110), y=200 (100), y=275 (90), y=350 (80)
+            # Generate Y-axis labels and gridlines - Use module constants
+            y_grid_positions = (
+                CHART_Y_POSITIONS  # SVG y-coordinates: 50 (120), 125 (110), 200 (100), 275 (90), 350 (80)
+            )
             y_labels_html = []
             gridlines_html = []
             for i, (val, y_pos) in enumerate(zip(y_labels, y_grid_positions)):
