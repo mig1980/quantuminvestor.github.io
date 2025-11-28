@@ -29,7 +29,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -564,7 +564,7 @@ Return a validation report (PASS or FAIL with details).
     # ===================== ALPHA VANTAGE DATA ENGINE =====================
     def _latest_market_date(self):
         """Return latest market date (previous weekday if weekend)."""
-        d = datetime.utcnow().date()
+        d = datetime.now(timezone.utc).date()
         # Adjust weekends
         if d.weekday() == 5:  # Saturday
             d -= timedelta(days=1)
@@ -721,7 +721,9 @@ Return a validation report (PASS or FAIL with details).
                 ts = data.get("t")
                 try:
                     date_clean = (
-                        datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d") if ts else self._latest_market_date()
+                        datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+                        if ts
+                        else self._latest_market_date()
                     )
                 except Exception:
                     date_clean = self._latest_market_date()
@@ -762,7 +764,9 @@ Return a validation report (PASS or FAIL with details).
                 ts = data.get("t")
                 try:
                     date_clean = (
-                        datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d") if ts else self._latest_market_date()
+                        datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+                        if ts
+                        else self._latest_market_date()
                     )
                 except Exception:
                     date_clean = self._latest_market_date()
@@ -1308,10 +1312,11 @@ This is for Week {self.week_number}.
         twitter_image = hero_image_url  # Force hero image, ignore SEO JSON
         twitter_card = seo.get("twitterCard") or "summary_large_image"
         published_iso = (
-            self.master_json.get("meta", {}).get("current_date", datetime.utcnow().date().isoformat()) + "T00:00:00Z"
+            self.master_json.get("meta", {}).get("current_date", datetime.now(timezone.utc).date().isoformat())
+            + "T00:00:00Z"
         )
         modified_iso = published_iso
-        csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce)
+        csp_policy = CSP_POLICY_TEMPLATE.format(nonce=self.nonce).replace("\\", "\\\\")
 
         # AI provider metadata
         ai_model_info = f"{self.ai_provider}: {self.model}" if self.ai_provider else "Data-only mode"
@@ -1656,8 +1661,8 @@ This is for Week {self.week_number}.
   }}
 }}
 </style>
-    <script type=\"application/ld+json\">{json.dumps(blog_ld, separators=(',',':'))}</script>
-    <script type=\"application/ld+json\">{json.dumps(breadcrumbs_ld, separators=(',',':'))}</script>
+    <script type=\"application/ld+json\">{json.dumps(blog_ld, separators=(',',':'), ensure_ascii=False)}</script>
+    <script type=\"application/ld+json\">{json.dumps(breadcrumbs_ld, separators=(',',':'), ensure_ascii=False)}</script>
 </head>"""
 
         new_html = re.sub(r"<head>.*?</head>", head_markup, html, flags=re.DOTALL | re.IGNORECASE)

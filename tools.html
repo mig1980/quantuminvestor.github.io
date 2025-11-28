@@ -221,6 +221,33 @@
                 padding: 30px;
             }
         }
+
+        .reset-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 0.5rem;
+            color: #fca5a5;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .reset-button:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.2));
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .reset-button:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-black text-white" data-theme="default">
@@ -278,6 +305,26 @@
                     </ul>
                 </article>
             </a>
+
+            <!-- API Keys Reset -->
+            <div class="tool-card">
+                <div class="tool-icon">🔑</div>
+                <h2>API Keys Reset</h2>
+                <p>Clear stored API keys from browser localStorage. Use this if you need to switch accounts or update your API keys.</p>
+
+                <ul class="tool-features">
+                    <li>Removes stored API keys</li>
+                    <li>Clears GitHub, Pixabay, Pexels keys</li>
+                    <li>Forces re-authentication</li>
+                    <li>Instant browser storage clear</li>
+                    <li>No server interaction</li>
+                </ul>
+
+                <button class="reset-button" onclick="resetAllAPIKeys()">
+                    <span>🗑️</span>
+                    <span>Reset API Keys</span>
+                </button>
+            </div>
         </div>
 
         <!-- Security Notice -->
@@ -289,5 +336,32 @@
 
     <!-- Footer -->
     <div data-template="footer" data-root-path=""></div>
+
+    <script nonce="qi123">
+        function resetAllAPIKeys() {
+            if (confirm('Are you sure you want to clear stored API keys? You will need to re-enter them on the next use.')) {
+                // Remove API keys
+                const apiKeys = [
+                    'github_api_key',
+                    'pixabay_api_key',
+                    'pexels_api_key'
+                ];
+
+                let clearedCount = 0;
+                apiKeys.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+
+                if (clearedCount > 0) {
+                    alert(`✅ Successfully cleared ${clearedCount} API key(s) from browser storage.`);
+                } else {
+                    alert('ℹ️ No API keys found in browser storage.');
+                }
+            }
+        }
+    </script>
 </body>
 </html>
