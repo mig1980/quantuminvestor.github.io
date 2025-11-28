@@ -1372,7 +1372,9 @@ This is for Week {self.week_number}.
                         self.narrative_html = html_match.group(1)
                     else:
                         # Save response to file for debugging
-                        debug_file = self.data_dir / f"prompt_b_response_debug_week{self.week_number}.txt"
+                        current_week_dir = DATA_DIR / f"W{self.week_number}"
+                        current_week_dir.mkdir(exist_ok=True)
+                        debug_file = current_week_dir / f"prompt_b_response_debug_week{self.week_number}.txt"
                         with open(debug_file, "w", encoding="utf-8") as f:
                             f.write(response)
                         logging.error(f"Saved AI response to {debug_file} for debugging")
@@ -1453,8 +1455,8 @@ This is for Week {self.week_number}.
             "twitterCard": "summary_large_image",
         }
 
-    def _apply_standard_head(self, html: str) -> str:
-        """Apply hardened CSP + nonce, stylesheet link, external scripts, JSON-LD."""
+    def _apply_standard_head(self, body_content: str) -> str:
+        """Wrap body content with full HTML document structure including head, meta tags, CSS, scripts, JSON-LD."""
         seo = self.seo_json or self.generate_fallback_seo()
 
         # ALWAYS use the generated hero image for Open Graph and Twitter Card meta tags (override AI-generated URLs)
@@ -1825,20 +1827,17 @@ This is for Week {self.week_number}.
     <script type=\"application/ld+json\">{json.dumps(breadcrumbs_ld, separators=(',',':'), ensure_ascii=False)}</script>
 </head>"""
 
-        new_html = re.sub(r"<head>.*?</head>", head_markup, html, flags=re.DOTALL | re.IGNORECASE)
-        if new_html == html:
-            html_tag = re.search(r"<html[^>]*>", new_html, re.IGNORECASE)
-            if html_tag:
-                end = html_tag.end()
-                new_html = new_html[:end] + head_markup + new_html[end:]
+        # Wrap body content with full HTML document structure
         palette_attr = f'data-theme="{self.palette}"'
-        new_html = re.sub(
-            r"<body(\s[^>]*)?>",
-            lambda m: "<body " + palette_attr + ("" if m.group(1) is None else m.group(1)) + ">",
-            new_html,
-            count=1,
-        )
-        return new_html
+        full_html = f"""<!DOCTYPE html>
+<html lang="en">
+{head_markup}
+<body {palette_attr}>
+{body_content}
+</body>
+</html>"""
+
+        return full_html
 
     def harden_static_pages(self):
         """Apply dynamic nonce + strict CSP to root static pages (index, about, Disclosures)."""
@@ -2136,7 +2135,6 @@ This is for Week {self.week_number}.
             "week_number": self.week_number,
             "current_date": self.master_json.get("meta", {}).get("current_date"),
             "inception_date": self.master_json.get("meta", {}).get("inception_date"),
-            "author": "Michael Gavrilov",  # Matches _apply_standard_head() value
         }
 
         user_message = f"""
@@ -2152,41 +2150,38 @@ Here are the components for Week {self.week_number}:
 {self.narrative_html}
 ```
 
-**seo.json:**
-```json
-{json.dumps(self.seo_json, indent=2)}
-```
-
 **metadata:**
 ```json
 {json.dumps(minimal_meta, indent=2)}
 ```
 
-**performance_table.html:** Already embedded in narrative.html
-**performance_chart.svg:** Already embedded in narrative.html
-
-**master.json:** Week {self.week_number} data is in the master.json file (not needed for HTML assembly)
-
-Generate the complete HTML file now. All required components are provided above.
+Generate ONLY the body content now (header template, main section, footer template). Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags. The automation script will wrap your output.
 """
 
         response = self.call_ai(system_prompt, user_message)
 
-        # Extract final HTML
-        html_match = re.search(r"<!DOCTYPE html>.*</html>", response, re.DOTALL | re.IGNORECASE)
-        final_html = html_match.group(0) if html_match else response
+        # Extract body content (should start with <div data-template="header">)
+        body_content = response.strip()
+        # Remove any markdown code fences if AI added them
+        body_content = re.sub(r"^```html\s*", "", body_content)
+        body_content = re.sub(r"\s*```$", "", body_content)
 
-        # ================= STANDARD META HEAD REPLACEMENT =================
+        # ================= WRAP WITH FULL HTML DOCUMENT =================
         try:
-            final_html = self._apply_standard_head(final_html)
+            final_html = self._apply_standard_head(body_content)
         except Exception as e:
-            logging.warning(f"Standard head template failed: {e}")
+            logging.error(f"Standard head wrapping failed: {e}")
+            raise
 
-        # ================= TLDR STRUCTURAL INJECTION (simplified, external script populates) =================
+        # ================= TLDR VALIDATION (should already be present from Prompt D) =================
         try:
-            # Remove accidental duplicate TLDR blocks leaving only first occurrence
+            # Verify TLDR strip is present
+            if 'id="tldrStrip"' not in final_html:
+                logging.warning("TLDR strip missing from generated body content")
+            # Remove accidental duplicate TLDR blocks if present
             occurrences = [m.start() for m in re.finditer(r'id="tldrStrip"', final_html)]
             if len(occurrences) > 1:
+                logging.warning(f"Found {len(occurrences)} TLDR blocks, removing duplicates")
                 # Keep first, strip others
                 final_html = re.sub(
                     r'<!-- TLDR STRIP.*?<div id="tldrStrip"[\s\S]*?</div>\s*',
@@ -2195,20 +2190,8 @@ Generate the complete HTML file now. All required components are provided above.
                     count=len(occurrences) - 1,
                     flags=re.IGNORECASE,
                 )
-            if 'id="tldrStrip"' not in final_html:
-                tldr_markup = (
-                    "\n            <!-- TLDR STRIP (Sandbox Style) -->\n"
-                    '            <div id="tldrStrip" class="tldr-strip mb-10" aria-label="Weekly summary strip">\n'
-                    '              <div class="tldr-metric"><span>Week Change</span><span id="tldrWeek">--</span></div>\n'
-                    '              <div class="tldr-metric"><span>Since Inception</span><span id="tldrTotal">--</span></div>\n'
-                    '              <div class="tldr-metric"><span>Alpha vs SPX (Total)</span><span id="tldrAlpha">--</span></div>\n'
-                    "            </div>\n"
-                )
-                prose_pos = final_html.find('<div class="prose')
-                if prose_pos != -1:
-                    final_html = final_html[:prose_pos] + tldr_markup + final_html[prose_pos:]
         except Exception as e:
-            logging.warning(f"TLDR structural injection failed: {e}")
+            logging.warning(f"TLDR validation failed: {e}")
 
         # Basic validation
         if not final_html.strip().startswith("<!DOCTYPE"):
@@ -3023,7 +3006,8 @@ Generate the complete HTML file now. All required components are provided above.
             self.generate_visuals()
             if not self.performance_table or not self.performance_chart:
                 raise ValueError("Visual components generation failed")
-                with open(self.data_dir / "performance_chart.svg", "r", encoding="utf-8") as f:
+                current_week_dir = DATA_DIR / f"W{self.week_number}"
+                with open(current_week_dir / "performance_chart.svg", "r", encoding="utf-8") as f:
                     self.performance_chart = f.read()
                 self.add_step("Generate Performance Table", "success", "Loaded existing performance table")
                 self.add_step("Generate Performance Chart", "success", "Loaded existing performance chart")

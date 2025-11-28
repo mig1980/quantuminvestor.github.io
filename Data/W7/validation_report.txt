@@ -1,94 +1,17 @@
 Prompt A Validation Report - Week 7
-Generated: 2025-11-27 23:11:59
+Generated: 2025-11-27 23:20:04
 ================================================================================
 
 ❌ **Prompt A Validation: FAIL**
 
-Found **26 error(s)** in Week **7**:
+Found **1** error in Week 7:
 
-The following issues are **systemic** and indicate a consistent automation‑script bug:
-All **stock current_values**, **weekly_pct**, and **total_pct** fail validation because the **current_value values in master.json were rounded to whole dollars**, but the **percentage calculations were performed using unrounded decimals**.
+1. Inception Consistency: expected all inception values to match
+   - meta.inception_value = **10000**
+   - portfolio_history[0].value = **10001**
+   - normalized_chart[0].portfolio_value = **10001**
+   These should match exactly.
 
-This creates **mismatches outside allowed tolerance** when re‑computing using the stored values.
+All other calculations (stock metrics, portfolio totals, benchmarks, array sync, normalized chart values) validated **correctly**.
 
-Below is a summary of the failing fields.
-
----
-
-### 1. Stock-Level Errors (20 errors)
-
-For every stock:
-
-- **current_value** stored as whole dollars → but precise shares × price ≠ stored value
-- Because of the rounding mismatch:
-  - **weekly_pct** recomputes incorrectly relative to stored current_value
-  - **total_pct** recomputes incorrectly relative to stored current_value
-
-Example (representative):
-
-PLTR
-shares 5.39 × 165.77 = **893.5123** (expected 894 ±1 OK)
-But weekly % computed using stored prices yields **6.43%**, while expected from accurate values ≈ **6.43%** but mismatch arises due to rounding of stored current_value vs unrounded calculation in script.
-
-These rounding inconsistencies propagate into **every stock**, producing deviations beyond the ±0.01 tolerance.
-
----
-
-### 2. Portfolio Totals (3 errors)
-
-- **current_value** = 10386 → sum of rounded per‑stock values = 10386 (OK)
-- But **weekly_pct** and **total_pct** recompute using accurate values and differ from stored values beyond tolerance.
-
----
-
-### 3. SP500 Benchmark Values (0 errors)
-
-All SP500 calculations validate correctly.
-
----
-
-### 4. Bitcoin Benchmark Values (0 errors)
-
-All BTC calculations validate correctly.
-
----
-
-### 5. Array Sync (PASS)
-
-All arrays have:
-- Identical length
-- Identical dates
-- All timestamps align correctly
-
----
-
-### 6. Normalized Chart Values (3 errors)
-
-Some normalized SPX and BTC values fail tolerance by more than ±0.02 due to the same rounding mismatch described above.
-
----
-
-### 7. Inception Consistency (0 errors)
-
-All inception baseline values align with master.json:
-- meta.inception_value = 10000
-- portfolio_history[0].value = 10001
-- normalized_chart[0].genai_norm = 100.01
-
-These match and are consistent.
-
----
-
-## Summary
-
-**26 total errors**
-Root cause: **Systematic rounding mismatch** between automation script’s price-derived calculations and the rounded dollar current_value stored in master.json.
-
----
-
-Please review the automation script to ensure:
-
-- Percentages are computed using the *exact same values* stored in master.json
-- Or store **unrounded current_value** internally and round only for display
-
-Let me know if you'd like a **patch recommendation** for the automation script.
+Please review the automation script to ensure consistent initialization of inception_value across meta, portfolio_history, and normalized_chart.
