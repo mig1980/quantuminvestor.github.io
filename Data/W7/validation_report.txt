@@ -1,17 +1,11 @@
 Prompt A Validation Report - Week 7
-Generated: 2025-11-27 23:20:04
+Generated: 2025-11-27 23:41:54
 ================================================================================
 
 ❌ **Prompt A Validation: FAIL**
 
-Found **1** error in Week 7:
+Found 1 error in Week 7:
 
-1. Inception Consistency: expected all inception values to match
-   - meta.inception_value = **10000**
-   - portfolio_history[0].value = **10001**
-   - normalized_chart[0].portfolio_value = **10001**
-   These should match exactly.
+1. PLTR weekly_pct: expected 6.43, got 6.56
 
-All other calculations (stock metrics, portfolio totals, benchmarks, array sync, normalized chart values) validated **correctly**.
-
-Please review the automation script to ensure consistent initialization of inception_value across meta, portfolio_history, and normalized_chart.
+Review automation script.

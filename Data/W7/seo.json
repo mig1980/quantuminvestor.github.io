@@ -1,13 +1,13 @@
 {
   "title": "GenAi-Managed Stocks Portfolio Week 7 \u2013 Performance, Risks & Next Moves - Quantum Investor Digest",
-  "description": "Week 7 of the GenAi-managed stock portfolio: full performance breakdown, benchmark comparison, AI analysis, risks, and the model\u2019s recommended next moves.",
+  "description": "Week 7 performance breakdown of the GenAi-managed high\u2011momentum stock portfolio. Detailed analysis, risks, benchmarks, and next\u2011week outlook.",
   "canonicalUrl": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-7.html",
   "ogTitle": "GenAi-Managed Stocks Portfolio Week 7 \u2013 Performance, Risks & Next Moves",
-  "ogDescription": "Explore Week 7 performance of the GenAi-managed stock portfolio with insights, benchmark data, and AI-guided recommendations.",
+  "ogDescription": "Full Week 7 analysis of the AI\u2011driven GenAi Chosen portfolio: performance, benchmark comparison, risks, and strategic outlook.",
   "ogImage": "https://quantuminvestor.net/Media/W7.webp",
   "ogUrl": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-7.html",
-  "twitterTitle": "GenAi-Managed Stocks Portfolio Week 7 \u2013 Performance & AI Insights",
-  "twitterDescription": "Full Week 7 analysis of the GenAi Chosen portfolio, including performance, risks, and AI-driven recommendations.",
+  "twitterTitle": "GenAi-Managed Stocks Portfolio Week 7 \u2013 Performance & Outlook",
+  "twitterDescription": "Week 7 performance and analysis of the GenAi-managed portfolio. Full breakdown of returns, risks, and next steps.",
   "twitterImage": "https://quantuminvestor.net/Media/W7.webp",
   "twitterCard": "summary_large_image",
   "jsonLd": {
@@ -15,7 +15,7 @@
       "@context": "https://schema.org",
       "@type": "BlogPosting",
       "headline": "GenAi-Managed Stocks Portfolio Week 7 \u2013 Performance, Risks & Next Moves",
-      "description": "Detailed Week 7 analysis of the GenAi-managed stock portfolio, including performance, benchmarks, AI insights, and risk guidance.",
+      "description": "Detailed Week 7 performance review of the AI-managed GenAi Chosen portfolio, including benchmark comparisons, risk insights, and forward-looking recommendations.",
       "datePublished": "2025-11-28",
       "dateCreated": "2025-11-28",
       "dateModified": "2025-11-28",
@@ -27,15 +27,11 @@
       },
       "publisher": {
         "@type": "Organization",
-        "name": "Quantum Investor Digest",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://quantuminvestor.net/Media/Logo.webp"
-        }
+        "name": "Quantum Investor Digest"
       },
       "image": "https://quantuminvestor.net/Media/W7.webp",
-      "articleSection": "Investing",
-      "keywords": "AI investing, GenAi portfolio, stock market, Week 7 performance, quantitative investing"
+      "articleSection": "Finance",
+      "keywords": "GenAi portfolio, AI investing, Week 7 performance, stock market analysis, S&P 500 comparison, Bitcoin performance"
     },
     "breadcrumbList": {
       "@context": "https://schema.org",
@@ -51,7 +47,7 @@
           "@type": "ListItem",
           "position": 2,
           "name": "Blog",
-          "item": "https://quantuminvestor.net/Blog"
+          "item": "https://quantuminvestor.net/Posts/"
         },
         {
           "@type": "ListItem",

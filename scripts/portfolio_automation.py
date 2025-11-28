@@ -1022,14 +1022,18 @@ Return a validation report (PASS or FAIL with details).
             inception_price = stock["prices"][inception_date]
             prior_price = stock["prices"][prev_date]
 
-            weekly_pct = ((current_price / prior_price) - 1) * 100 if prior_price else 0.0
-            total_pct = ((current_price / inception_price) - 1) * 100 if inception_price else 0.0
+            # Calculate values using same rounding as will be stored (shares × price, rounded to whole $)
+            current_value = round(stock["shares"] * current_price)
+            prior_value = round(stock["shares"] * prior_price)
+            inception_value_stock = round(stock["shares"] * inception_price)
+
+            # Calculate percentages using rounded values for consistency with stored data
+            weekly_pct = ((current_value / prior_value) - 1) * 100 if prior_value else 0.0
+            total_pct = ((current_value / inception_value_stock) - 1) * 100 if inception_value_stock else 0.0
 
             # Update prices dict
             new_prices = dict(stock["prices"])
             new_prices[new_date] = round(current_price, 2)
-
-            current_value = round(stock["shares"] * current_price)
 
             updated_stocks.append(
                 {
@@ -1328,6 +1332,23 @@ Return a validation report (PASS or FAIL with details).
             # Compact JSON to reduce size
             data_json = json.dumps(narrative_data, separators=(",", ":"))
 
+            # Load pre-generated table and chart from Data/W{n}/ folder
+            current_week_dir = DATA_DIR / f"W{self.week_number}"
+            table_html = ""
+            chart_svg = ""
+
+            try:
+                with open(current_week_dir / "performance_table.html", "r", encoding="utf-8") as f:
+                    table_html = f.read()
+            except FileNotFoundError:
+                logging.warning(f"performance_table.html not found in {current_week_dir}")
+
+            try:
+                with open(current_week_dir / "performance_chart.svg", "r", encoding="utf-8") as f:
+                    chart_svg = f.read()
+            except FileNotFoundError:
+                logging.warning(f"performance_chart.svg not found in {current_week_dir}")
+
             user_message = f"""
 {self.prompts['B']}
 
@@ -1339,8 +1360,18 @@ Here is the summary data for Week {self.week_number}:
 {data_json}
 ```
 
+**performance_table.html:**
+```html
+{table_html}
+```
+
+**performance_chart.svg:**
+```svg
+{chart_svg}
+```
+
 Generate:
-1. narrative.html (the prose content block)
+1. narrative.html (the prose content block with embedded table and chart using placeholder comments)
 2. seo.json (all metadata)
 
 This is for Week {self.week_number}.
