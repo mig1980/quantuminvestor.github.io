@@ -1512,38 +1512,123 @@ Current date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}
 Generate the complete JSON now.
 """
 
-            logging.info("Calling AI with web search to generate research candidates...")
-            response = self.call_ai_with_web_search(system_prompt, user_message)
+            # TWO-PHASE APPROACH: Separate research from JSON generation
+            # Phase 1: AI with web search generates research notes (citations allowed)
+            # Phase 2: AI without web search converts notes to clean JSON (no citations)
 
-            # Extract JSON from response - try multiple patterns
+            logging.info("Phase 1: Calling AI with web search to research candidates...")
+            research_phase_prompt = f"""
+{user_message}
+
+CRITICAL: For this phase, OUTPUT RESEARCH NOTES ONLY, NOT JSON.
+
+Generate a research summary with these sections:
+
+**CANDIDATES IDENTIFIED:**
+For each of 3-5 candidates, provide:
+- Ticker & Name
+- Current price and market cap
+- Momentum metrics (4-week, 12-week from sources)
+- Recent catalysts (earnings, upgrades, news)
+- Sector classification
+- Institutional ownership level
+- Why it fits the portfolio
+
+**SOURCES USED:**
+List all financial sources accessed with URLs
+
+Output plain text research notes. Citations encouraged for source tracking.
+"""
+
+            research_notes = self.call_ai_with_web_search(system_prompt, research_phase_prompt)
+
+            # Save research notes for reference
+            research_notes_path = current_week_dir / "market_research_notes.txt"
+            with open(research_notes_path, "w", encoding="utf-8") as f:
+                f.write(research_notes)
+            logging.info(f"✓ Research notes saved to {research_notes_path}")
+
+            # Phase 2: Convert research notes to clean JSON WITHOUT web search
+            logging.info("Phase 2: Converting research notes to JSON structure...")
+
+            json_generation_system = "You are a JSON formatter. Convert research notes to research_candidates.json structure. Output ONLY valid JSON, no markdown, no code fences, no explanations."
+
+            json_generation_prompt = f"""
+Convert these research notes to the exact JSON structure specified in the Market Research prompt.
+
+**RESEARCH NOTES:**
+{research_notes}
+
+**REQUIRED JSON STRUCTURE:**
+{json.dumps({
+                "scan_date": "YYYY-MM-DD",
+                "week_number": self.week_number,
+                "portfolio_context": portfolio_summary,
+                "candidates": [
+                    {
+                        "ticker": "EXAMPLE",
+                        "name": "Company Name",
+                        "price": "$XXX.XX",
+                        "sector": "Sector - Subsector",
+                        "market_cap": "$XXBillion",
+                        "momentum_4w": "+X.X%",
+                        "momentum_12w": "+XX.X%",
+                        "volume_avg": "X.XM",
+                        "institutional_ownership": "High/Medium/Low",
+                        "catalyst": "Recent catalyst description",
+                        "fundamentals": "Key fundamental metrics",
+                        "relative_strength": "Relative performance",
+                        "rationale": "Why this fits portfolio",
+                        "recommendation": "Recommendation for position size"
+                    }
+                ],
+                "screening_summary": {
+                    "total_scanned": "~XXX stocks",
+                    "momentum_screen": "~XX stocks",
+                    "quality_screen": "~XX stocks",
+                    "final_candidates": "X",
+                    "sector_diversification": "Sectors covered",
+                    "avg_momentum_4w": "+XX%",
+                    "avg_momentum_12w": "+XX%",
+                    "notes": "Summary notes"
+                },
+                "citations": [
+                    {"source": "Source Name", "url": "https://...", "data_retrieved": "What data"}
+                ]
+            }, indent=2)}
+
+OUTPUT: Return ONLY the complete JSON object. No markdown, no code fences, no extra text. Start with {{ and end with }}.
+Current date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}
+"""
+
+            # Call AI WITHOUT web search for clean JSON generation
+            response = self.call_ai(json_generation_system, json_generation_prompt)
+
+            # Extract JSON - cleaner now without citations
             research_candidates = None
 
-            # Pattern 1: JSON in code fence
-            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
-            if json_match:
-                try:
-                    research_candidates = json.loads(json_match.group(1))
-                    logging.info("✓ Extracted JSON from code fence")
-                except json.JSONDecodeError as e:
-                    logging.warning(f"JSON in code fence invalid: {e}")
-
-            # Pattern 2: JSON with nested objects (greedy match from first { to last })
-            if not research_candidates:
-                json_match = re.search(r"(\{[\s\S]*\})", response)
+            # Try direct JSON parse first (model should output clean JSON)
+            try:
+                research_candidates = json.loads(response.strip())
+                logging.info("✓ Extracted clean JSON directly")
+            except json.JSONDecodeError:
+                # Fallback: try to find JSON in response
+                json_match = re.search(r"\{[\s\S]*\}", response)
                 if json_match:
                     try:
-                        research_candidates = json.loads(json_match.group(1))
+                        research_candidates = json.loads(json_match.group(0))
                         logging.info("✓ Extracted JSON from response body")
                     except json.JSONDecodeError as e:
-                        logging.warning(f"JSON extraction attempt 2 failed: {e}")
+                        logging.warning(f"JSON extraction failed: {e}")
 
             if not research_candidates:
-                # Save response for debugging
-                debug_path = current_week_dir / "market_research_response.txt"
+                # Save both phases for debugging
+                debug_path = current_week_dir / "market_research_json_response.txt"
                 with open(debug_path, "w", encoding="utf-8") as f:
                     f.write(response)
-                logging.error(f"Could not extract JSON. Response saved to {debug_path}")
-                raise ValueError("Could not extract research_candidates JSON from AI response")
+                logging.error(f"Could not extract JSON from Phase 2. Response saved to {debug_path}")
+                logging.error(f"Research notes available in {research_notes_path}")
+                raise ValueError("Could not extract research_candidates JSON from Phase 2 (JSON generation)")
 
             # Validate structure
             if not isinstance(research_candidates, dict):
@@ -1559,6 +1644,13 @@ Generate the complete JSON now.
             candidate_count = len(candidates)
             if candidate_count < 3 or candidate_count > 5:
                 logging.warning(f"⚠️ Generated {candidate_count} candidates (expected 3-5)")
+
+            # Enrich candidates with Marketstack data
+            if self.marketstack_key:
+                logging.info("Enriching candidates with Marketstack API data...")
+                research_candidates = self.enrich_candidates_with_marketstack(research_candidates)
+            else:
+                logging.warning("⚠️ Marketstack not configured - skipping enrichment (using web search estimates)")
 
             # Save to file
             output_path = current_week_dir / "research_candidates.json"
@@ -1587,6 +1679,131 @@ Generate the complete JSON now.
                 f"Failed to generate research_candidates.json: {str(e)}",
             )
             raise
+
+    def enrich_candidates_with_marketstack(self, research_candidates):
+        """Enrich research candidates with precise data from Marketstack API.
+
+        For each candidate:
+        1. Fetch 12 weeks of historical EOD data from Marketstack
+        2. Calculate precise 4-week and 12-week momentum
+        3. Get average volume from recent trading days
+        4. Update candidate data with precise metrics
+
+        Falls back to web search estimates if API call fails for a ticker.
+        """
+        from datetime import datetime, timedelta, timezone
+
+        candidates = research_candidates.get("candidates", [])
+        if not candidates:
+            return research_candidates
+
+        # Calculate date range: 12 weeks back from today
+        today = datetime.now(timezone.utc)
+        date_to = today.strftime("%Y-%m-%d")
+        date_from = (today - timedelta(weeks=12)).strftime("%Y-%m-%d")
+
+        enriched_count = 0
+        failed_tickers = []
+
+        for candidate in candidates:
+            ticker = candidate.get("ticker")
+            if not ticker:
+                continue
+
+            try:
+                # Fetch EOD data from Marketstack
+                url = "http://api.marketstack.com/v1/eod"
+                params = {
+                    "access_key": self.marketstack_key,
+                    "symbols": ticker,
+                    "date_from": date_from,
+                    "date_to": date_to,
+                    "limit": 100,  # ~12 weeks = 60 trading days
+                }
+
+                # Respect rate limit (5 requests/second for Marketstack)
+                time.sleep(0.3)  # 0.3s = ~3 requests/sec (safe margin)
+
+                response = self.session.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+
+                # Check for API errors
+                if "error" in data:
+                    error_info = data["error"]
+                    logging.warning(
+                        f"  ⚠️ {ticker}: Marketstack API error - {error_info.get('message', 'Unknown error')}"
+                    )
+                    failed_tickers.append(ticker)
+                    continue
+
+                eod_data = data.get("data", [])
+                if not eod_data or len(eod_data) < 20:  # Need at least 4 weeks
+                    logging.warning(f"  ⚠️ {ticker}: Insufficient data (got {len(eod_data)} days, need 20+)")
+                    failed_tickers.append(ticker)
+                    continue
+
+                # Sort by date ascending (oldest first)
+                eod_data.sort(key=lambda x: x.get("date", ""))
+
+                # Calculate momentum
+                latest_price = eod_data[-1].get("close")
+                price_4w_ago = eod_data[-20].get("close") if len(eod_data) >= 20 else None
+                price_12w_ago = eod_data[0].get("close") if len(eod_data) >= 60 else None
+
+                momentum_4w = None
+                momentum_12w = None
+
+                if latest_price and price_4w_ago:
+                    momentum_4w = ((latest_price - price_4w_ago) / price_4w_ago) * 100
+
+                if latest_price and price_12w_ago:
+                    momentum_12w = ((latest_price - price_12w_ago) / price_12w_ago) * 100
+
+                # Calculate average volume (last 20 trading days)
+                recent_volumes = [day.get("volume", 0) for day in eod_data[-20:] if day.get("volume")]
+                avg_volume = sum(recent_volumes) / len(recent_volumes) if recent_volumes else None
+
+                # Update candidate with precise data
+                if latest_price:
+                    candidate["price"] = f"${latest_price:.2f}"
+
+                if momentum_4w is not None:
+                    sign = "+" if momentum_4w >= 0 else ""
+                    candidate["momentum_4w"] = f"{sign}{momentum_4w:.1f}%"
+
+                if momentum_12w is not None:
+                    sign = "+" if momentum_12w >= 0 else ""
+                    candidate["momentum_12w"] = f"{sign}{momentum_12w:.1f}%"
+
+                if avg_volume:
+                    # Format volume (e.g., 5.2M, 1.3M)
+                    if avg_volume >= 1_000_000:
+                        candidate["volume_avg"] = f"{avg_volume / 1_000_000:.1f}M"
+                    elif avg_volume >= 1_000:
+                        candidate["volume_avg"] = f"{avg_volume / 1_000:.1f}K"
+                    else:
+                        candidate["volume_avg"] = f"{avg_volume:.0f}"
+
+                enriched_count += 1
+                logging.info(
+                    f"  ✓ {ticker}: Enriched with Marketstack data (4w: {candidate.get('momentum_4w', 'N/A')}, 12w: {candidate.get('momentum_12w', 'N/A')})"
+                )
+
+            except requests.exceptions.RequestException as e:
+                logging.warning(f"  ⚠️ {ticker}: Marketstack API request failed - {e}")
+                failed_tickers.append(ticker)
+                continue
+            except Exception as e:
+                logging.warning(f"  ⚠️ {ticker}: Enrichment failed - {e}")
+                failed_tickers.append(ticker)
+                continue
+
+        logging.info(f"Marketstack enrichment: {enriched_count}/{len(candidates)} candidates updated")
+        if failed_tickers:
+            logging.warning(f"  ⚠️ Failed tickers (using web search estimates): {', '.join(failed_tickers)}")
+
+        return research_candidates
 
     def _extract_portfolio_context_for_research(self):
         """Extract portfolio summary for Prompt-MarketResearch
@@ -3185,12 +3402,21 @@ Generate ONLY the body content now (header template, main section, footer templa
             chart_width = width - pad_left - pad_right
             chart_height = height - pad_top - pad_bottom
 
-            # Y-axis scale: normalized baseline 100 ± 20
-            y_min = CHART_Y_MIN
-            y_max = CHART_Y_MAX
+            # Calculate dynamic Y-axis range based on actual data
+            all_values = []
+            for entry in normalized_data:
+                all_values.extend(
+                    [entry.get("genai_norm", 100), entry.get("spx_norm", 100), entry.get("btc_norm", 100)]
+                )
+            data_min = min(all_values)
+            data_max = max(all_values)
 
-            # Y-axis labels (from module constants)
-            y_labels = CHART_Y_LABELS
+            # Round to nearest 10, add padding
+            y_min = max(50, int((data_min - 5) / 10) * 10)  # Floor to 10s, min 50
+            y_max = min(150, int((data_max + 15) / 10) * 10)  # Ceil to 10s, max 150
+
+            # Generate Y-axis labels dynamically (5 evenly spaced labels)
+            y_labels = [y_max - i * (y_max - y_min) // 4 for i in range(5)]
 
             # Coordinate conversion functions - Week 5 standard
             # Y-axis mapping: 80 -> y=350, 100 -> y=200, 120 -> y=50
@@ -3201,8 +3427,11 @@ Generate ONLY the body content now (header template, main section, footer templa
                 return pad_left + (index / (len(normalized_data) - 1)) * chart_width
 
             def y_coord(value):
-                # Week 5 formula: y = 200 - (value - 100) * 7.5
-                return 200.0 - (value - 100.0) * 7.5
+                # Dynamic scaling based on y_min/y_max
+                # Map value range [y_min, y_max] to SVG y-range [350, 50] (inverted)
+                clamped_value = max(y_min, min(y_max, value))  # Clamp to boundaries
+                normalized = (clamped_value - y_min) / (y_max - y_min)  # 0 to 1
+                return pad_top + chart_height * (1 - normalized)  # Invert: high values = low y
 
             # Generate polyline points - Week 5 format (1 decimal place)
             genai_points = []
