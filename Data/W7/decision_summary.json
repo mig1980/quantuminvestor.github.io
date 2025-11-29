@@ -1,0 +1,30 @@
+{
+  "week": 7,
+  "decision": "REBALANCE",
+  "position_count": 9,
+  "triggers_activated": [
+    "Individual Drawdown: STX -27% (below -25% threshold)"
+  ],
+  "trades_executed": [
+    {
+      "action": "exit",
+      "ticker": "STX",
+      "shares": 4.51,
+      "price": 194.00,
+      "value": 875,
+      "reason": "Exit underperformer - 27% drawdown triggered stop-loss"
+    },
+    {
+      "action": "buy",
+      "ticker": "AVGO",
+      "name": "Broadcom Inc.",
+      "shares": 4.96,
+      "price": 176.41,
+      "value": 875,
+      "reason": "New position - Strong momentum (4w: +12%, 12w: +28%), AI semiconductor leader, above 50-day MA"
+    }
+  ],
+  "portfolio_value": "$10,280",
+  "sp500_alpha_bps": 187,
+  "narrative_summary": "Week 7 rebalancing: Exit STX after triggering -25% stop-loss rule. Redeploy capital into AVGO, capturing AI infrastructure momentum with strong technical setup."
+}

@@ -1,4 +1,36 @@
 # Python
 **/__pycache__/
+**/.mypy_cache/
 *.pyc
 *.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environment & Secrets
+.env
+.env.local
+*.key
+
+# Logs
+*.log
+**/*.log
+
+# Data & Outputs
+*.csv
+*.json.bak
+*.json_
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

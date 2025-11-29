@@ -3,6 +3,7 @@ openai>=1.0.0                # Azure OpenAI API client
 requests>=2.31.0             # HTTP client for API calls (includes urllib3, certifi)
 Pillow>=10.3.0               # Image processing for hero image generation
 beautifulsoup4>=4.12.0       # HTML parsing for newsletter extraction
+yfinance>=0.2.0              # Yahoo Finance API wrapper for fundamental data enrichment
 
 # Azure Services
 azure-storage-blob>=12.19.0  # Azure Blob Storage client for newsletter uploads
