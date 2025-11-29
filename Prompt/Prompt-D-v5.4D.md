@@ -24,6 +24,8 @@ You do **not** recalculate data or change text meaning. You only glue components
 
 You receive:
 - `narrative.html` – prose block from Prompt B (already contains embedded table and chart)
+  - **Conditional sections**: May include "Market Opportunities Under Review" (HOLD weeks with research candidates) or "Rebalance Execution Details" (REBALANCE weeks with trade executions)
+  - **Variable holdings list**: Portfolio contains 6–10 positions (flexible count)
 - `metadata` – week number, current date, inception date
 
 ---
@@ -119,6 +121,13 @@ Values are auto-populated by `tldr.js` (injected by automation script).
 ### Narrative Block
 
 Insert `narrative.html` as-is after TLDR. The table and chart are already embedded. Remove any inline `style` attributes if present.
+
+**Note**: The narrative is treated as an opaque block:
+- Holdings list (`<ul>`) contains 6–10 items (variable length based on portfolio decision)
+- May include conditional sections:
+  - "Market Opportunities Under Review" (HOLD weeks when research candidates are provided)
+  - "Rebalance Execution Details" (REBALANCE weeks when trades are executed)
+- Do not modify, reorder, or validate narrative structure - pass through exactly as received
 
 ### Back Link
 

@@ -11,7 +11,7 @@ Workflow:
 5. Generate narrative content (Prompt B)
 6. Assemble final HTML page (Prompt D)
 
-Note: Prompt C eliminated - visual generation now handled by deterministic Python code
+Note: Prompt-VisualGeneration (formerly Prompt C) eliminated - visual generation now handled by deterministic Python code
 
 Error Handling Strategy:
 - FATAL ERRORS (raise ValueError): Missing data, failed calculations, critical API failures
@@ -276,10 +276,11 @@ class PortfolioAutomation:
         logging.info("=" * 80)
 
     def load_prompts(self):
-        """Load prompt markdown files (A, B, D - Prompt C eliminated)"""
+        """Load prompt markdown files (A, B, D, MarketResearch)"""
         prompts = {}
         missing = []
-        # Prompt C eliminated - visual generation now handled by automation script
+        # Prompt-VisualGeneration (formerly Prompt C) eliminated - visual generation now handled by automation script
+        # Prompt-MarketResearch provides research_candidates.json (market intelligence)
         for letter in ["A", "B", "D"]:
             prompt_file = PROMPT_DIR / f"Prompt-{letter}-v5.4{letter}.md"
             if prompt_file.exists():
@@ -290,18 +291,28 @@ class PortfolioAutomation:
                 prompts[letter] = f"# Prompt {letter} (placeholder)"
                 missing.append(letter)
 
+        # Load Prompt-MarketResearch
+        market_research_file = PROMPT_DIR / "Prompt-MarketResearch.md"
+        if market_research_file.exists():
+            with open(market_research_file, "r", encoding="utf-8") as f:
+                prompts["MarketResearch"] = f.read()
+        else:
+            logging.warning(f"{market_research_file.name} not found")
+            prompts["MarketResearch"] = "# Prompt-MarketResearch (placeholder)"
+            missing.append("MarketResearch")
+
         if missing:
             self.add_step(
                 "Load Prompts",
                 "warning",
                 f"Loaded prompts but {len(missing)} file(s) missing",
-                {"missing_prompts": ", ".join([f"Prompt-{l}" for l in missing])},
+                {"missing_prompts": ", ".join(missing)},
             )
         else:
             self.add_step(
                 "Load Prompts",
                 "success",
-                "All 3 prompt files loaded successfully (A, B, D)",
+                "All 4 prompt files loaded successfully (A, B, D, MarketResearch)",
             )
 
         return prompts
@@ -1325,6 +1336,196 @@ Return a validation report (PASS or FAIL with details).
             "week_number": self.week_number,
         }
 
+    def run_prompt_market_research(self):
+        """Prompt-MarketResearch: Generate research_candidates.json with 3-5 pre-screened stock candidates
+
+        This runs BEFORE Prompt B to provide market intelligence for portfolio decisions.
+        Uses web search to gather real-time data from reputable financial sources.
+        """
+        logging.info("Running Prompt-MarketResearch: Market Intelligence Agent...")
+
+        try:
+            current_week_dir = DATA_DIR / f"W{self.week_number}"
+            current_week_dir.mkdir(parents=True, exist_ok=True)
+
+            # Prepare portfolio context for market research
+            portfolio_summary = self._extract_portfolio_context_for_research()
+
+            system_prompt = "You are the GenAi Chosen Market Intelligence & Stock Screening Agent with web search capabilities. Use real-time market data from trusted financial sources (Yahoo Finance, MarketWatch, Seeking Alpha, Finviz, CNBC) to identify momentum stocks. Follow Prompt-MarketResearch specifications exactly and produce the complete research_candidates.json."
+
+            user_message = f"""
+{self.prompts['MarketResearch']}
+
+---
+
+**CURRENT PORTFOLIO CONTEXT FOR WEEK {self.week_number}:**
+
+{json.dumps(portfolio_summary, indent=2)}
+
+---
+
+**REQUIRED ACTIONS:**
+
+**STEP 1: Analyze Current Portfolio**
+- Determine sector classification for each holding (Technology, Healthcare, Industrials, Materials, Energy, Consumer, Financials, etc.)
+- Calculate current sector exposure percentages based on position weights
+- Identify which sectors are approaching the 45% cap
+- Determine available capital based on portfolio composition
+
+**STEP 2: Search Financial Sources**
+1. Use web search to query trusted sources (Yahoo Finance, MarketWatch, Seeking Alpha, Finviz, CNBC)
+2. For each sector with room to grow, search for:
+   - "[SECTOR] stocks momentum earnings beat [CURRENT_YEAR]"
+   - "best performing [SECTOR] stocks [CURRENT_MONTH] [CURRENT_YEAR]"
+   - "[SECTOR] stocks analyst upgrades institutional buying"
+3. Focus on stocks with:
+   - Strong 4-week and 12-week price momentum (visible in charts/data)
+   - Recent positive earnings announcements
+   - High institutional ownership
+   - Market cap >$2B, volume >1M shares
+
+**STEP 3: Generate Market Research Candidates**
+1. From your search results, identify 3-5 high-quality candidates
+2. Extract real data from sources:
+   - Current stock price, 52-week range
+   - Recent momentum percentages (4-week, 12-week)
+   - Market cap, average volume
+   - Recent catalysts (earnings, news, analyst actions)
+   - Sector classification
+3. Ensure candidates:
+   - Do NOT duplicate any ticker in `current_holdings` list above
+   - Comply with sector constraints (would not push any sector over 45%)
+   - Meet all screening criteria from Prompt-MarketResearch
+
+**STEP 4: Generate Output**
+- Generate the complete `research_candidates.json` file with the EXACT structure specified in OUTPUT FORMAT section
+- Use actual data from your web search results
+- Cite information sources in your search process
+- Document portfolio_context with calculated sector exposure
+
+Current date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}
+
+Generate the complete JSON now.
+"""
+
+            logging.info("Calling AI to generate research candidates with web search...")
+            response = self.call_ai(system_prompt, user_message)
+
+            # Extract JSON from response - try multiple patterns
+            research_candidates = None
+
+            # Pattern 1: JSON in code fence
+            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
+            if json_match:
+                try:
+                    research_candidates = json.loads(json_match.group(1))
+                    logging.info("✓ Extracted JSON from code fence")
+                except json.JSONDecodeError as e:
+                    logging.warning(f"JSON in code fence invalid: {e}")
+
+            # Pattern 2: JSON with nested objects (greedy match from first { to last })
+            if not research_candidates:
+                json_match = re.search(r"(\{[\s\S]*\})", response)
+                if json_match:
+                    try:
+                        research_candidates = json.loads(json_match.group(1))
+                        logging.info("✓ Extracted JSON from response body")
+                    except json.JSONDecodeError as e:
+                        logging.warning(f"JSON extraction attempt 2 failed: {e}")
+
+            if not research_candidates:
+                # Save response for debugging
+                debug_path = current_week_dir / "market_research_response.txt"
+                with open(debug_path, "w", encoding="utf-8") as f:
+                    f.write(response)
+                logging.error(f"Could not extract JSON. Response saved to {debug_path}")
+                raise ValueError("Could not extract research_candidates JSON from AI response")
+
+            # Validate structure
+            if not isinstance(research_candidates, dict):
+                raise ValueError("research_candidates must be a JSON object")
+
+            if "candidates" not in research_candidates:
+                raise ValueError("research_candidates.json missing required 'candidates' key")
+
+            candidates = research_candidates.get("candidates", [])
+            if not isinstance(candidates, list):
+                raise ValueError("'candidates' must be a JSON array")
+
+            candidate_count = len(candidates)
+            if candidate_count < 3 or candidate_count > 5:
+                logging.warning(f"⚠️ Generated {candidate_count} candidates (expected 3-5)")
+
+            # Save to file
+            output_path = current_week_dir / "research_candidates.json"
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(research_candidates, f, indent=2)
+
+            logging.info(f"✅ Prompt-MarketResearch completed - {candidate_count} candidates saved to {output_path}")
+
+            self.add_step(
+                "Prompt-MarketResearch - Market Intelligence",
+                "success",
+                f"Generated research_candidates.json with {candidate_count} pre-screened stocks",
+                {
+                    "output_file": str(output_path),
+                    "candidate_count": candidate_count,
+                    "sectors": list(set([c.get("sector", "Unknown") for c in candidates])),
+                },
+            )
+
+            return research_candidates
+
+        except Exception as e:
+            self.add_step(
+                "Prompt-MarketResearch - Market Intelligence",
+                "error",
+                f"Failed to generate research_candidates.json: {str(e)}",
+            )
+            raise
+
+    def _extract_portfolio_context_for_research(self):
+        """Extract portfolio summary for Prompt-MarketResearch
+
+        Only passes data directly available from master.json.
+        The AI agent will use web search to look up:
+        - Sector classification for each ticker
+        - Current sector exposure analysis
+        - Available capital (inferred from portfolio composition)
+        """
+        stocks = self.master_json.get("stocks", [])
+        portfolio_totals = self.master_json.get("portfolio_totals", {})
+
+        # Build holdings list with current positions
+        holdings_data = []
+        for stock in stocks:
+            ticker = stock.get("ticker", "N/A")
+            current_value = stock.get("current_value", 0)
+            holdings_data.append(
+                {
+                    "ticker": ticker,
+                    "name": stock.get("name", ""),
+                    "current_value": current_value,
+                    "weight_pct": round((current_value / portfolio_totals.get("current_value", 1)) * 100, 2),
+                }
+            )
+
+        # Sort by value to find largest position
+        holdings_data.sort(key=lambda x: x["current_value"], reverse=True)
+        largest_position = None
+        if holdings_data:
+            largest = holdings_data[0]
+            largest_position = f"{largest['ticker']} ({largest['weight_pct']:.1f}%)"
+
+        return {
+            "week_number": self.week_number,
+            "position_count": len(holdings_data),
+            "largest_position": largest_position,
+            "portfolio_value": f"${portfolio_totals.get('current_value', 0):,.0f}",
+            "current_holdings": holdings_data,
+            "instruction_note": "Use web search to determine sector classification for each holding and calculate sector exposure. Infer available capital constraints from portfolio concentration.",
+        }
+
     def run_prompt_b(self):
         """Prompt B: Narrative Writer - Generate HTML content
 
@@ -1350,17 +1551,87 @@ Return a validation report (PASS or FAIL with details).
             table_html = ""
             chart_svg = ""
 
-            try:
-                with open(current_week_dir / "performance_table.html", "r", encoding="utf-8") as f:
-                    table_html = f.read()
-            except FileNotFoundError:
-                logging.warning(f"performance_table.html not found in {current_week_dir}")
+            # Load research candidates (MANDATORY - required for Prompt B)
+            research_path = current_week_dir / "research_candidates.json"
+            if not research_path.exists():
+                error_msg = (
+                    f"❌ CRITICAL: research_candidates.json not found in {current_week_dir}\n"
+                    f"   This file is REQUIRED for Prompt B to execute.\n"
+                    f"   Expected path: {research_path}\n\n"
+                    f"   To resolve:\n"
+                    f"   1. Run Prompt-MarketResearch to generate research_candidates.json\n"
+                    f"   2. Manually create the file with 3-5 pre-screened stock candidates\n"
+                    f"   3. Place the file in Data/W{self.week_number}/ directory\n\n"
+                    f"   See Prompt/Prompt-MarketResearch.md for file format specification."
+                )
+                logging.error(error_msg)
+                self.add_step(
+                    "Prompt B - Narrative Writer",
+                    "error",
+                    "research_candidates.json not found (REQUIRED)",
+                )
+                raise FileNotFoundError(error_msg)
 
             try:
-                with open(current_week_dir / "performance_chart.svg", "r", encoding="utf-8") as f:
-                    chart_svg = f.read()
-            except FileNotFoundError:
-                logging.warning(f"performance_chart.svg not found in {current_week_dir}")
+                with open(research_path, "r", encoding="utf-8") as f:
+                    research_candidates = json.load(f)
+
+                # Validate JSON structure
+                if not isinstance(research_candidates, dict):
+                    raise ValueError("research_candidates.json must be a JSON object (dictionary)")
+
+                if "candidates" not in research_candidates:
+                    raise ValueError("research_candidates.json missing required 'candidates' key")
+
+                candidates = research_candidates.get("candidates", [])
+                if not isinstance(candidates, list):
+                    raise ValueError("'candidates' must be a JSON array")
+
+                candidate_count = len(candidates)
+                if candidate_count < 3 or candidate_count > 5:
+                    logging.warning(f"⚠️ research_candidates.json has {candidate_count} candidates (expected 3-5)")
+
+                logging.info(f"✅ Loaded research_candidates.json with {candidate_count} candidates")
+
+            except json.JSONDecodeError as e:
+                error_msg = (
+                    f"❌ CRITICAL: research_candidates.json is not valid JSON\n"
+                    f"   File path: {research_path}\n"
+                    f"   JSON error: {e}\n\n"
+                    f"   Verify file format matches Prompt-MarketResearch specification."
+                )
+                logging.error(error_msg)
+                self.add_step(
+                    "Prompt B - Narrative Writer",
+                    "error",
+                    f"Invalid JSON in research_candidates.json: {e}",
+                )
+                raise
+
+            except ValueError as e:
+                error_msg = (
+                    f"❌ CRITICAL: research_candidates.json has invalid structure\n"
+                    f"   File path: {research_path}\n"
+                    f"   Validation error: {e}\n\n"
+                    f"   Required structure:\n"
+                    f"   {{\n"
+                    f'     "candidates": [\n'
+                    f'       {{ "ticker": "...", "name": "...", ... }},\n'
+                    f"       ...\n"
+                    f"     ]\n"
+                    f"   }}\n\n"
+                    f"   See Prompt/Prompt-MarketResearch.md for complete specification."
+                )
+                logging.error(error_msg)
+                self.add_step(
+                    "Prompt B - Narrative Writer",
+                    "error",
+                    f"Invalid structure in research_candidates.json: {e}",
+                )
+                raise
+
+            # Note: Do NOT send actual table/chart HTML to Prompt B
+            # Prompt B generates placeholders, final assembly inserts the actual content
 
             user_message = f"""
 {self.prompts['B']}
@@ -1373,23 +1644,33 @@ Here is the summary data for Week {self.week_number}:
 
 ---
 
-PERFORMANCE TABLE (HTML - use as-is):
-
-{table_html}
-
----
-
-PERFORMANCE CHART (SVG - use as-is):
-
-{chart_svg}
+RESEARCH CANDIDATES (from Prompt-MarketResearch):
+{json.dumps(research_candidates, indent=2)}
 
 ---
 
-Generate:
-1. narrative.html (the prose content block with embedded table and chart using placeholder comments)
-2. seo.json (all metadata)
+INSTRUCTIONS:
 
-This is for Week {self.week_number}.
+Generate the following files for Week {self.week_number}:
+
+1. **narrative.html** - The prose narrative content block
+   - Use placeholder comments for table and chart insertion:
+     * `<!-- PERFORMANCE TABLE WILL BE INSERTED HERE BY AUTOMATION -->`
+     * `<!-- CHART WILL BE INSERTED HERE BY AUTOMATION -->`
+   - Do NOT include the actual table or chart HTML/SVG
+   - The automation will insert them during final assembly
+
+2. **seo.json** - All SEO metadata (title, description, keywords, OG tags, etc.)
+
+3. **decision_summary.json** - Tracking file with:
+   - decision (HOLD or REBALANCE)
+   - position_count
+   - triggers (array of trigger descriptions if any)
+   - trades (array of trade summaries if REBALANCE)
+   - portfolio_value
+   - sp500_alpha_bps
+
+Generate all three JSON/HTML blocks now.
 """
 
             # Log request size for debugging
@@ -1445,6 +1726,24 @@ This is for Week {self.week_number}.
                 logging.warning("No SEO JSON found, generating fallback")
                 self.seo_json = self.generate_fallback_seo()
                 seo_status = "warning"
+
+            # Extract decision_summary.json (Priority 2 - tracking enhancement)
+            decision_summary = None
+            # Look for decision_summary.json block in response
+            decision_match = re.search(r"decision_summary\.json[:\s]*```json\s*({.*?})\s*```", response, re.DOTALL)
+            if decision_match:
+                try:
+                    decision_summary = json.loads(decision_match.group(1))
+                    summary_path = current_week_dir / "decision_summary.json"
+                    with open(summary_path, "w", encoding="utf-8") as f:
+                        json.dump(decision_summary, f, indent=2)
+                    logging.info(
+                        f"Extracted decision_summary.json: {decision_summary.get('decision')} with {decision_summary.get('position_count')} positions"
+                    )
+                except Exception as e:
+                    logging.warning(f"Failed to extract decision_summary.json: {e}")
+            else:
+                logging.info("No decision_summary.json found in response - AI may not have generated it")
 
             logging.info("Prompt B completed - narrative and SEO generated")
 
@@ -1968,7 +2267,7 @@ This is for Week {self.week_number}.
     def generate_visuals(self):
         """Generate performance table and chart directly (no AI needed).
 
-        Replaces Prompt C functionality with deterministic Python generation.
+        Replaces Prompt-VisualGeneration (formerly Prompt C) functionality with deterministic Python generation.
 
         Raises:
             ValueError: If master.json not loaded or insufficient data.
@@ -2264,56 +2563,128 @@ Generate ONLY the body content now (header template, main section, footer templa
         except Exception as e:
             logging.warning(f"TLDR validation failed: {e}")
 
-        # Basic validation
-        if not final_html.strip().startswith("<!DOCTYPE"):
-            logging.warning("Generated HTML doesn't start with DOCTYPE")
-        if "</html>" not in final_html.lower():
-            logging.warning("Generated HTML doesn't have closing </html> tag")
-
-        # Check for required elements
-        required_elements = ["<head>", "<body", "<article", 'class="prose']
-        missing = [elem for elem in required_elements if elem not in final_html]
-        if missing:
-            logging.warning(f"Missing expected elements: {', '.join(missing)}")
-
         # ================= PERFORMANCE OPTIMIZATION =================
         try:
             final_html = self._optimize_performance(final_html)
         except Exception as e:
             logging.warning(f"Performance optimization failed: {e}")
 
-        # Save to Posts folder
+        # ================= PRE-PUBLISH VALIDATION =================
+        validation_result = None
+        try:
+            validation_result = self._validate_final_html(final_html)
+
+            if not validation_result["valid"]:
+                # Save failed HTML for analysis
+                error_path = DATA_DIR / f"W{self.week_number}" / f"FAILED_week{self.week_number}_validation_errors.html"
+                error_path.parent.mkdir(parents=True, exist_ok=True)
+
+                with open(error_path, "w", encoding="utf-8") as f:
+                    f.write(final_html)
+
+                # Create detailed error report
+                error_report_path = (
+                    DATA_DIR / f"W{self.week_number}" / f"FAILED_week{self.week_number}_validation_report.txt"
+                )
+                with open(error_report_path, "w", encoding="utf-8") as f:
+                    f.write("=" * 80 + "\n")
+                    f.write(f"HTML VALIDATION FAILED - Week {self.week_number}\n")
+                    f.write("=" * 80 + "\n\n")
+                    f.write(f"Date: {datetime.now(timezone.utc).isoformat()}\n\n")
+                    f.write("CRITICAL ERRORS:\n")
+                    f.write("-" * 80 + "\n")
+                    for error in validation_result["errors"]:
+                        f.write(f"❌ {error}\n")
+                    f.write("\n")
+
+                    if validation_result["warnings"]:
+                        f.write("WARNINGS:\n")
+                        f.write("-" * 80 + "\n")
+                        for warning in validation_result["warnings"]:
+                            f.write(f"⚠️ {warning}\n")
+                        f.write("\n")
+
+                    f.write("FILES SAVED FOR ANALYSIS:\n")
+                    f.write("-" * 80 + "\n")
+                    f.write(f"Failed HTML: {error_path}\n")
+                    f.write(f"Validation Report: {error_report_path}\n")
+                    f.write(f"Narrative (Prompt B): {DATA_DIR / f'W{self.week_number}' / 'narrative.html'}\n")
+                    f.write(f"SEO Metadata: {DATA_DIR / f'W{self.week_number}' / 'seo.json'}\n\n")
+
+                    f.write("RESOLUTION STEPS:\n")
+                    f.write("-" * 80 + "\n")
+                    f.write("1. Review validation errors above\n")
+                    f.write("2. Check Prompt B output (narrative.html) for structural issues\n")
+                    f.write("3. Verify Prompt D correctly assembled components\n")
+                    f.write(
+                        "4. Inspect FAILED_week{}_validation_errors.html for HTML issues\n".format(self.week_number)
+                    )
+                    f.write("5. Re-run automation after fixing prompt issues\n")
+
+                error_msg = (
+                    f"❌ HTML VALIDATION FAILED - Week {self.week_number}\n\n"
+                    f"Critical Errors ({len(validation_result['errors'])}):\n"
+                    + "\n".join([f"  • {err}" for err in validation_result["errors"]])
+                    + "\n\n"
+                    f"Files saved for analysis:\n"
+                    f"  • {error_path}\n"
+                    f"  • {error_report_path}\n\n"
+                    f"Automation cannot proceed. Fix validation errors and re-run."
+                )
+
+                logging.error(error_msg)
+                self.add_step(
+                    "HTML Validation",
+                    "error",
+                    f"Pre-publish validation failed ({len(validation_result['errors'])} critical errors)",
+                    {
+                        "errors": validation_result["errors"],
+                        "warnings": validation_result["warnings"],
+                        "failed_html_saved": str(error_path),
+                        "validation_report": str(error_report_path),
+                    },
+                )
+                raise ValueError(f"HTML validation failed: {len(validation_result['errors'])} critical errors found")
+
+            # Log warnings but continue
+            if validation_result["warnings"]:
+                logging.warning(f"⚠️ HTML validation passed with {len(validation_result['warnings'])} warnings:")
+                for warning in validation_result["warnings"]:
+                    logging.warning(f"  • {warning}")
+            else:
+                logging.info("✅ HTML validation passed - all checks successful")
+
+        except ValueError:
+            # Re-raise validation failures
+            raise
+        except Exception as e:
+            logging.error(f"HTML validation crashed: {e}")
+            # Save HTML for debugging even if validation crashes
+            error_path = DATA_DIR / f"W{self.week_number}" / f"FAILED_week{self.week_number}_validation_crash.html"
+            error_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_path, "w", encoding="utf-8") as f:
+                f.write(final_html)
+            logging.error(f"HTML saved for debugging: {error_path}")
+            raise
+
+        # Save to Posts folder (only if validation passed)
         try:
             output_path = POSTS_DIR / f"GenAi-Managed-Stocks-Portfolio-Week-{self.week_number}.html"
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(final_html)
 
-            logging.info(f"Prompt D completed - {output_path.name} created ({len(final_html)} bytes)")
-
-            # Validation warnings
-            warnings = []
-            if not final_html.strip().startswith("<!DOCTYPE"):
-                warnings.append("missing DOCTYPE")
-            if "</html>" not in final_html.lower():
-                warnings.append("missing </html>")
-            required_elements = ["<head>", "<body", "<article", 'class="prose']
-            missing = [elem for elem in required_elements if elem not in final_html]
-            if missing:
-                warnings.extend(missing)
-
-            status = "warning" if warnings else "success"
-            details = {
-                "output_file": str(output_path),
-                "file_size": f"{len(final_html)} bytes",
-            }
-            if warnings:
-                details["validation_warnings"] = ", ".join(warnings)
+            logging.info(f"✅ Prompt D completed - {output_path.name} created ({len(final_html):,} bytes)")
 
             self.add_step(
                 "Prompt D - Final Assembler",
-                status,
-                "Generated complete HTML page for Week post",
-                details,
+                "success",
+                "Generated and validated complete HTML page for Week post",
+                {
+                    "output_file": str(output_path),
+                    "file_size": f"{len(final_html):,} bytes",
+                    "validation": "passed",
+                    "warnings": len(validation_result["warnings"]) if validation_result else 0,
+                },
             )
 
             return final_html
@@ -2325,6 +2696,183 @@ Generate ONLY the body content now (header template, main section, footer templa
                 f"Failed to save final HTML: {str(e)}",
             )
             raise
+
+    def _validate_final_html(self, html: str) -> dict:
+        """
+        Comprehensive pre-publish validation of final HTML.
+        Returns dict with keys: 'valid' (bool), 'errors' (list), 'warnings' (list)
+        """
+        errors = []
+        warnings = []
+
+        # ===== CRITICAL CHECKS (ERRORS) =====
+
+        # 1. Document structure
+        if not html.strip().startswith("<!DOCTYPE"):
+            errors.append("Missing DOCTYPE declaration at start of document")
+
+        if "<html" not in html.lower():
+            errors.append("Missing <html> opening tag")
+
+        if "</html>" not in html.lower():
+            errors.append("Missing </html> closing tag")
+
+        # 2. Required sections
+        if "<head>" not in html and "<head " not in html:
+            errors.append("Missing <head> section")
+
+        if "<body" not in html:
+            errors.append("Missing <body> tag")
+
+        if "</body>" not in html.lower():
+            errors.append("Missing </body> closing tag")
+
+        # 3. Header/Footer templates
+        if 'data-template="header"' not in html:
+            errors.append('Missing header template (data-template="header")')
+
+        if 'data-template="footer"' not in html:
+            errors.append('Missing footer template (data-template="footer")')
+
+        # 4. Main content structure
+        if "<main" not in html:
+            errors.append("Missing <main> section")
+
+        if "<article" not in html:
+            errors.append("Missing <article> section")
+
+        # 5. Critical content elements
+        if 'class="prose' not in html:
+            errors.append("Missing prose content class (narrative block)")
+
+        if f"<h1" not in html:
+            errors.append("Missing <h1> title element")
+
+        # Check title format
+        expected_title = f"GenAi-Managed Stocks Portfolio Week {self.week_number}"
+        if expected_title not in html:
+            errors.append(f"Title doesn't match expected format: '{expected_title}'")
+
+        # 6. Hero image
+        hero_image_pattern = f'src="../Media/W{self.week_number}.webp"'
+        if hero_image_pattern not in html:
+            errors.append(f"Missing hero image: {hero_image_pattern}")
+
+        # 7. TLDR strip
+        if 'id="tldrStrip"' not in html:
+            errors.append('Missing TLDR strip (id="tldrStrip")')
+
+        tldr_metrics = ['id="tldrWeek"', 'id="tldrTotal"', 'id="tldrAlpha"']
+        missing_metrics = [m for m in tldr_metrics if m not in html]
+        if missing_metrics:
+            errors.append(f"TLDR strip missing metric IDs: {', '.join(missing_metrics)}")
+
+        # 8. Performance visuals (table and chart)
+        if 'class="myblock-performance-snapshot"' not in html:
+            errors.append('Missing performance table (class="myblock-performance-snapshot")')
+
+        if 'class="myblock-chart-container"' not in html:
+            errors.append('Missing performance chart (class="myblock-chart-container")')
+
+        # 9. Holdings list
+        holdings_pattern = r"<ul[^>]*>.*?</ul>"
+        if not re.search(holdings_pattern, html, re.DOTALL):
+            errors.append("Missing holdings list (<ul>...</ul>)")
+        else:
+            # Check for variable holdings count (6-10 items)
+            holdings_items = len(re.findall(r"<li[^>]*>", html))
+            if holdings_items < 6 or holdings_items > 10:
+                warnings.append(f"Holdings list has {holdings_items} items (expected 6-10)")
+
+        # 10. Heatmap button
+        if "heatmap-cta-button" not in html:
+            warnings.append('Heatmap button not found (class="heatmap-cta-button")')
+
+        # 11. SEO meta tags
+        required_meta = [
+            'name="description"',
+            'property="og:title"',
+            'property="og:description"',
+            'property="og:image"',
+            'name="twitter:card"',
+            'rel="canonical"',
+        ]
+        missing_meta = [m for m in required_meta if m not in html]
+        if missing_meta:
+            errors.append(f"Missing SEO meta tags: {', '.join(missing_meta)}")
+
+        # 12. CSS injection
+        if ".myblock-performance-snapshot" not in html:
+            errors.append("Missing injected CSS for performance table")
+
+        if ".myblock-chart-container" not in html:
+            errors.append("Missing injected CSS for performance chart")
+
+        # 13. JavaScript includes
+        required_scripts = ["template-loader.js", "mobile-menu.js", "tldr.js"]
+        missing_scripts = [s for s in required_scripts if s not in html]
+        if missing_scripts:
+            errors.append(f"Missing JavaScript files: {', '.join(missing_scripts)}")
+
+        # 14. Back link
+        if 'href="posts.html"' not in html:
+            warnings.append("Missing back link to posts.html")
+
+        # ===== STRUCTURAL WARNINGS (NON-CRITICAL) =====
+
+        # Check for duplicate TLDR strips
+        tldr_count = html.count('id="tldrStrip"')
+        if tldr_count > 1:
+            warnings.append(f"Multiple TLDR strips found ({tldr_count} instances)")
+        elif tldr_count == 0:
+            errors.append("TLDR strip completely missing")
+
+        # Check hero image attributes
+        if hero_image_pattern in html:
+            img_match = re.search(r'<img[^>]*src="../Media/W\d+\.webp"[^>]*>', html)
+            if img_match:
+                img_tag = img_match.group(0)
+                if 'fetchpriority="high"' not in img_tag:
+                    warnings.append('Hero image missing fetchpriority="high" attribute')
+                if 'loading="eager"' not in img_tag and 'loading="lazy"' in img_tag:
+                    warnings.append('Hero image should use loading="eager", not lazy')
+
+        # Check conditional sections (HOLD vs REBALANCE)
+        has_market_opportunities = "Market Opportunities Under Review" in html
+        has_rebalance_execution = "Rebalance Execution Details" in html
+
+        if has_market_opportunities and has_rebalance_execution:
+            warnings.append("Both conditional sections present (Market Opportunities AND Rebalance Execution)")
+
+        # Check file size (warn if too large)
+        size_mb = len(html) / (1024 * 1024)
+        if size_mb > 1.0:
+            warnings.append(f"HTML file size is large: {size_mb:.2f} MB (may impact load time)")
+
+        # Check for common HTML issues
+        if "<html>" in html and 'lang="en"' not in html:
+            warnings.append('HTML tag missing lang="en" attribute')
+
+        # Check for inline styles (should be minimal)
+        inline_style_count = html.count('style="')
+        if inline_style_count > 10:
+            warnings.append(f"Many inline styles found ({inline_style_count}) - prefer utility classes")
+
+        # Validate JSON-LD structured data
+        if 'type="application/ld+json"' in html:
+            try:
+                jsonld_match = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
+                if jsonld_match:
+                    json.loads(jsonld_match.group(1))  # Validate JSON
+            except json.JSONDecodeError:
+                warnings.append("JSON-LD structured data is malformed")
+        else:
+            warnings.append("Missing JSON-LD structured data for SEO")
+
+        # ===== RETURN VALIDATION RESULT =====
+        valid = len(errors) == 0
+
+        return {"valid": valid, "errors": errors, "warnings": warnings}
 
     def _optimize_performance(self, html: str) -> str:
         """Post-process HTML for performance: hero fetchpriority, lazy load images, remove redundant inline styles."""
@@ -3078,7 +3626,12 @@ Generate ONLY the body content now (header template, main section, footer templa
                 self.add_step("Generate Performance Table", "success", "Loaded existing performance table")
                 self.add_step("Generate Performance Chart", "success", "Loaded existing performance chart")
 
-            # Step 4: Narrative generation (requires AI)
+            # Step 4: Market Research (requires AI with web search)
+            if self.ai_enabled:
+                # Generate research candidates BEFORE narrative
+                self.run_prompt_market_research()
+
+            # Step 5: Narrative generation (requires AI)
             if self.ai_enabled:
                 # All-or-nothing: generate content first, write file only if successful
                 self.run_prompt_b()

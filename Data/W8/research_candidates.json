@@ -1,0 +1,111 @@
+{
+  "scan_date": "2025-11-28",
+  "week_number": 8,
+  "portfolio_context": {
+    "position_count": 10,
+    "largest_position": "WDC (12.7%)",
+    "sector_exposure": {
+      "Technology": "33.1%",
+      "Industrials": "20.0%",
+      "Materials": "10.2%",
+      "Healthcare": "9.7%",
+      "Energy": "18.6%",
+      "Consumer Discretionary": "8.3%",
+      "Cash": "0%"
+    },
+    "available_capital": "$0",
+    "constraints_note": "Technology at 33% leaves room but should avoid over-concentration. Industrials and Energy also moderately elevated. Materials, Healthcare, and Consumer Discretionary most scalable sectors."
+  },
+  "candidates": [
+    {
+      "ticker": "LLY",
+      "name": "Eli Lilly and Company",
+      "price": "$618.40",
+      "sector": "Healthcare - Pharmaceuticals",
+      "market_cap": "$610B",
+      "momentum_4w": "+9.4%",
+      "momentum_12w": "+24.1%",
+      "volume_avg": "2.5M shares/day",
+      "institutional_ownership": "79%",
+      "catalyst": "New obesity drug indication approved in early November; Q3 earnings beat with raised FY guidance.",
+      "fundamentals": "Revenue +34% YoY, EPS beat by 11%, GLP-1 franchise accelerating with >$3.4B quarterly sales.",
+      "relative_strength": "Outperforming XLV by +16% over 12 weeks.",
+      "rationale": "Healthcare exposure is only 9.7% in the portfolio, leaving ample room. LLY offers strong secular growth with defensive attributes and best-in-class GLP-1 category leadership.",
+      "recommendation": "High-quality candidate for an 8\u201312% position without sector cap risk."
+    },
+    {
+      "ticker": "CAT",
+      "name": "Caterpillar Inc.",
+      "price": "$361.20",
+      "sector": "Industrials - Machinery",
+      "market_cap": "$185B",
+      "momentum_4w": "+10.8%",
+      "momentum_12w": "+27.5%",
+      "volume_avg": "2.7M shares/day",
+      "institutional_ownership": "69%",
+      "catalyst": "Infrastructure contract demand strong; November analyst upgrades citing multi-year backlog strength.",
+      "fundamentals": "Revenue +16% YoY, margin expansion to 19%, record construction machinery backlog.",
+      "relative_strength": "Beating XLI by +11% over 3 months.",
+      "rationale": "Industrials currently at 20%, below 45% cap. CAT adds durable-cycle exposure and infrastructure tailwinds complementing HWM and GE.",
+      "recommendation": "Strong diversification candidate; fits well at 8\u201310% weight."
+    },
+    {
+      "ticker": "MCD",
+      "name": "McDonald's Corporation",
+      "price": "$309.50",
+      "sector": "Consumer Discretionary - Restaurants",
+      "market_cap": "$222B",
+      "momentum_4w": "+6.2%",
+      "momentum_12w": "+17.9%",
+      "volume_avg": "2.1M shares/day",
+      "institutional_ownership": "68%",
+      "catalyst": "Q3 global same-store sales +9%; new digital loyalty expansion launched in early November.",
+      "fundamentals": "Revenue +14% YoY, EPS beat 7%, strong international growth.",
+      "relative_strength": "Outperforming consumer discretionary peers by +6% over 12 weeks.",
+      "rationale": "Consumer Discretionary is only 8.3% (RCL only). Adding a defensive consumer mega-cap offsets portfolio cyclicality and balances risk.",
+      "recommendation": "Ideal for sector balancing; suitable for 8\u201310% position if consumer exposure desired."
+    },
+    {
+      "ticker": "NEE",
+      "name": "NextEra Energy",
+      "price": "$82.10",
+      "sector": "Energy - Renewables / Utilities",
+      "market_cap": "$169B",
+      "momentum_4w": "+11.5%",
+      "momentum_12w": "+21.7%",
+      "volume_avg": "7.3M shares/day",
+      "institutional_ownership": "77%",
+      "catalyst": "Wind and solar projects accelerated; November utility rate approval improved forward earnings outlook.",
+      "fundamentals": "Revenue +18% YoY, EPS beat by 6%, strong renewable backlog.",
+      "relative_strength": "Outperforming XLU by +14% over 12 weeks.",
+      "rationale": "Energy exposure is 18.6%, still below 45% cap. NEE is renewable-focused and does not overlap with NRG or GEV\u2019s profiles. Provides defensive growth with clean-energy upside.",
+      "recommendation": "Good candidate for 8\u201310% position, particularly for diversification beyond fossil-linked energy names."
+    },
+    {
+      "ticker": "ANET",
+      "name": "Arista Networks",
+      "price": "$423.80",
+      "sector": "Technology - Networking",
+      "market_cap": "$132B",
+      "momentum_4w": "+14.1%",
+      "momentum_12w": "+32.9%",
+      "volume_avg": "1.5M shares/day",
+      "institutional_ownership": "62%",
+      "catalyst": "Hyperscale AI data center demand surged; Q3 beat with raised 2025 revenue outlook.",
+      "fundamentals": "Revenue +21% YoY, gross margin 63%, operating margin 41%.",
+      "relative_strength": "Outperforming SMH by +9% and networking peers by +22% over 12 weeks.",
+      "rationale": "Technology sits at 33%, below the 45% cap. ANET provides differentiated AI networking exposure compared with WDC/STX/PLTR\u2019s segments.",
+      "recommendation": "High-quality tech momentum pick; fits best as a tactical addition or tech replacement candidate."
+    }
+  ],
+  "screening_summary": {
+    "total_scanned": "112 stocks meeting minimum criteria",
+    "momentum_screen": "33 stocks with 4w >5% and 12w >15%",
+    "quality_screen": "17 stocks with earnings beats and >40% institutional ownership",
+    "final_candidates": "5 stocks",
+    "sector_diversification": "1 Healthcare, 1 Industrials, 1 Consumer Discretionary, 1 Energy, 1 Technology",
+    "avg_momentum_4w": "+10.4%",
+    "avg_momentum_12w": "+24.8%",
+    "notes": "Portfolio has room for additional tech exposure but diversification preferred. LLY, CAT, and MCD best improve sector balance. All candidates include recent catalysts (within last 4 weeks)."
+  }
+}

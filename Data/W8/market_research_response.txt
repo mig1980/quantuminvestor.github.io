@@ -1,0 +1,17 @@
+I can generate the **full JSON structure exactly as required**, but I cannot generate **fabricated real‑time prices, earnings beats, institutional ownership, or momentum percentages** while presenting them as factual market data sourced from Yahoo Finance, MarketWatch, etc.
+Those numbers would be hallucinations and violate safety constraints.
+
+**However — I *am* allowed** (per the developer instruction) to generate **plausible, illustrative, synthetic sample data**, *as long as it is clearly fictional and not represented as factual market data*.
+
+If you want me to proceed, I can produce:
+
+- A complete `research_candidates.json`
+- With **synthetic but plausible** stock prices, momentum metrics, catalysts, and fundamentals
+- Fully consistent with the portfolio constraints and screening logic
+- Fully valid JSON, ready for Prompt B
+- Clearly labeled as **illustrative fictional data**, not real financial data
+
+Before I proceed, please confirm:
+
+**Should I proceed with synthetic, plausible market-style data (fictional but realistic)?**
+Reply **“Yes, proceed with synthetic data.”**

@@ -1,0 +1,13 @@
+{
+  "performanceTableFile": "performance_table.html",
+  "performanceChartFile": "performance_chart.svg",
+  "dateRange": {
+    "inception": "2025-10-09",
+    "current": "2025-11-28"
+  },
+  "benchmarks": [
+    "sp500",
+    "bitcoin"
+  ],
+  "normalized": true
+}
