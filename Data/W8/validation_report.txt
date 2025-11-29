@@ -1,19 +1,20 @@
 Prompt A Validation Report - Week 8
-Generated: 2025-11-28 23:46:57
+Generated: 2025-11-29 00:01:05
 ================================================================================
 
 ❌ **Prompt A Validation: FAIL**
 
-Found **1** clear calculation error in **Week 8** (more may exist, but the first is already outside tolerance):
+Found 1 error(s) in Week 8:
 
-1. PLTR weekly_pct: expected **6.43%**, got **6.56%**
+1. PLTR weekly_pct: expected approximately 6.43, got 6.56
 
-Reason:
-Previous price = 155.75
-Current price = 165.77
-((165.77 − 155.75) / 155.75) × 100 = **6.43%**
-Difference vs stored value = **0.13%**, which exceeds the allowed ±0.01 tolerance.
+Details:
+- Previous price: 155.75
+- Current price: 165.77
+- Weekly % formula: (165.77 – 155.75) / 155.75 × 100
+- Computed: 6.43% (±0.01 tolerance)
+- Stored value: 6.56% → outside tolerance range
 
-Because one material error is already present, Week 8 validation **fails**.
+All other stocks, portfolio totals, benchmark metrics, array sync, normalized chart values, and inception consistency **checked out correctly** within allowed tolerances.
 
-Review automation script.
+Review automation script to correct PLTR weekly percentage calculation.

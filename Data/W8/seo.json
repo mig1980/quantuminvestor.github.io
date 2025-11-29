@@ -1,13 +1,13 @@
 {
   "title": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Performance, Risks & Next Moves - Quantum Investor Digest",
-  "description": "Week 8 performance review of the GenAi-managed high\u2011conviction stock portfolio. Full analysis, benchmark comparison, momentum review, and this week\u2019s HOLD decision.",
+  "description": "Week 8 analysis of the GenAi-managed high-conviction stock portfolio. Full performance review, benchmark comparison, weekly movers, AI-driven insights, and next steps.",
   "canonicalUrl": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-8.html",
-  "ogTitle": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Performance, Risks & Next Moves",
-  "ogDescription": "Week 8 portfolio results: +7.08% weekly gain, continued benchmark outperformance, and a HOLD recommendation. See full analysis and risk review.",
+  "ogTitle": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Performance & Insights",
+  "ogDescription": "Discover how the GenAi-managed stock portfolio performed in Week 8: returns, benchmark comparison, AI-driven analysis, and next move recommendations.",
   "ogImage": "https://quantuminvestor.net/Media/W8.webp",
   "ogUrl": "https://quantuminvestor.net/Posts/GenAi-Managed-Stocks-Portfolio-Week-8.html",
-  "twitterTitle": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Full Performance Breakdown",
-  "twitterDescription": "The GenAi Chosen portfolio gained +7.08% this week. Read the full Week 8 analysis, benchmark comparison, and HOLD decision rationale.",
+  "twitterTitle": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Performance & AI Insights",
+  "twitterDescription": "Week 8 recap: AI-managed portfolio performance, benchmark comparison, momentum highlights, and next steps.",
   "twitterImage": "https://quantuminvestor.net/Media/W8.webp",
   "twitterCard": "summary_large_image",
   "jsonLd": {
@@ -15,7 +15,7 @@
       "@context": "https://schema.org",
       "@type": "BlogPosting",
       "headline": "GenAi-Managed Stocks Portfolio Week 8 \u2013 Performance, Risks & Next Moves",
-      "description": "Full Week 8 analysis of the GenAi-managed stock portfolio, including performance drivers, benchmark comparison, and HOLD recommendation.",
+      "description": "Week 8 performance review and AI-driven analysis of the GenAi-managed high-conviction equity portfolio.",
       "datePublished": "2025-11-28",
       "dateCreated": "2025-11-28",
       "dateModified": "2025-11-28",
@@ -30,12 +30,12 @@
         "name": "Quantum Investor Digest",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://quantuminvestor.net/Media/logo.png"
+          "url": "https://quantuminvestor.net/Media/Logo.webp"
         }
       },
       "image": "https://quantuminvestor.net/Media/W8.webp",
-      "articleSection": "Investing",
-      "keywords": "AI investing, GenAi portfolio, stock market, Week 8 performance, momentum investing, portfolio analysis"
+      "articleSection": "Investing, AI Portfolio Management, Weekly Performance",
+      "keywords": "AI investing, stock portfolio, GenAi portfolio, Week 8 performance, S&P 500 comparison, Bitcoin performance, momentum investing"
     },
     "breadcrumbList": {
       "@context": "https://schema.org",

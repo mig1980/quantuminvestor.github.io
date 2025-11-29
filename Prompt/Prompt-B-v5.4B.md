@@ -482,9 +482,9 @@ Your narrative must follow this structure, adapting sections based on HOLD vs RE
 9. **Risk Disclosure**
    - `h2`: `Risk Disclosure`
    - Two paragraphs:
-     1. Standard risk text:
+     1. Standard risk text with AI disclosure:
         ```html
-        <p class="text-gray-300 mb-6"><strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions.</p>
+        <p class="text-gray-300 mb-6"><strong>This portfolio is AI-generated and designed for aggressive growth</strong>. It carries higher volatility and risk than diversified index funds. Past performance does not guarantee future results. This content is for informational purposes only and should not be considered financial advice. Always consult a licensed financial advisor before making investment decisions. The entire thing here, post and analysis, was produced by AI.</p>
         ```
      2. Next review schedule:
         - **IMPORTANT**: Review day depends on week number:

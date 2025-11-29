@@ -194,7 +194,7 @@
   },
   "benchmarks": {
     "sp500": {
-      "inception_reference": 6688,
+      "inception_reference": 6735,
       "history": [
         {
           "date": "2025-10-09",
@@ -247,7 +247,7 @@
       ]
     },
     "bitcoin": {
-      "inception_reference": 123353,
+      "inception_reference": 121706,
       "history": [
         {
           "date": "2025-10-09",
@@ -357,8 +357,8 @@
       "genai_norm": 100.0,
       "spx_close": 6735,
       "btc_close": 121706,
-      "spx_norm": 100.7,
-      "btc_norm": 98.66
+      "spx_norm": 100.0,
+      "btc_norm": 100.0
     },
     {
       "date": "2025-10-16",
